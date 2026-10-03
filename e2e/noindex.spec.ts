@@ -20,9 +20,15 @@ test.describe("noindex", () => {
         );
       expect(contents.length).toBeGreaterThan(0);
       for (const content of contents) {
-        expect(content).toMatch(/noindex/);
+        expect(content).toMatch(/\bnoindex\b/);
       }
-      expect(contents.join(",")).toMatch(/nofollow/);
+      expect(
+        contents.some(
+          (content) =>
+            /\bnoindex\b/.test(content) && /\bnofollow\b/.test(content)
+        ),
+        "one single robots meta must carry both noindex and nofollow"
+      ).toBe(true);
     });
   }
 
