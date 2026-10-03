@@ -18,7 +18,8 @@ export function DemoBanner({ branding }: DemoBannerProps) {
           <span className="hidden sm:inline">
             {" "}
             · {branding.previewLabel} – nicht die offizielle Website von{" "}
-            {branding.companyName}.
+            {branding.companyName}
+            {branding.companyName.endsWith(".") ? "" : "."}
           </span>
           <span className="sm:hidden"> – nicht die offizielle Website</span>
         </p>

@@ -30,6 +30,24 @@ describe("DemoBanner (FR-1, SC-5)", () => {
     ).toHaveAttribute("href", "https://dev.example");
   });
 
+  it("does not double the period after a company name ending in a period", () => {
+    render(
+      <DemoBanner
+        branding={{ ...fixture, companyName: "Example Spritzguss e.K." }}
+      />
+    );
+    const banner = screen.getByRole("region", { name: "Hinweis zur Vorschau" });
+    expect(banner.textContent).toContain("Example Spritzguss e.K.");
+    expect(banner.textContent).not.toContain("..");
+  });
+
+  it("appends exactly one period after a company name without one", () => {
+    render(<DemoBanner branding={fixture} />);
+    const banner = screen.getByRole("region", { name: "Hinweis zur Vorschau" });
+    expect(banner.textContent).toContain("Website von Example GmbH.");
+    expect(banner.textContent).not.toContain("..");
+  });
+
   it("cannot be dismissed", () => {
     render(<DemoBanner branding={fixture} />);
     expect(screen.queryByRole("button")).toBeNull();
