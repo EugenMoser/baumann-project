@@ -18,6 +18,9 @@ for (const path of paths) {
       const banner = page.getByRole("region", { name: "Hinweis zur Vorschau" });
       await expect(banner).toBeVisible();
       await expect(banner).toContainText("Vorschau");
+      await expect(banner).toContainText("nicht die offizielle Website", {
+        useInnerText: true,
+      });
 
       const officialLink = banner.getByRole("link", {
         name: "Zur offiziellen Seite",
