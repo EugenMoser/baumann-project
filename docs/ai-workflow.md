@@ -32,5 +32,5 @@ Roadmap → spec → plan → TDD → review → PR → merge.
 ## Guardrails
 
 - Pre-commit: gitleaks, lint-staged, typecheck, tests.
-- CI on every PR.
-- No commit, push or merge without human approval.
+- CI on every PR and on pushes to `main`.
+- Agents make WIP commits on feature branches; push, merge and commits to `main` require human approval.

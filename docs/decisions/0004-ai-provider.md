@@ -61,8 +61,8 @@ Notes on the table:
   catch it.
 - nemotron: with `max_tokens: 1500` two of three calls returned empty content
   with HTTP 200; one call with `max_tokens: 4000` succeeded. The script did not
-  record `finish_reason`, so the cause is unconfirmed. The successful call
-  described "Höhe 15,5 mm breitere Ausführung" as "Breite 15,5 mm" and returned
+  record `finish_reason`, so the cause is unconfirmed. The one call with
+  `max_tokens: 4000` described "Höhe 15,5 mm breitere Ausführung" as "Breite 15,5 mm" and returned
   an 832-character description with a bullet list.
 - apodex: supports `json_object` only, although the models endpoint lists
   `structured_outputs`.
@@ -84,7 +84,7 @@ Notes on the table:
 Qwen is primary because its three valid calls followed the schema without
 invented facts, although only 3 of 5 calls succeeded. Nemotron is faster but
 succeeded in 2 of 4 calls and made one factual slip. The evidence is small
-(13 calls); the ranking is indicative.
+(15 calls); the ranking is indicative.
 
 **Guidance for the AI feature.**
 
@@ -101,10 +101,10 @@ succeeded in 2 of 4 calls and made one factual slip. The evidence is small
 
 - Free models are rate-limited upstream: qwen returned HTTP 429 on 2 of 5 calls
   (provider-side, "temporarily rate-limited"). Without credits OpenRouter allows
-  about 20 requests per minute and 50 per day.
+  about 20 requests per minute and 50 per day (per OpenRouter docs, 2026-10).
 - Latency of 6-18 s per call; generation must run asynchronously, not inline
   in a page render.
-- Sample size is small (13 calls, 3 products); the ratings are indicative.
+- Sample size is small (15 calls, 3 products); the ratings are indicative.
 - A model listed with `structured_outputs` can still reject `json_schema`
   depending on the serving provider.
 
