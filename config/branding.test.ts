@@ -33,6 +33,15 @@ describe("brandingSchema (FR-5, SC-5)", () => {
     ).toBe(false);
   });
 
+  it("rejects a non-http official site URL", () => {
+    expect(
+      brandingSchema.safeParse({
+        ...valid,
+        officialSiteUrl: "ftp://example.com",
+      }).success
+    ).toBe(false);
+  });
+
   it("rejects an invalid developer URL", () => {
     expect(
       brandingSchema.safeParse({
