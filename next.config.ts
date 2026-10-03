@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
+// Side-effect import: throws during `next build`/`next start` if env is invalid.
+import "./lib/env";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  poweredByHeader: false,
 };
 
 export default nextConfig;
