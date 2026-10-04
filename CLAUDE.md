@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 0 of 8 features done. Next: feature 1 (Foundation).
+Active. MVP: 1 of 8 features done. Next: feature 2 (Data layer & deploy).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
@@ -17,7 +17,8 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Next.js 16.3 (App Router), React 19.2, TypeScript 5 (`strict: true`)
 - Tailwind CSS 4 via `@tailwindcss/postcss`
 - ESLint 9 flat config (`eslint.config.mjs`, `eslint-config-next`)
-- Vitest for tests, Prettier for formatting
+- Vitest + Testing Library (unit), Playwright (E2E), Prettier for formatting
+- Zod for env and config validation
 - pnpm 10
 
 ## Commands
@@ -26,7 +27,9 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
-- Build: `pnpm build`
+- E2E: `pnpm e2e` (runs against the production build — `pnpm build` first)
+- Build: `pnpm build` (needs `NEXT_PUBLIC_SITE_URL`, see `.env.example`)
+- Fresh clone: run `pnpm exec next typegen` (or `build`/`dev`) once before `pnpm typecheck`
 - Pre-commit (Husky): gitleaks → lint-staged (ESLint + Prettier) → typecheck → test
 
 ## Structure & key files
