@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
-// Side-effect import: throws during `next build`/`next start` if env is invalid.
-import "./lib/env";
+import { parsePublicEnv, parseServerEnv } from "./lib/env/schema";
+
+// Throws during `next build`/`next start` if env is invalid.
+parsePublicEnv(process.env);
+parseServerEnv(process.env);
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,

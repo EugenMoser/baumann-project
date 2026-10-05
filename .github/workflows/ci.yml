@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       GITLEAKS_VERSION: 8.30.1
     steps:
       - uses: actions/checkout@v7
