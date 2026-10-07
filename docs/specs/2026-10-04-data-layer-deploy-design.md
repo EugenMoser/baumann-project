@@ -238,3 +238,5 @@ is verified on the feature branch.
   port the tunnel targets.
 - Self-hosted Supabase may lag behind the hosted product (key format,
   defaults for exposing new tables); D5 and the explicit grants cover this.
+- The `catalog` bucket is public: files of draft products are reachable by URL
+  if the path is known (listing and writes are admin-only); accepted trade-off.

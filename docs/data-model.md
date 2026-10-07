@@ -164,6 +164,8 @@ the order number is built:
 order_number = article_number || coalesce(' - ' || suffix, '')
 ```
 
+Products without colours yield one row with the bare article number.
+
 Search, the inquiry form and structured data all read from this view.
 
 ### `media` and `product_media`
@@ -196,8 +198,12 @@ legacy exports contain none.
 - RLS is enabled on every table.
 - Anonymous users read published catalog data only; `status <> 'published'`
   rows and `ai_generation` are invisible.
-- Writes are restricted to the admin role.
-- Storage: public read for catalog images, writes for the admin only.
+- Writes are restricted to the admin role. Admin = JWT
+  `app_metadata.role = 'admin'`, checked by `private.is_admin()`.
+- Children of a product are visible when the product is visible to the caller.
+- Storage: bucket `catalog`, files served by public URL, listing and writes for
+  the admin only. Files of draft products are reachable by URL if the path is
+  known (accepted trade-off).
 - The service-role key is used server-side only (import, removal scripts).
 
 ## Pages and visible content
