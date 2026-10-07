@@ -8,14 +8,16 @@ on:
 permissions:
   contents: read
 
+# PR runs may be cancelled by newer pushes; main runs never, so a deploy
+# (migration + release) always runs to completion.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  ci:
+  app:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
@@ -79,3 +81,80 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Lint workflows
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.7 -color
+
+      - name: Build Docker image
+        run: >
+          docker build -t baumann-demo:ci
+          --build-arg NEXT_PUBLIC_SITE_URL
+          --build-arg NEXT_PUBLIC_SUPABASE_URL
+          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+          .
+
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:start
+      - run: pnpm db:test
+      - name: Generated types match the migrations
+        run: pnpm db:types && git diff --exit-code -- lib/supabase/database.types.ts
+
+  deploy:
+    needs: [app, db]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: deploy-preview
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Open SSH tunnel to the database
+        env:
+          SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          DB_TUNNEL_TARGET: ${{ secrets.DEPLOY_DB_TUNNEL_TARGET }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+            -fN -L "54329:${DB_TUNNEL_TARGET}" "${SSH_USER}@${SSH_HOST}"
+
+      - name: Apply migrations
+        env:
+          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
+        run: pnpm exec supabase db push --db-url "$PROD_DB_URL"
+
+      - name: Trigger Coolify deployment
+        env:
+          COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: >
+          curl --fail-with-body -sS -X POST "$COOLIFY_WEBHOOK_URL"
+          -H "Authorization: Bearer $COOLIFY_TOKEN"
+
+      - name: Smoke check
+        env:
+          PREVIEW_URL: ${{ secrets.PREVIEW_URL }}
+        run: node scripts/smoke-check.mts "$PREVIEW_URL" "$GITHUB_SHA"
