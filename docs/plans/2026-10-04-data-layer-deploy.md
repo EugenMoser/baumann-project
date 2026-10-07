@@ -110,7 +110,7 @@ function fakeJwt(payload: Record<string, unknown>): string {
 const valid = {
   NEXT_PUBLIC_SITE_URL: "https://baumann.eugen-moser.com",
   NEXT_PUBLIC_SUPABASE_URL: "https://api.baumann.eugen-moser.com",
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_abc123_XYZ-9",
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_example",
 };
 
 describe("parsePublicEnv (FR-1, SC-1)", () => {
