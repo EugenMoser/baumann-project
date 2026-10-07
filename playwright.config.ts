@@ -13,9 +13,10 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  // Runs against the production build: run `pnpm build` first.
+  // Runs against the standalone production build: run `pnpm build` first.
   webServer: {
-    command: `pnpm start --port ${PORT}`,
+    command: "pnpm start:standalone",
+    env: { PORT: String(PORT), HOSTNAME: "127.0.0.1" },
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
