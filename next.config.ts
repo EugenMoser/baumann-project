@@ -6,6 +6,7 @@ parsePublicEnv(process.env);
 parseServerEnv(process.env);
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   poweredByHeader: false,
   // Applies to every response independent of page code, incl. assets and errors.
   headers() {
