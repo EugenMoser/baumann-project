@@ -21,9 +21,13 @@ not hold credentials that can change the schema.
 - Before the webhook, the job checks that its commit is still the head of
   `main` (`git ls-remote`). Coolify deploys the branch head, so otherwise a
   newer app could go live before its own run has applied its migrations. A
-  superseded run applies migrations only; the newer run deploys. Remaining
-  window: a push between the guard and Coolify's clone turns that run's smoke
-  check red; the next run fixes it forward.
+  superseded run applies migrations only; the newer run deploys if its `app`
+  and `db` jobs are green (if not, production stays on the previous version
+  until a fix is pushed, harmless under expand/contract). Remaining window: if
+  a push lands between the guard and Coolify's clone, the newer app runs
+  against the older schema until its own run has applied its migrations, and
+  this run's smoke check goes red. Expand/contract limits the impact; the next
+  run fixes it forward.
 - Migrations follow expand/contract: each one works with the app version that
   is currently running; destructive changes ship in a later release.
 

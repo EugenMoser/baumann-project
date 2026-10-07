@@ -26,15 +26,21 @@ push to main
   calling it, the job compares `git ls-remote origin refs/heads/main` with
   `GITHUB_SHA`. If main has moved on, the webhook and smoke check are skipped
   (a `::notice::` says so) and the newer run, queued in the same concurrency
-  group, deploys. Migrations still run in the older job; they are a prefix of
-  the newer run's migrations. Remaining window: a push that lands between the
-  guard and Coolify's clone makes this run's smoke check red because the app
-  reports the newer commit; the next run deploys it and fixes it forward.
+  group, deploys, provided its `app` and `db` jobs are green. If they fail, the
+  older run's migrations are applied but no app is deployed, and production
+  stays on the previous version until a fix is pushed (harmless under
+  expand/contract). Migrations still run in the older job; they are a prefix
+  of the newer run's migrations. Remaining window: if a push lands between the
+  guard and Coolify's clone, Coolify builds the newer commit, so the newer app
+  runs against the older schema until its own run has applied its migrations.
+  This run's smoke check goes red because the app reports the newer commit.
+  Expand/contract limits the impact; the next run fixes it forward.
 - The smoke check polls `/api/health` for up to 10 minutes until it reports the
   commit that was pushed. `/api/health` always answers 200 with
   `{ commit, db }`; `db` is `error` when the database is slow or down. The
   Dockerfile has a `HEALTHCHECK` on the same endpoint.
-- Migrations always run before the new app is deployed.
+- Migrations run before the new app is deployed, except in the residual
+  window described above.
 
 ## 2. DNS
 
@@ -190,8 +196,8 @@ container goes live.
 - Destructive changes (drop, rename, type change) never share a release with
   the code that stops using the old structure.
 - The head guard (section 1) ensures only the current `main` head is deployed,
-  so an app version never goes live before its migrations; a superseded run
-  only applies migrations.
+  so an app version goes live before its migrations only in the residual
+  window described in section 1; a superseded run only applies migrations.
 - A failed migration fails the `deploy` job before the webhook runs, so the app
   is not redeployed. Fix forward with a new migration; do not edit an applied
   one.
