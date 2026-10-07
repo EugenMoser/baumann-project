@@ -146,7 +146,19 @@ jobs:
           PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
         run: pnpm exec supabase db push --db-url "$PROD_DB_URL"
 
+      - name: Check that this run is the current main head
+        id: head
+        run: |
+          head_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$head_sha" = "$GITHUB_SHA" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::main moved to ${head_sha}; the newer run will deploy it"
+          fi
+
       - name: Trigger Coolify deployment
+        if: steps.head.outputs.current == 'true'
         env:
           COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
@@ -155,6 +167,7 @@ jobs:
           -H "Authorization: Bearer $COOLIFY_TOKEN"
 
       - name: Smoke check
+        if: steps.head.outputs.current == 'true'
         env:
           PREVIEW_URL: ${{ secrets.PREVIEW_URL }}
         run: node scripts/smoke-check.mts "$PREVIEW_URL" "$GITHUB_SHA"

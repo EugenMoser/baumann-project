@@ -18,6 +18,12 @@ not hold credentials that can change the schema.
   Postgres listens on `127.0.0.1` of the VPS only.
 - The migration step runs before the Coolify deploy webhook. If it fails, the
   app is not redeployed.
+- Before the webhook, the job checks that its commit is still the head of
+  `main` (`git ls-remote`). Coolify deploys the branch head, so otherwise a
+  newer app could go live before its own run has applied its migrations. A
+  superseded run applies migrations only; the newer run deploys. Remaining
+  window: a push between the guard and Coolify's clone turns that run's smoke
+  check red; the next run fixes it forward.
 - Migrations follow expand/contract: each one works with the app version that
   is currently running; destructive changes ship in a later release.
 

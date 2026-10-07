@@ -14,17 +14,27 @@ push to main
        db  (pgTAP, integration, types check)   ─┴─> deploy
                                                       1. SSH tunnel (local port 54329) -> Postgres on the VPS
                                                       2. supabase db push (migrations)
-                                                      3. Coolify deploy webhook -> build on VPS -> container
-                                                      4. smoke check: scripts/smoke-check.mts <preview-url> <sha>
+                                                      3. head guard: skip 4 and 5 if main moved on
+                                                      4. Coolify deploy webhook -> build on VPS -> container
+                                                      5. smoke check: scripts/smoke-check.mts <preview-url> <sha>
 ```
 
 - The `deploy` job only runs on pushes to `main` and only after `app` and `db`
   are green. Deploys are serialized (`concurrency: deploy-preview`,
   `cancel-in-progress: false`), so a later push never kills a running deploy.
+- The Coolify webhook deploys the branch head, not the pushed commit. Before
+  calling it, the job compares `git ls-remote origin refs/heads/main` with
+  `GITHUB_SHA`. If main has moved on, the webhook and smoke check are skipped
+  (a `::notice::` says so) and the newer run, queued in the same concurrency
+  group, deploys. Migrations still run in the older job; they are a prefix of
+  the newer run's migrations. Remaining window: a push that lands between the
+  guard and Coolify's clone makes this run's smoke check red because the app
+  reports the newer commit; the next run deploys it and fixes it forward.
 - The smoke check polls `/api/health` for up to 10 minutes until it reports the
   commit that was pushed. `/api/health` always answers 200 with
   `{ commit, db }`; `db` is `error` when the database is slow or down. The
   Dockerfile has a `HEALTHCHECK` on the same endpoint.
+- Migrations always run before the new app is deployed.
 
 ## 2. DNS
 
@@ -163,6 +173,9 @@ container goes live.
   remove old structures in a later release (contract).
 - Destructive changes (drop, rename, type change) never share a release with
   the code that stops using the old structure.
+- The head guard (section 1) ensures only the current `main` head is deployed,
+  so an app version never goes live before its migrations; a superseded run
+  only applies migrations.
 - A failed migration fails the `deploy` job before the webhook runs, so the app
   is not redeployed. Fix forward with a new migration; do not edit an applied
   one.
