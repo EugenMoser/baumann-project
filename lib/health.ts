@@ -36,7 +36,8 @@ export function supabaseProbe(client: CatalogClient): DbProbe {
   return async (signal) => {
     const { error } = await client
       .from("category")
-      .select("id", { head: true, count: "exact" })
+      .select("id", { head: true })
+      .limit(1)
       .abortSignal(signal);
     return error === null;
   };

@@ -12,7 +12,8 @@ function jwtRole(token: string): string | null {
       Buffer.from(parts[1], "base64url").toString("utf8")
     );
     if (typeof payload !== "object" || payload === null) return null;
-    const role = (payload as { role?: unknown }).role;
+    if (!("role" in payload)) return null;
+    const role = payload.role;
     return typeof role === "string" ? role : null;
   } catch {
     return null;

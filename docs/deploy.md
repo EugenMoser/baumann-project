@@ -97,7 +97,12 @@ On the VPS:
 adduser --disabled-password --gecos "" deploy
 ```
 
-Add one line to `/home/deploy/.ssh/authorized_keys` (owner `deploy`, mode 600):
+Create the SSH directory, then add one line to
+`/home/deploy/.ssh/authorized_keys` (owner `deploy`, mode 600):
+
+```bash
+install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+```
 
 ```
 restrict,port-forwarding,permitopen="127.0.0.1:5432",command="/usr/sbin/nologin" ssh-ed25519 AAAA… github-actions-deploy
@@ -112,7 +117,8 @@ ssh -i deploy_key deploy@<vps-host>                              # no shell
 ssh -i deploy_key -N -L 54329:127.0.0.1:5432 deploy@<vps-host>   # tunnel works
 ```
 
-Delete the local `deploy_key` after storing it as a GitHub secret.
+Keep the local `deploy_key` until the verification in section 8 is done, then
+delete it (it is stored as a GitHub secret).
 
 ## 6. App resource in Coolify
 
@@ -125,7 +131,9 @@ Delete the local `deploy_key` after storing it as a GitHub secret.
 - `SOURCE_COMMIT` is a predefined Coolify runtime variable. It is excluded from
   Docker builds by default ("Include Source Commit in Build" off); that is fine
   because the app reads it at runtime for `/api/health`.
-- Health check path: `/api/health`.
+- Health check: the Dockerfile `HEALTHCHECK` is what Coolify uses. Do not
+  configure a separate HTTP health check in the dashboard; the slim image has
+  neither curl nor wget.
 - Create an API token with deploy permission and copy the deploy webhook URL
   of the resource.
 
@@ -134,20 +142,27 @@ Delete the local `deploy_key` after storing it as a GitHub secret.
 Repository secrets are used because environments with protection rules need a
 paid plan for private repositories.
 
-| Secret                    | Holds                                                    | Source                                     |
-| ------------------------- | -------------------------------------------------------- | ------------------------------------------ |
-| `DEPLOY_SSH_HOST`         | VPS host name or address for the tunnel                  | `<vps-host>`                               |
-| `DEPLOY_SSH_USER`         | Restricted user, `deploy`                                | step 5                                     |
-| `DEPLOY_SSH_PRIVATE_KEY`  | Private key `deploy_key` (full file content)             | step 5                                     |
-| `DEPLOY_SSH_KNOWN_HOSTS`  | Pinned host key line(s)                                  | `ssh-keyscan -t ed25519 <vps-host>`        |
-| `DEPLOY_DB_TUNNEL_TARGET` | Tunnel target on the VPS, `127.0.0.1:5432`               | step 4                                     |
-| `PROD_DB_URL`             | Postgres URL via the tunnel (`127.0.0.1:54329`, DB user) | database credentials of the Supabase stack |
-| `COOLIFY_WEBHOOK_URL`     | Deploy webhook URL of the app resource                   | step 6                                     |
-| `COOLIFY_TOKEN`           | Coolify API token with deploy permission                 | step 6                                     |
-| `PREVIEW_URL`             | `https://baumann.eugen-moser.com`                        | step 2                                     |
+| Secret                    | Holds                                                            | Source                                     |
+| ------------------------- | ---------------------------------------------------------------- | ------------------------------------------ |
+| `DEPLOY_SSH_HOST`         | VPS host name or address for the tunnel                          | `<vps-host>`                               |
+| `DEPLOY_SSH_USER`         | Restricted user, `deploy`                                        | step 5                                     |
+| `DEPLOY_SSH_PRIVATE_KEY`  | Private key `deploy_key` (full file content)                     | step 5                                     |
+| `DEPLOY_SSH_KNOWN_HOSTS`  | Pinned host key line(s)                                          | `ssh-keyscan -t ed25519 <vps-host>`        |
+| `DEPLOY_DB_TUNNEL_TARGET` | Tunnel target on the VPS, `127.0.0.1:5432`                       | step 4                                     |
+| `PROD_DB_URL`             | Postgres URL via the tunnel (`127.0.0.1:54329`, `postgres` user) | database credentials of the Supabase stack |
+| `COOLIFY_WEBHOOK_URL`     | Deploy webhook URL of the app resource                           | step 6                                     |
+| `COOLIFY_TOKEN`           | Coolify API token with deploy permission                         | step 6                                     |
+| `PREVIEW_URL`             | `https://baumann.eugen-moser.com`                                | step 2                                     |
 
 `PROD_DB_URL` uses the tunnel's local end, not the VPS: the workflow forwards
 local port 54329 to `DEPLOY_DB_TUNNEL_TARGET`.
+
+- Use the `postgres` user: the migration that revokes default privileges does
+  so `for role postgres`; with another owner, future tables would get default
+  grants (including TRUNCATE) for the API roles.
+- Percent-encode the password in the URL.
+- The production Postgres major version must match `major_version` in
+  `supabase/config.toml` (currently 17).
 
 ## 8. First deploy and verification
 
@@ -162,6 +177,7 @@ to collect (SC-14, SC-15):
 - `ssh -i deploy_key deploy@<vps-host>` gets no shell.
 - The demo notice is visible and `noindex` is set (meta, `X-Robots-Tag`,
   `robots.txt`).
+- Afterwards delete the local `deploy_key`.
 
 ## 9. Migrations
 
