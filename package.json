@@ -6,16 +6,24 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:standalone": "cp -R .next/static .next/standalone/.next/ && (test ! -d public || cp -R public .next/standalone/) && node .next/standalone/server.js",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "e2e": "playwright test",
+    "db:start": "supabase start -x studio,realtime,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:test": "supabase test db && vitest run --config vitest.integration.config.mts",
+    "db:types": "supabase gen types typescript --local --schema public > lib/supabase/database.types.ts",
     "prepare": "husky"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -34,6 +42,7 @@
     "jsdom": "^30.1.1",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.9",
+    "supabase": "2.119.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.3"

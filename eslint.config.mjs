@@ -14,6 +14,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     ".claude/**",
     ".superpowers/**",
+    "lib/supabase/database.types.ts",
   ]),
 ]);
 

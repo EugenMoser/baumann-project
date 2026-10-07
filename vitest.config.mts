@@ -13,9 +13,14 @@ export default defineConfig({
       "e2e/**",
       ".claude/**",
       ".superpowers/**",
+      "tests/integration/**",
     ],
     setupFiles: ["./vitest.setup.ts"],
-    // lib/env validates at import time; unit tests get a fixed valid value.
-    env: { NEXT_PUBLIC_SITE_URL: "http://localhost:3000" },
+    // lib/env validates at import time; unit tests get fixed valid values.
+    env: {
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_unit_test",
+    },
   },
 });

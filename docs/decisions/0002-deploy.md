@@ -35,3 +35,5 @@ served at `baumann.eugen-moser.com`.
 - Negative: the image is built on the VPS (2 vCPU, shared with Supabase), so
   builds compete with the running database.
 - Follow-up: the webhook secret is stored as a GitHub Actions secret.
+- Migrations reach the production database from the same CI job, before the
+  webhook; see ADR 0005. The setup is described in `docs/deploy.md`.

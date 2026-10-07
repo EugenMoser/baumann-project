@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { DemoBanner } from "@/components/demo-banner";
 import { branding } from "@/config/branding";
-import { env } from "@/lib/env";
+import { publicEnv } from "@/lib/env/public";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
+  metadataBase: new URL(publicEnv.NEXT_PUBLIC_SITE_URL),
   title: {
     default: `${branding.companyName} – Vorschau`,
     template: `%s – ${branding.shortName} (Vorschau)`,

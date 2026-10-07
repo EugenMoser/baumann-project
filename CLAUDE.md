@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 1 of 8 features done. Next: feature 2 (Data layer & deploy).
+Active. MVP: 2 of 8 features done. Next: feature 3 (Import & removal).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
@@ -28,6 +28,10 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
 - E2E: `pnpm e2e` (runs against the production build — `pnpm build` first)
+- Local Supabase: `pnpm db:start` / `pnpm db:stop` (Docker required)
+- Reset local DB (migrations + seed): `pnpm db:reset`
+- DB tests (pgTAP + integration, stack must run): `pnpm db:test`
+- Regenerate DB types: `pnpm db:types`
 - Build: `pnpm build` (needs `NEXT_PUBLIC_SITE_URL`, see `.env.example`)
 - Fresh clone: run `pnpm exec next typegen` (or `build`/`dev`) once before `pnpm typecheck`
 - Pre-commit (Husky): gitleaks → lint-staged (ESLint + Prettier) → typecheck → test
@@ -36,6 +40,8 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 - Routes and layouts live in `app/` (no `src/` dir); static assets in `public/`
 - `docs/roadmap.md` — features, status, decisions, risks
+- `supabase/` — migrations, seed, pgTAP tests
+- `docs/deploy.md` — deploy runbook (VPS, Coolify, secrets, backups)
 - `docs/data-model.md` — binding data model, import rules, RLS principles
 - `docs/specs/`, `docs/plans/` — feature specs and implementation plans
 
@@ -57,4 +63,6 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Pitfalls & open issues
 
-_(none yet)_
+- Default privileges on `public` are revoked for `anon`/`authenticated`: every new
+  table needs explicit grants, RLS enabled and admin write policies in its
+  migration (the RLS pgTAP test fails otherwise).
