@@ -191,6 +191,12 @@ it (it is stored as a GitHub secret).
 - Build variables (mark as build-time, they are inlined into the client
   bundle): `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+- Copy the key with the copy icon of `SERVICE_SUPABASEANON_KEY`, not by
+  selecting it. A JWT starts with `eyJ` and has two dots. The build only checks
+  the payload's `role`, so a key with a cut-off first character builds fine
+  but Kong rejects it and `/api/health` reports `"db":"error"`. Check the
+  running container with
+  `docker exec <app-container> printenv NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | cut -c1-3`.
 - `SOURCE_COMMIT` is a predefined Coolify runtime variable. It is excluded from
   Docker builds by default ("Include Source Commit in Build" off); that is fine
   because the app reads it at runtime for `/api/health`.
@@ -339,6 +345,6 @@ Threshold: if available memory drops below 1 GB during a build, switch to
 building in GitHub Actions and pushing to GHCR (ADR 0002 fallback). The app does
 not change for this.
 
-| Date       | Idle available | Peak during build | Decision   |
-| ---------- | -------------- | ----------------- | ---------- |
-| _(record)_ | _(record)_     | _(record)_        | _(record)_ |
+| Date       | Idle available       | Peak during build        | Decision             |
+| ---------- | -------------------- | ------------------------ | -------------------- |
+| 2026-10-07 | 4.7 GiB (of 7.8 GiB) | ~3.1 GiB available (min) | keep building on VPS |
