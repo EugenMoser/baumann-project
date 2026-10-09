@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { DemoBanner } from "@/components/demo-banner";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteHeader } from "@/components/site/site-header";
 import { branding } from "@/config/branding";
 import { publicEnv } from "@/lib/env/public";
 import "./globals.css";
@@ -32,9 +34,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="de"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      <body className="flex min-h-full flex-col bg-paper font-sans text-ink">
         <DemoBanner branding={branding} />
-        {children}
+        <SiteHeader branding={branding} />
+        <div className="flex flex-1 flex-col">{children}</div>
+        <SiteFooter branding={branding} />
       </body>
     </html>
   );

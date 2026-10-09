@@ -20,7 +20,7 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
       <button
         type="button"
         onClick={() => retry()}
-        className="w-fit underline underline-offset-2"
+        className="w-fit text-accent underline underline-offset-2"
       >
         Erneut versuchen
       </button>
