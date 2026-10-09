@@ -88,7 +88,12 @@ function SearchShell({
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10">
       <Breadcrumb items={[{ label: "Suche" }]} />
       <h1 className="text-3xl font-semibold tracking-tight">Suche</h1>
-      <SearchForm size="large" defaultValue={defaultValue} id="suche-seite" />
+      <SearchForm
+        size="large"
+        defaultValue={defaultValue}
+        id="suche-seite"
+        ariaLabel="Suche verfeinern"
+      />
       {children}
     </main>
   );

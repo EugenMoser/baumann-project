@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(13);
 
 select ok(
   has_function_privilege('anon', 'public.search_catalog(text, integer)', 'execute'),
@@ -45,6 +45,14 @@ select is_empty(
 select is_empty(
   $$select 1 from public.search_catalog('99%')$$,
   'LIKE wildcards in the query are literal');
+
+select is(
+  (select matched_numbers[1] from public.search_catalog('99010-1')),
+  '99010 - 1',
+  'the exact number comes first in matched_numbers');
+select lives_ok(
+  $$select * from public.search_catalog(repeat('a', 1000))$$,
+  'a 1000-character query returns without error');
 
 select * from finish();
 rollback;

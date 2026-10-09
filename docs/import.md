@@ -119,9 +119,10 @@ On an update the importer **overwrites** the fields it owns: names, texts,
 material, sort order, attributes, colours, packaging and media links. It
 **keeps** the fields it does not own: `product.status`, `seo_*`, `*_origin`,
 `media.alt_text` (set on insert only). Category `intro_text` and `seo_*` are
-filled only while empty (see "Category texts"). New products are inserted as `published`. Products and articles that
-carry a legacy id but are missing from the snapshot are deleted; rows without a
-legacy id (seed data, later admin entries) are never touched.
+filled only while empty (see "Category texts"). New products are inserted as
+`published`. Products and articles that carry a legacy id but are missing from
+the snapshot are deleted; rows without a legacy id (seed data, later admin
+entries) are never touched.
 
 Once the admin area exists, a re-import overwrites admin edits of imported
 fields. Export what you need to keep, or do not re-import.

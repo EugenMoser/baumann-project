@@ -14,7 +14,7 @@ export function OrderNumberList({
       </h2>
       <ul className="grid gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
         {page.variants.map((v) => (
-          <li key={v.orderNumber}>
+          <li key={`${v.articleNumber}|${v.colorId ?? "none"}`}>
             <span className="font-mono">{v.orderNumber}</span>
             {v.colorId !== null && colorName.has(v.colorId) && (
               <span className="text-muted"> – {colorName.get(v.colorId)}</span>

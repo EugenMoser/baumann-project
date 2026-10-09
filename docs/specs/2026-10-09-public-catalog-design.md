@@ -1,6 +1,6 @@
 # Feature 4 — Public catalog
 
-- **Status:** draft (2026-10-09)
+- **Status:** implemented (2026-10-09)
 - **Roadmap:** feature 4 ([roadmap](../roadmap.md))
 - **Estimate:** 22 h
 - **Builds on:** [data model](../data-model.md) (pages, visible content,

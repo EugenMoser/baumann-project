@@ -6,11 +6,11 @@ type Props = {
   image: ImageRef | null;
   name: string;
   sizes: string;
-  priority?: boolean;
+  preload?: boolean;
 };
 
 // Missing images reduce the display, never break it (spec, error handling).
-export function ProductImage({ image, name, sizes, priority = false }: Props) {
+export function ProductImage({ image, name, sizes, preload = false }: Props) {
   if (!image) {
     return (
       <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1 rounded-md bg-surface p-4 text-center text-sm text-muted">
@@ -26,7 +26,7 @@ export function ProductImage({ image, name, sizes, priority = false }: Props) {
       width={image.width}
       height={image.height}
       sizes={sizes}
-      priority={priority}
+      preload={preload}
       className="aspect-[4/3] w-full rounded-md bg-surface object-contain"
     />
   );

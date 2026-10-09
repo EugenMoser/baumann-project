@@ -4,6 +4,7 @@ type SearchFormProps = {
   defaultValue?: string;
   size?: "compact" | "large";
   id?: string;
+  ariaLabel?: string;
 };
 
 // Plain GET form: works without JavaScript (spec D3).
@@ -11,11 +12,13 @@ export function SearchForm({
   defaultValue,
   size = "compact",
   id = "suche",
+  ariaLabel = "Katalogsuche",
 }: SearchFormProps) {
   const large = size === "large";
   return (
     <form
       role="search"
+      aria-label={ariaLabel}
       action="/suche"
       method="get"
       className="flex w-full max-w-md gap-2"

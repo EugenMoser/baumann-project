@@ -21,7 +21,11 @@ export default async function HomePage() {
           Suchen Sie nach Produktname oder direkt nach einer Artikel- oder
           Bestellnummer.
         </p>
-        <SearchForm size="large" id="suche-start" />
+        <SearchForm
+          size="large"
+          id="suche-start"
+          ariaLabel="Suche nach Produkten"
+        />
       </section>
       <section aria-labelledby="kategorien" className="flex flex-col gap-4">
         <h2 id="kategorien" className="text-xl font-semibold">

@@ -14,7 +14,7 @@ describe("SiteHeader (FR-1, SC-1)", () => {
       "href",
       "/produkte"
     );
-    const form = screen.getByRole("search");
+    const form = screen.getByRole("search", { name: "Katalogsuche" });
     expect(form).toHaveAttribute("action", "/suche");
     expect(form).toHaveAttribute("method", "get");
     expect(screen.getByRole("searchbox")).toHaveAttribute("name", "q");

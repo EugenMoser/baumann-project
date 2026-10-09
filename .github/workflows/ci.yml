@@ -64,6 +64,19 @@ jobs:
           --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
           .
 
+      # next/image needs sharp at runtime; resolve it the way Next does (from
+      # next's own location in the standalone pnpm layout) and encode once.
+      - name: Check sharp inside the image
+        run: |
+          docker run --rm --entrypoint node baumann-demo:ci -e "
+          const p = require.resolve('next/dist/server/image-optimizer');
+          const sharp = require(require.resolve('sharp', { paths: [p] }));
+          sharp({ create: { width: 2, height: 2, channels: 3, background: '#fff' } })
+            .webp().toBuffer()
+            .then((b) => console.log('sharp ok', sharp.versions.sharp, b.length))
+            .catch((e) => { console.error(e); process.exit(1); });
+          "
+
   db:
     runs-on: ubuntu-latest
     timeout-minutes: 20

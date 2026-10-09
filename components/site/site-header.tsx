@@ -24,7 +24,7 @@ export function SiteHeader({ branding }: { branding: Branding }) {
           </Link>
         </nav>
         <div className="w-full sm:ml-auto sm:w-auto">
-          <SearchForm id="suche-header" />
+          <SearchForm id="suche-header" ariaLabel="Katalogsuche" />
         </div>
       </div>
     </header>
