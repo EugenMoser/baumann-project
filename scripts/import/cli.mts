@@ -58,20 +58,12 @@ export async function runImportCli(
     io.error(`Snapshot rejected: ${snapshot.error.message}`);
     return 1;
   }
-  const mapped = mapSnapshot(snapshot.value, {
-    imageBaseUrl: env.value.IMPORT_IMAGE_BASE_URL,
-  });
-  if (!mapped.ok) {
-    io.error(`Invalid data: ${mapped.error.message}`);
-    return 1;
-  }
-
   const reportPath = join(snapshotDir, "import-report.md");
   const now = io.now ?? (() => new Date());
   const report = async (
     outcome: string,
     findings: readonly Finding[],
-    stats: CatalogStats,
+    stats: CatalogStats | null,
     result: Record<string, unknown> | null = null
   ) => {
     await writeReport(reportPath, {
@@ -84,6 +76,14 @@ export async function runImportCli(
     });
     io.log(`Report: ${reportPath}`);
   };
+  const mapped = mapSnapshot(snapshot.value, {
+    imageBaseUrl: env.value.IMPORT_IMAGE_BASE_URL,
+  });
+  if (!mapped.ok) {
+    await report(`aborted: invalid data (${mapped.error.message})`, [], null);
+    io.error(`Invalid data: ${mapped.error.message}`);
+    return 1;
+  }
   const { findings, stats } = mapped.value;
 
   if (dryRun) {
@@ -158,7 +158,7 @@ export async function runImportCli(
       stats
     );
     io.error(
-      `Database rejected the import: ${error.message} — nothing was changed.`
+      `Database rejected the import: ${error.message} — the database was not changed; uploaded images are reused or cleaned up by the next successful run.`
     );
     return 1;
   }
@@ -198,10 +198,17 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const code = await runImportCli(process.argv.slice(2), {
-    env: process.env,
-    log: (line) => console.log(line),
-    error: (line) => console.error(line),
-  });
-  process.exit(code);
+  try {
+    const code = await runImportCli(process.argv.slice(2), {
+      env: process.env,
+      log: (line) => console.log(line),
+      error: (line) => console.error(line),
+    });
+    process.exit(code);
+  } catch (error: unknown) {
+    console.error(
+      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
+    );
+    process.exit(1);
+  }
 }

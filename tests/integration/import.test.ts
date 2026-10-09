@@ -34,11 +34,15 @@ beforeAll(async () => {
   server = await startImageServer(FIXTURE_IMAGES);
 });
 
-afterAll(async () => {
-  await server.close();
+async function resetState(): Promise<void> {
   const listed = await listObjects(bucket(), "products");
   if (listed.ok && listed.value.length > 0) await bucket().remove(listed.value);
   await resetDatabase();
+}
+
+afterAll(async () => {
+  await server.close();
+  await resetState();
 });
 
 describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
@@ -86,6 +90,25 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
     expect(await tableCounts()).toEqual(before);
   });
 
+  it("aborts on invalid data, writes the report and changes nothing (FR-8)", async () => {
+    const dir = await copyFixtureSnapshot();
+    const articles = JSON.parse(
+      await readFile(join(dir, "articles.json"), "utf8")
+    );
+    articles[0].product_id = 9999;
+    await writeFile(join(dir, "articles.json"), JSON.stringify(articles));
+    const before = await tableCounts();
+    expect(
+      await runImportCli(
+        ["--snapshot", dir],
+        silentIo(importEnv(server.baseUrl))
+      )
+    ).toBe(1);
+    expect(await tableCounts()).toEqual(before);
+    const report = await readFile(join(dir, "import-report.md"), "utf8");
+    expect(report).toContain("- Outcome: aborted: invalid data");
+  });
+
   it("aborts on a missing image, writes the report and changes nothing", async () => {
     const dir = await copyFixtureSnapshot();
     const products = JSON.parse(
@@ -129,7 +152,7 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
     expect(await runImportCli(["--snapshot", dir], io)).toBe(1);
     expect(await tableCounts()).toEqual(before);
     expect(await readFile(join(dir, "import-report.md"), "utf8")).toContain(
-      "- Outcome: aborted"
+      "database rejected the import"
     );
 
     await client
@@ -147,6 +170,8 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
 });
 
 describe("catalog:import result (FR-7, FR-9, SC-7, SC-8)", () => {
+  beforeAll(resetState);
+
   it("imports products, articles, colours and images", async () => {
     const io = silentIo(importEnv(server.baseUrl));
     expect(
@@ -193,6 +218,8 @@ describe("catalog:import result (FR-7, FR-9, SC-7, SC-8)", () => {
 });
 
 describe("re-import semantics (FR-10, SC-10)", () => {
+  beforeAll(resetState);
+
   it("keeps owned-elsewhere fields, restores imported fields, keeps ids and removes orphans", async () => {
     const dir = await copyFixtureSnapshot();
     expect(

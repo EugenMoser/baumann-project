@@ -7,5 +7,5 @@
   { "color_id": "3-1", "name": "testbraun", "code": "#5B3A29" },
   { "color_id": "4-1", "name": "testgrau", "code": "#8A8D8F" },
   { "color_id": "4-2", "name": "testgrau", "code": "#8A8D8F" },
-  { "color_id": "9-9", "name": "ungenutzt", "code": "#FF8800" }
+  { "color_id": "9-9", "name": "testungenutzt", "code": "#FF8800" }
 ]
