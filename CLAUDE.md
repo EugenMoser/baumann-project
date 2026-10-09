@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 2 of 8 features done. Next: feature 3 (Import & removal).
+Active. MVP: 3 of 8 features done. Next: feature 4 (Public catalog).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
