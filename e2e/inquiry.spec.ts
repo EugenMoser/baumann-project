@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { branding } from "../config/branding";
 
 const PRODUCT = "/produkte/moebelteile/testkeil-mit-daempfung";
 
@@ -28,6 +29,9 @@ test.describe("inquiry", () => {
     await expect(
       notice.getByRole("link", { name: "offizielle Website" })
     ).toBeVisible();
+    await expect(
+      notice.getByRole("link", { name: "offizielle Website" })
+    ).toHaveAttribute("href", branding.officialSiteUrl);
   });
 
   test("unknown number shows a hint, odd parameters do not break the page (SC-8, Review Focus 4)", async ({
@@ -85,6 +89,7 @@ test.describe("inquiry", () => {
     await expect(page.getByLabel("Bestellnummer", { exact: true })).toHaveValue(
       "00000"
     );
+    await expect(page.getByLabel("E-Mail")).toHaveValue("erika@example.com");
     await expect(page.getByLabel("Menge (optional)")).toHaveValue("500");
     await expect(page.getByLabel("Nachricht")).toHaveValue("Bitte um Muster.");
     await expect(page.getByRole("checkbox")).toBeChecked();
