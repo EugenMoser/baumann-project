@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(19);
 
 select has_table('public', 'certificate', 'certificate table exists');
 select has_table('public', 'certificate_document', 'certificate_document table exists');
@@ -40,6 +40,11 @@ select throws_ok($$select public.import_certificates('[]'::jsonb)$$, 'P0001', nu
 select throws_ok(
   $$select public.import_certificates('[{"standard": "X", "title": "X", "preview_path": "certificates/x.png", "preview_width": 1, "preview_height": 1, "preview_alt": "x", "sort_order": 0, "documents": []}]'::jsonb)$$,
   'P0001', null, 'a certificate without documents raises');
+select throws_ok(
+  $$select public.import_certificates('[{"standard": "X", "title": "X", "preview_path": "certificates/x.png", "preview_width": 1, "preview_height": 1, "preview_alt": "x", "sort_order": 0}]'::jsonb)$$,
+  'P0001', null, 'a certificate without a documents key raises');
+select results_eq($$select standard from public.certificate$$, $$values ('ISO 14001 (Test)')$$,
+  'failed imports keep the previous certificates');
 
 -- removal
 select ok((public.remove_catalog() ? 'certificates'), 'remove_catalog reports certificates');

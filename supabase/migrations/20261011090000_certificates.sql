@@ -58,7 +58,7 @@ begin
   end if;
   delete from public.certificate where true;
   for cert in select value from jsonb_array_elements(payload) loop
-    if jsonb_typeof(cert -> 'documents') <> 'array' or jsonb_array_length(cert -> 'documents') = 0 then
+    if coalesce(jsonb_typeof(cert -> 'documents'), '') <> 'array' or jsonb_array_length(cert -> 'documents') = 0 then
       raise exception 'import_certificates: certificate % has no documents', cert ->> 'standard';
     end if;
     insert into public.certificate (standard, title, preview_path, preview_width, preview_height, preview_alt, sort_order)
