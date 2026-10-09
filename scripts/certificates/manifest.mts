@@ -148,7 +148,14 @@ export async function readCertificates(
       return err(
         `unsupported preview "${cert.preview.file}" (PNG, JPEG or WebP)`
       );
-    const { width, height } = imageSize(previewBytes.value);
+    let size: { width: number; height: number };
+    try {
+      const { width, height } = imageSize(previewBytes.value);
+      size = { width, height };
+    } catch {
+      return err(`preview "${cert.preview.file}" cannot be read as an image`);
+    }
+    const { width, height } = size;
     const previewPath = claim(
       storagePath(cert.preview.file),
       cert.preview.file

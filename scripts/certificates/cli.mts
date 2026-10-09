@@ -4,11 +4,17 @@ import { isAbsolute, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type { Database, Json } from "../../lib/supabase/database.types.ts";
 import type { CliIo } from "../import/cli.mts";
 import { parseRemoveEnv } from "../import/env.mts";
 import { deleteOrphans } from "../import/images.mts";
 import { readCertificates, toPayload } from "./manifest.mts";
+
+const importResult = z.object({
+  certificates: z.number().int(),
+  documents: z.number().int(),
+});
 
 const USAGE = "usage: pnpm certificates:import --dir <dir> [--dry-run]";
 
@@ -95,7 +101,19 @@ export async function runCertificatesCli(
     );
     return 1;
   }
-  io.log(`Imported: ${JSON.stringify(data)}`);
+  const counts = importResult.safeParse(data);
+  if (
+    !counts.success ||
+    counts.data.certificates !== certificates.value.length
+  ) {
+    io.error(
+      "Unexpected result from import_certificates (counts missing or not matching the manifest)."
+    );
+    return 1;
+  }
+  io.log(
+    `Imported: ${counts.data.certificates} certificate(s), ${counts.data.documents} document(s).`
+  );
 
   const removed = await deleteOrphans(
     bucket,

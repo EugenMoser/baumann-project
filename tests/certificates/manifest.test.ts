@@ -146,6 +146,19 @@ describe("readCertificates (FR-4, SC-4)", () => {
     if (!result.ok) expect(result.error).toMatch(message);
   });
 
+  it("rejects a truncated preview with a valid signature", async () => {
+    const dir = await fixture([entry()], {
+      "Vorschau ISO 9001.png": Buffer.concat([
+        Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+        Buffer.from("garbage"),
+      ]),
+      "Zertifikat DE.pdf": PDF,
+      "Zertifikat EN.pdf": PDF,
+    });
+    const result = await readCertificates(dir);
+    expect(!result.ok && result.error).toMatch(/cannot be read as an image/);
+  });
+
   it("rejects two files that normalise to the same storage path", async () => {
     const dir = await fixture(
       [

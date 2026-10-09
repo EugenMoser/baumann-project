@@ -93,4 +93,18 @@ describe("certificates:import against the local stack (FR-4, SC-4)", () => {
     const { data } = await client.from("certificate").select("standard");
     expect(data?.map((r) => r.standard)).toEqual(["ISO 50001 (T)"]);
   });
+
+  it("leaves the rows unchanged when the run fails after the dry run", async () => {
+    const before = await client.from("certificate").select("standard");
+    expect(before.data).not.toHaveLength(0);
+    const out = silentIo({
+      ...env(),
+      IMPORT_SUPABASE_SECRET_KEY: "sb_secret_wrongwrongwrongwrong",
+    });
+    const dir = await dirWith(["ISO 9001 (T)"]);
+    expect(await runCertificatesCli(["--dir", dir, "--dry-run"], out)).toBe(0);
+    expect(await runCertificatesCli(["--dir", dir], out)).toBe(1);
+    const after = await client.from("certificate").select("standard");
+    expect(after.data).toEqual(before.data);
+  });
 });
