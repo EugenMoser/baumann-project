@@ -252,7 +252,9 @@ Source: legacy CSV exports kept outside the repo.
    hex); derive `family` from the legacy colour-id prefix; set `is_default`
    explicitly.
 8. Images → Supabase Storage with normalised file names (no spaces), read
-   dimensions, take over alt texts for editorial review.
+   dimensions, take over alt texts for editorial review. The legacy data has no
+   alt texts, so the product name is the initial alt text and every image is
+   listed in the import report for review.
 9. Cross-check: every legacy article number exists exactly once; every product
    has at least one article and exactly one default colour when it has colours.
 
@@ -264,4 +266,4 @@ like success.
 
 A removal script deletes all catalog rows and Storage objects of the customer and
 resets branding to placeholders. The revocation procedure (≤ 14 days) is
-documented in `docs/revocation.md` (feature 3).
+documented in [`docs/revocation.md`](revocation.md).

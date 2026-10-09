@@ -1,0 +1,41 @@
+[
+  {
+    "product_id": 9001,
+    "number": "98010",
+    "prio": 10000,
+    "name": "Testkeil mit Dämpfung",
+    "description1": "Höhe 8 mm",
+    "vpe1": "500",
+    "vpe2": "100"
+  },
+  {
+    "product_id": 9001,
+    "number": "98011/80",
+    "prio": 11000,
+    "name": "Testkeil hoch",
+    "description1": "Höhe 9,5 mm abgesetzt"
+  },
+  {
+    "product_id": 9002,
+    "number": "98020",
+    "prio": 10000,
+    "name": "Testhalter",
+    "description1": "Ø 12 mm",
+    "vpe1": "wird passend verpackt"
+  },
+  {
+    "product_id": 9003,
+    "number": "98030",
+    "prio": 10000,
+    "name": "Testsiphon",
+    "description1": "für Schlauch Ø 10 mm",
+    "description2": "Für die Montage wird ein Testwerkzeug benötigt."
+  },
+  {
+    "product_id": 9003,
+    "number": "98010",
+    "prio": 12000,
+    "name": "Testkeil mit Dämpfung",
+    "description1": "Höhe 8 mm"
+  }
+]

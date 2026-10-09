@@ -310,6 +310,8 @@ container goes live.
 - Storage files are backed up as well: with the file backend (section 3) they
   live in the service's `volumes/storage` directory under
   `/data/coolify/services/<service-uuid>/`, not in the database.
+- On revocation, backups are deleted earlier if requested; see
+  [`docs/revocation.md`](revocation.md).
 - Restore test, quarterly, into the local stack:
 
   ```bash

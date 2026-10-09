@@ -15,12 +15,24 @@ export const brandingSchema = z.object({
 
 export type Branding = z.infer<typeof brandingSchema>;
 
-// Single source for customer and developer names/links. On revocation this
-// object is replaced with placeholders (see docs/data-model.md, "Removal").
-export const branding: Branding = brandingSchema.parse({
+// Customer and developer names/links. On revocation the `branding` export at
+// the bottom is switched to `placeholderBranding` (docs/revocation.md).
+const customerBranding: Branding = brandingSchema.parse({
   companyName: "Tilo Baumann Spritzgussteile e.K.",
   shortName: "Baumann",
   officialSiteUrl: "https://www.baumann-entwicklungen.de",
   previewLabel: "Kundenprojekt in Entwicklung (Vorschau)",
   developer: { name: "Eugen Moser", url: "https://eugen-moser.com" },
 });
+
+// Contains no customer data.
+export const placeholderBranding: Branding = brandingSchema.parse({
+  companyName: "Beispiel Kunststoffteile GmbH",
+  shortName: "Beispiel",
+  officialSiteUrl: "https://example.com",
+  previewLabel: "Referenzprojekt (Vorschau mit Beispieldaten)",
+  developer: { name: "Eugen Moser", url: "https://eugen-moser.com" },
+});
+
+// Single source used by the app. Revocation switch (one line):
+export const branding: Branding = customerBranding; // revocation: placeholderBranding

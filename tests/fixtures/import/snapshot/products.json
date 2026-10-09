@@ -1,0 +1,41 @@
+[
+  {
+    "_id": { "$oid": "000000000000000000009001" },
+    "product_id": 9001,
+    "prio": 10000,
+    "category": "moebel",
+    "name": "Testkeil mit Dämpfung",
+    "description1": "für Testschlösser",
+    "description2": "Gedämpfter Testkeil für Schubladen.",
+    "description3": null,
+    "description4": null,
+    "material": "PA-6 (temperaturbeständig bis 100° C)",
+    "imageUrls_small": ["/a_98010-Testkeil.webp"],
+    "imageUrls_big": ["/b1_98010-Testkeil.webp"],
+    "createdAt": { "$date": "2024-11-23T00:00:00.000Z" },
+    "updatedAt": { "$date": "2024-11-23T00:00:00.000Z" }
+  },
+  {
+    "_id": { "$oid": "000000000000000000009002" },
+    "product_id": 9002,
+    "prio": 20000,
+    "category": "halterung",
+    "name": "Testhalter",
+    "description1": "",
+    "description2": null,
+    "material": "Wandteile: PA-6 / Blendenteile: ABS",
+    "imageUrls_small": ["/a_98020 Testhalter.webp"],
+    "imageUrls_big": []
+  },
+  {
+    "_id": { "$oid": "000000000000000000009003" },
+    "product_id": 9003,
+    "prio": 30000,
+    "category": "wasser",
+    "name": "Testsiphon",
+    "description1": "für Testbecken",
+    "material": "TPE",
+    "imageUrls_small": [],
+    "imageUrls_big": []
+  }
+]
