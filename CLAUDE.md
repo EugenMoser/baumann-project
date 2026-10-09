@@ -32,6 +32,8 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Reset local DB (migrations + seed): `pnpm db:reset`
 - DB tests (pgTAP + integration, stack must run): `pnpm db:test`
 - Regenerate DB types: `pnpm db:types`
+- Import legacy catalog: `pnpm catalog:import --snapshot <dir> [--dry-run]` (see `docs/import.md`)
+- Remove all customer data: `pnpm catalog:remove --confirm <api host>` (see `docs/revocation.md`)
 - Build: `pnpm build` (needs `NEXT_PUBLIC_SITE_URL`, see `.env.example`)
 - Fresh clone: run `pnpm exec next typegen` (or `build`/`dev`) once before `pnpm typecheck`
 - Pre-commit (Husky): gitleaks → lint-staged (ESLint + Prettier) → typecheck → test
