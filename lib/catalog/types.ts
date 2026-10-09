@@ -8,12 +8,22 @@ export type CatalogError =
   | { kind: "not_found" }
   | { kind: "db_error"; code: string | null; message: string };
 
+export type ImageRef = {
+  storagePath: string;
+  width: number;
+  height: number;
+  altText: string;
+};
+
 export type CategorySummary = { slug: string; name: string };
+
+export type CategoryListItem = CategorySummary & { productCount: number };
 
 export type ProductSummary = {
   slug: string;
   name: string;
   subtitle: string | null;
+  thumbnail: ImageRef | null;
 };
 
 export type CategoryPage = CategorySummary & {
@@ -44,6 +54,7 @@ export type ArticleView = {
 };
 
 export type ColorView = {
+  id: number;
   name: string;
   ralReference: string | null;
   hexCode: string;
@@ -57,13 +68,10 @@ export type VariantView = {
   articleNumber: string;
   suffix: string | null;
   isDefault: boolean;
+  colorId: number | null;
 };
 
-export type MediaView = {
-  storagePath: string;
-  width: number;
-  height: number;
-  altText: string;
+export type MediaView = ImageRef & {
   altOrigin: ContentOrigin;
   role: MediaRole;
 };
@@ -90,4 +98,16 @@ export type ProductPage = ProductSummary & {
   variants: VariantView[];
   media: MediaView[];
   accessories: AccessoryView[];
+  related: ProductSummary[];
+};
+
+export type MatchKind = "exact_number" | "number" | "text";
+
+export type SearchHit = {
+  categorySlug: string;
+  productSlug: string;
+  name: string;
+  subtitle: string | null;
+  matchedNumbers: string[];
+  matchKind: MatchKind;
 };

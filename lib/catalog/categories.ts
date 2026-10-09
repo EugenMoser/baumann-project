@@ -4,19 +4,57 @@ import {
   type CatalogClient,
 } from "@/lib/supabase/server";
 import { guard, toDbError } from "./errors";
-import type { CatalogError, CategoryPage, CategorySummary } from "./types";
+import { pickThumbnail } from "./media";
+import type {
+  CatalogError,
+  CategoryListItem,
+  CategoryPage,
+  ProductSummary,
+} from "./types";
+
+export const PRODUCT_TILE =
+  "slug, name, subtitle, sort_order, product_media(role, sort_order, media(storage_path, width, height, alt_text))";
+
+export function toProductSummaries(
+  rows: readonly {
+    slug: string;
+    name: string;
+    subtitle: string | null;
+    sort_order: number;
+    product_media: Parameters<typeof pickThumbnail>[0];
+  }[]
+): ProductSummary[] {
+  return [...rows]
+    .sort(
+      (a, b) =>
+        a.sort_order - b.sort_order || a.name.localeCompare(b.name, "de")
+    )
+    .map((p) => ({
+      slug: p.slug,
+      name: p.name,
+      subtitle: p.subtitle,
+      thumbnail: pickThumbnail(p.product_media),
+    }));
+}
 
 export function listCategories(
   client: CatalogClient = createServerSupabase()
-): Promise<Result<CategorySummary[], CatalogError>> {
+): Promise<Result<CategoryListItem[], CatalogError>> {
   return guard(async () => {
     const { data, error } = await client
       .from("category")
-      .select("slug, name")
+      .select("slug, name, product(slug)")
       .order("sort_order")
       .order("name");
     if (error) return err(toDbError(error));
-    return ok(data);
+    // RLS limits `product` to published rows for anon.
+    return ok(
+      data.map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        productCount: c.product.length,
+      }))
+    );
   });
 }
 
@@ -28,7 +66,7 @@ export function getCategoryPage(
     const { data, error } = await client
       .from("category")
       .select(
-        "slug, name, intro_text, seo_title, seo_description, product(slug, name, subtitle, sort_order)"
+        `slug, name, intro_text, seo_title, seo_description, product(${PRODUCT_TILE})`
       )
       .eq("slug", slug)
       .maybeSingle();
@@ -36,12 +74,7 @@ export function getCategoryPage(
     if (!data) return err({ kind: "not_found" });
 
     // RLS already limits `product` to published rows for anon.
-    const products = [...data.product]
-      .sort(
-        (a, b) =>
-          a.sort_order - b.sort_order || a.name.localeCompare(b.name, "de")
-      )
-      .map(({ slug, name, subtitle }) => ({ slug, name, subtitle }));
+    const products = toProductSummaries(data.product);
 
     return ok({
       slug: data.slug,

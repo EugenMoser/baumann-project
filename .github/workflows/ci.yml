@@ -53,6 +53,69 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+      - name: Lint workflows
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.7 -color
+
+      - name: Build Docker image
+        run: >
+          docker build -t baumann-demo:ci
+          --build-arg NEXT_PUBLIC_SITE_URL
+          --build-arg NEXT_PUBLIC_SUPABASE_URL
+          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+          .
+
+      # next/image needs sharp at runtime; resolve it the way Next does (from
+      # next's own location in the standalone pnpm layout) and encode once.
+      - name: Check sharp inside the image
+        run: |
+          docker run --rm --entrypoint node baumann-demo:ci -e "
+          const p = require.resolve('next/dist/server/image-optimizer');
+          const sharp = require(require.resolve('sharp', { paths: [p] }));
+          sharp({ create: { width: 2, height: 2, channels: 3, background: '#fff' } })
+            .webp().toBuffer()
+            .then((b) => console.log('sharp ok', sharp.versions.sharp, b.length))
+            .catch((e) => { console.error(e); process.exit(1); });
+          "
+
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:start
+      - run: pnpm db:test
+      - name: Generated types match the migrations
+        run: pnpm db:types && git diff --exit-code -- lib/supabase/database.types.ts
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:start
+
+      - name: Point the build at the local stack
+        run: |
+          status="$(pnpm exec supabase status -o json)"
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL <<<"$status")" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -r .PUBLISHABLE_KEY <<<"$status")" >> "$GITHUB_ENV"
+
+      - run: pnpm build
+
       - name: Get Playwright version
         id: playwright-version
         run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
@@ -82,35 +145,8 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      - name: Lint workflows
-        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.7 -color
-
-      - name: Build Docker image
-        run: >
-          docker build -t baumann-demo:ci
-          --build-arg NEXT_PUBLIC_SITE_URL
-          --build-arg NEXT_PUBLIC_SUPABASE_URL
-          --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-          .
-
-  db:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm db:start
-      - run: pnpm db:test
-      - name: Generated types match the migrations
-        run: pnpm db:types && git diff --exit-code -- lib/supabase/database.types.ts
-
   deploy:
-    needs: [app, db]
+    needs: [app, db, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20

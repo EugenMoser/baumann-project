@@ -22,12 +22,12 @@ insert into public.color (id, name, ral_reference, hex_code, family) overriding 
   (2, 'grau', null, '#8A8D8F', 'grau'),
   (3, 'braun', null, '#6B4423', 'braun');
 
-insert into public.product (id, category_id, slug, name, subtitle, description, material_id, status, sort_order) overriding system value values
-  (1, 1, 'testkeil-mit-daempfung', 'Testkeil mit Dämpfung', 'für Beispielschlösser', 'Gedämpfter Keil für Möbeltüren. Beispieldaten.', 1, 'published', 0),
-  (2, 2, 'testrohrschelle', 'Testrohrschelle', 'für Rohre bis 15 mm', 'Rohrschelle zur Befestigung an der Wand. Beispieldaten.', 2, 'published', 0),
-  (3, 1, 'testabdeckung', 'Testabdeckung', null, 'Abdeckkappe ohne Farbvarianten. Beispieldaten.', null, 'published', 1),
-  (4, 1, 'entwurfsteil', 'Entwurfsteil', null, 'Noch nicht veröffentlicht.', null, 'draft', 2),
-  (5, 2, 'altteil', 'Altteil', null, 'Nicht mehr im Sortiment.', null, 'archived', 1);
+insert into public.product (id, category_id, slug, name, subtitle, description, description_origin, material_id, status, sort_order) overriding system value values
+  (1, 1, 'testkeil-mit-daempfung', 'Testkeil mit Dämpfung', 'für Beispielschlösser', 'Gedämpfter Keil für Möbeltüren. Beispieldaten.', 'human', 1, 'published', 0),
+  (2, 2, 'testrohrschelle', 'Testrohrschelle', 'für Rohre bis 15 mm', 'Rohrschelle zur Befestigung an der Wand. Beispieldaten.', 'ai', 2, 'published', 0),
+  (3, 1, 'testabdeckung', 'Testabdeckung', null, 'Abdeckkappe ohne Farbvarianten. Beispieldaten.', 'human', null, 'published', 1),
+  (4, 1, 'entwurfsteil', 'Entwurfsteil', null, 'Noch nicht veröffentlicht.', 'human', null, 'draft', 2),
+  (5, 2, 'altteil', 'Altteil', null, 'Nicht mehr im Sortiment.', 'human', null, 'archived', 1);
 
 insert into public.article (id, product_id, article_number, name, sort_order) overriding system value values
   (1, 1, '99010', 'Testkeil 8 mm', 0),
