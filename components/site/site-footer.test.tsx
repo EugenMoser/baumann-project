@@ -14,4 +14,20 @@ describe("SiteFooter (FR-1, SC-1)", () => {
       "https://eugen-moser.com"
     );
   });
+
+  it("links imprint, privacy and the quality page (FR-1, SC-1)", () => {
+    render(<SiteFooter branding={placeholderBranding} />);
+    expect(screen.getByRole("link", { name: "Impressum" })).toHaveAttribute(
+      "href",
+      placeholderBranding.developer.imprintUrl
+    );
+    expect(screen.getByRole("link", { name: "Datenschutz" })).toHaveAttribute(
+      "href",
+      placeholderBranding.developer.privacyUrl
+    );
+    expect(screen.getByRole("link", { name: "Qualität" })).toHaveAttribute(
+      "href",
+      "/qualitaet"
+    );
+  });
 });

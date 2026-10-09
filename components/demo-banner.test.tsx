@@ -8,7 +8,13 @@ const fixture: Branding = {
   shortName: "Example",
   officialSiteUrl: "https://example.com",
   previewLabel: "Testprojekt (Vorschau)",
-  developer: { name: "Dev Person", url: "https://dev.example" },
+  qualityPolicy: ["Ein Absatz."],
+  developer: {
+    name: "Dev Person",
+    url: "https://dev.example",
+    imprintUrl: "https://dev.example/impressum",
+    privacyUrl: "https://dev.example/datenschutz",
+  },
 };
 
 describe("DemoBanner (FR-1, SC-5)", () => {

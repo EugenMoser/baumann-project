@@ -6,7 +6,13 @@ const valid = {
   shortName: "Example",
   officialSiteUrl: "https://example.com",
   previewLabel: "Testprojekt (Vorschau)",
-  developer: { name: "Dev Person", url: "https://dev.example" },
+  qualityPolicy: ["Ein Absatz."],
+  developer: {
+    name: "Dev Person",
+    url: "https://dev.example",
+    imprintUrl: "https://dev.example/impressum",
+    privacyUrl: "https://dev.example/datenschutz",
+  },
 };
 
 describe("brandingSchema (FR-5, SC-5)", () => {
@@ -46,8 +52,37 @@ describe("brandingSchema (FR-5, SC-5)", () => {
     expect(
       brandingSchema.safeParse({
         ...valid,
-        developer: { name: "Dev", url: "not a url" },
+        developer: { ...valid.developer, url: "not a url" },
       }).success
+    ).toBe(false);
+  });
+});
+
+describe("brandingSchema legal links and policy", () => {
+  it.each(["imprintUrl", "privacyUrl"] as const)(
+    "rejects a missing or non-http %s (FR-1, SC-1)",
+    (key) => {
+      const rest = Object.fromEntries(
+        Object.entries(valid.developer).filter(([k]) => k !== key)
+      );
+      expect(
+        brandingSchema.safeParse({ ...valid, developer: rest }).success
+      ).toBe(false);
+      expect(
+        brandingSchema.safeParse({
+          ...valid,
+          developer: { ...valid.developer, [key]: "ftp://dev.example/x" },
+        }).success
+      ).toBe(false);
+    }
+  );
+
+  it("rejects an empty quality policy (FR-7, SC-7)", () => {
+    expect(
+      brandingSchema.safeParse({ ...valid, qualityPolicy: [] }).success
+    ).toBe(false);
+    expect(
+      brandingSchema.safeParse({ ...valid, qualityPolicy: [""] }).success
     ).toBe(false);
   });
 });
@@ -63,6 +98,7 @@ describe("placeholderBranding (FR-13, SC-13)", () => {
       branding.companyName,
       branding.shortName,
       branding.officialSiteUrl,
+      ...branding.qualityPolicy,
     ]) {
       expect(serialized).not.toContain(value);
     }

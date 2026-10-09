@@ -19,4 +19,16 @@ describe("SiteHeader (FR-1, SC-1)", () => {
     expect(form).toHaveAttribute("method", "get");
     expect(screen.getByRole("searchbox")).toHaveAttribute("name", "q");
   });
+
+  it("links the quality and inquiry pages (FR-13, SC-13)", () => {
+    render(<SiteHeader branding={placeholderBranding} />);
+    expect(screen.getByRole("link", { name: "Qualität" })).toHaveAttribute(
+      "href",
+      "/qualitaet"
+    );
+    expect(screen.getByRole("link", { name: "Anfrage" })).toHaveAttribute(
+      "href",
+      "/anfrage"
+    );
+  });
 });

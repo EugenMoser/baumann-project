@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Branding } from "@/config/branding";
 
 export function SiteFooter({ branding }: { branding: Branding }) {
@@ -13,6 +14,29 @@ export function SiteFooter({ branding }: { branding: Branding }) {
             Die offizielle Website von {branding.companyName}
           </a>
         </p>
+        <nav
+          aria-label="Rechtliches und Service"
+          className="flex flex-wrap gap-x-4"
+        >
+          <Link
+            href="/qualitaet"
+            className="underline underline-offset-2 hover:text-accent"
+          >
+            Qualität
+          </Link>
+          <a
+            href={branding.developer.imprintUrl}
+            className="underline underline-offset-2 hover:text-accent"
+          >
+            Impressum
+          </a>
+          <a
+            href={branding.developer.privacyUrl}
+            className="underline underline-offset-2 hover:text-accent"
+          >
+            Datenschutz
+          </a>
+        </nav>
         <p>
           Umsetzung:{" "}
           <a
