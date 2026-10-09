@@ -1,0 +1,7 @@
+[
+  { "product_id": 9001, "color_id": "1-1", "color_suffix": 0 },
+  { "product_id": 9001, "color_id": "3-1", "color_suffix": 1 },
+  { "product_id": 9001, "color_id": "4-1", "color_suffix": 2 },
+  { "product_id": 9002, "color_id": "3-1", "color_suffix": 2 },
+  { "product_id": 9002, "color_id": "4-2", "color_suffix": 1 }
+]

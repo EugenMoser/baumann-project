@@ -13,8 +13,10 @@ if (
   status === null ||
   !("API_URL" in status) ||
   !("PUBLISHABLE_KEY" in status) ||
+  !("SECRET_KEY" in status) ||
   typeof status.API_URL !== "string" ||
-  typeof status.PUBLISHABLE_KEY !== "string"
+  typeof status.PUBLISHABLE_KEY !== "string" ||
+  typeof status.SECRET_KEY !== "string"
 ) {
   throw new Error("Local Supabase is not running — run `pnpm db:start`.");
 }
@@ -26,6 +28,7 @@ export default defineConfig({
     include: ["tests/integration/**/*.test.ts"],
     setupFiles: ["./tests/integration/setup.ts"],
     fileParallelism: false,
+    hookTimeout: 120_000,
     // supabase-js retries failed GETs with backoff (~7 s), which the
     // unreachable-database tests wait out.
     testTimeout: 20_000,
@@ -33,6 +36,8 @@ export default defineConfig({
       NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
       NEXT_PUBLIC_SUPABASE_URL: status.API_URL,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.PUBLISHABLE_KEY,
+      IMPORT_SUPABASE_URL: status.API_URL,
+      IMPORT_SUPABASE_SECRET_KEY: status.SECRET_KEY,
     },
   },
 });
