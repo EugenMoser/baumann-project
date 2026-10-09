@@ -113,7 +113,7 @@ export async function listObjects(
     if (error) return err(`listing ${prefix} failed: ${error.message}`);
     const entries = data ?? [];
     for (const entry of entries) {
-      const path = `${prefix}/${entry.name}`;
+      const path = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
       // Storage lists folders as entries without an id.
       if (entry.id === null) {
         const nested = await listObjects(bucket, path);

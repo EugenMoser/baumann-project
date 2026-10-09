@@ -4,6 +4,7 @@ import type { Finding } from "../../scripts/import/findings.mts";
 import { renderReport } from "../../scripts/import/report.mts";
 
 const all: Finding[] = [
+  { kind: "unknown_field", file: "products", field: "description5", count: 3 },
   {
     kind: "failed_image",
     url: "https://cdn.test/a.webp",
@@ -78,6 +79,7 @@ describe("renderReport (FR-11, SC-11)", () => {
     expect(md).toContain("| Typed description fragments | 2 of 5 |");
     expect(md).toContain("| deleted_products | 0 |");
     for (const line of [
+      "- products.json: `description5` (3 records)",
       "- `products/m/p/a.webp` ← https://cdn.test/a.webp: HTTP 404",
       "- 98020: `Ø 12 mm`",
       "- 98011/80: `Höhe 9,5 mm abgesetzt` → note `abgesetzt`",
@@ -93,6 +95,7 @@ describe("renderReport (FR-11, SC-11)", () => {
       expect(md).toContain(line);
     }
     const order = [
+      "## Unknown snapshot fields",
       "## Failed image downloads",
       "## Unparsed attribute values",
       "## Partially parsed attribute values",

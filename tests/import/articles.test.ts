@@ -145,6 +145,44 @@ describe("mapArticles (FR-4, SC-4)", () => {
     ).toEqual([]);
   });
 
+  it("reports a repeated packaging quantity without adding it to the note", () => {
+    const result = mapArticles(
+      [
+        article({ vpe1: "500", vpe3: "500" }),
+        article({ product_id: 9003, number: "98030", name: "Testschlüssel" }),
+      ],
+      products
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.findings).toContainEqual({
+      kind: "packaging_note",
+      articleNumber: "98010",
+      text: "duplicate quantity 500",
+    });
+    expect(result.value.articles[0].note).toBeNull();
+    expect(
+      result.value.article_packaging.filter((p) => p.article_number === "98010")
+    ).toHaveLength(1);
+  });
+
+  it("rejects an article number with surrounding whitespace", () => {
+    const result = mapArticles(
+      [
+        article({ number: "98010 " }),
+        article({ product_id: 9003, number: "98030", name: "Testschlüssel" }),
+      ],
+      products
+    );
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        kind: "invalid_data",
+        message: 'article "98010 " has surrounding whitespace',
+      },
+    });
+  });
+
   it("gives a shared article one home product and accessory rows elsewhere", () => {
     const result = mapArticles(
       [

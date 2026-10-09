@@ -46,6 +46,8 @@ afterAll(async () => {
 });
 
 describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
+  beforeAll(resetState);
+
   it("refuses to run without valid env", async () => {
     const before = await tableCounts();
     const io = silentIo({
@@ -60,6 +62,18 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
 
   it("prints usage without --snapshot", async () => {
     expect(await runImportCli([], silentIo(importEnv(server.baseUrl)))).toBe(2);
+  });
+
+  it("refuses a snapshot inside the repository and writes nothing", async () => {
+    const dir = join(process.cwd(), "tests/fixtures/import/snapshot");
+    const before = await tableCounts();
+    const io = silentIo(importEnv(server.baseUrl));
+    expect(await runImportCli(["--snapshot", dir], io)).toBe(2);
+    expect(io.lines.join("\n")).toContain(
+      "Snapshot must live outside the repository"
+    );
+    expect(await tableCounts()).toEqual(before);
+    expect(await storedPaths()).toEqual([]);
   });
 
   it("dry run writes the report and changes nothing", async () => {

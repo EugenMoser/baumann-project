@@ -53,14 +53,32 @@ describe("parseSnapshot (FR-2, SC-2)", () => {
   });
 
   it("treats missing image arrays as empty", () => {
-    const {
-      imageUrls_small: _s,
-      imageUrls_big: _b,
-      ...bare
-    } = valid.products[0];
+    const bare: Record<string, unknown> = { ...valid.products[0] };
+    delete bare.imageUrls_small;
+    delete bare.imageUrls_big;
     const result = parseSnapshot({ ...valid, products: [bare] });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.products[0].imageUrls_small).toEqual([]);
+  });
+
+  it("reports unknown fields but not Mongo bookkeeping fields", () => {
+    const result = parseSnapshot({
+      ...valid,
+      products: [
+        { ...valid.products[0], description5: "extra", __v: 0 },
+        { ...valid.products[0], product_id: 9002, description5: "more" },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.unknownFields).toEqual([
+      { file: "products", field: "description5", count: 2 },
+    ]);
+  });
+
+  it("has no unknown fields for the plain export shape", () => {
+    const result = parseSnapshot(valid);
+    expect(result.ok && result.value.unknownFields).toEqual([]);
   });
 
   it("rejects an empty collection with the file name", () => {

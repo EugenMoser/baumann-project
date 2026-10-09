@@ -4,8 +4,9 @@ import { z } from "zod";
 import { err, ok, type Result } from "./result.mts";
 
 // Shapes follow the old admin app's Prisma schema as exported by
-// `mongoexport --jsonArray` (relaxed extended JSON). Unknown fields such as
-// `_id` or `createdAt` are ignored.
+// `mongoexport --jsonArray` (relaxed extended JSON). Mongo bookkeeping fields
+// (`_id`, `createdAt`, `updatedAt`, `__v`) are ignored; any other field that is
+// not in the schema is reported as an unknown field (never dropped silently).
 const optionalText = z.string().nullish();
 const stringList = z
   .array(z.string())
@@ -66,6 +67,19 @@ const schemas = {
   product_colors_connection: z.array(productColorSchema),
 } as const;
 
+const knownKeys: Record<keyof typeof schemas, ReadonlySet<string>> = {
+  products: new Set(Object.keys(productSchema.shape)),
+  articles: new Set(Object.keys(articleSchema.shape)),
+  colors: new Set(Object.keys(colorSchema.shape)),
+  product_colors_connection: new Set(Object.keys(productColorSchema.shape)),
+};
+const IGNORED_KEYS: ReadonlySet<string> = new Set([
+  "_id",
+  "createdAt",
+  "updatedAt",
+  "__v",
+]);
+
 export const SNAPSHOT_FILES = [
   "products",
   "articles",
@@ -78,11 +92,18 @@ export type SnapshotProduct = z.infer<typeof productSchema>;
 export type SnapshotArticle = z.infer<typeof articleSchema>;
 export type SnapshotColor = z.infer<typeof colorSchema>;
 export type SnapshotProductColor = z.infer<typeof productColorSchema>;
+export type UnknownField = {
+  file: SnapshotFile;
+  field: string;
+  count: number;
+};
 export type Snapshot = {
   products: SnapshotProduct[];
   articles: SnapshotArticle[];
   colors: SnapshotColor[];
   product_colors_connection: SnapshotProductColor[];
+  /** Fields present in the raw records but not in the schema (reported, not mapped). */
+  unknownFields: UnknownField[];
 };
 export type SnapshotError = { kind: "snapshot_invalid"; message: string };
 
@@ -107,6 +128,22 @@ function parseFile<S extends z.ZodType<unknown[]>>(
   return ok(result.data);
 }
 
+function findUnknownFields(file: SnapshotFile, raw: unknown): UnknownField[] {
+  if (!Array.isArray(raw)) return [];
+  const known = knownKeys[file];
+  const counts = new Map<string, number>();
+  // raw already passed the array schema, so entries are objects
+  for (const record of raw as unknown[]) {
+    if (typeof record !== "object" || record === null) continue;
+    for (const field of Object.keys(record))
+      if (!known.has(field) && !IGNORED_KEYS.has(field))
+        counts.set(field, (counts.get(field) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([field, count]) => ({ file, field, count }));
+}
+
 export function parseSnapshot(
   raw: Record<SnapshotFile, unknown>
 ): Result<Snapshot, SnapshotError> {
@@ -127,6 +164,9 @@ export function parseSnapshot(
     articles: articles.value,
     colors: colors.value,
     product_colors_connection: links.value,
+    unknownFields: SNAPSHOT_FILES.flatMap((file) =>
+      findUnknownFields(file, raw[file])
+    ),
   });
 }
 

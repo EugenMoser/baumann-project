@@ -12,6 +12,7 @@ export type ReportInput = {
 };
 
 const SECTIONS: readonly { kind: Finding["kind"]; title: string }[] = [
+  { kind: "unknown_field", title: "Unknown snapshot fields" },
   { kind: "failed_image", title: "Failed image downloads" },
   { kind: "unparsed_attribute", title: "Unparsed attribute values" },
   { kind: "partial_attribute", title: "Partially parsed attribute values" },
@@ -27,6 +28,8 @@ const SECTIONS: readonly { kind: Finding["kind"]; title: string }[] = [
 
 function line(f: Finding): string {
   switch (f.kind) {
+    case "unknown_field":
+      return `- ${f.file}.json: \`${f.field}\` (${f.count} records)`;
     case "failed_image":
       return `- \`${f.storagePath}\` ← ${f.url}: ${f.reason}`;
     case "unparsed_attribute":

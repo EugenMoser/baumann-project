@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../lib/supabase/database.types.ts";
 import type { CliIo } from "./cli.mts";
 import { parseRemoveEnv } from "./env.mts";
+import { listObjects } from "./images.mts";
 
 const USAGE =
   "usage: pnpm catalog:remove --confirm <host of IMPORT_SUPABASE_URL>";
@@ -63,6 +64,19 @@ export async function runRemoveCli(
   if (emptied.error) {
     io.error(
       `Rows deleted, but emptying the bucket failed: ${emptied.error.message}. Re-run to finish.`
+    );
+    return 1;
+  }
+  const remaining = await listObjects(supabase.storage.from("catalog"), "");
+  if (!remaining.ok) {
+    io.error(
+      `Rows deleted, but verifying the bucket failed: ${remaining.error}. Re-run to finish.`
+    );
+    return 1;
+  }
+  if (remaining.value.length > 0) {
+    io.error(
+      `Rows deleted, but ${remaining.value.length} object(s) remain in the bucket catalog. Re-run to finish.`
     );
     return 1;
   }

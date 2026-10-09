@@ -120,7 +120,10 @@ export function parseFragment(raw: string): FragmentResult {
     if (r.keepOriginal)
       return { kind: "typed", values, note: text, partial: false };
     const remainder = cleanText(
-      text.slice(match[0].length).replace(/^[\s,;:-]+/, "")
+      text
+        .slice(match[0].length)
+        .replace(/^[\s,;:-]+/, "")
+        .replace(/^\.$/, "")
     );
     return {
       kind: "typed",

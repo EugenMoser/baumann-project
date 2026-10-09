@@ -32,6 +32,8 @@ export function mapArticles(
   for (const a of input) {
     if (a.number.trim() === "")
       return invalid(`article in product ${a.product_id} has no number`);
+    if (a.number !== a.number.trim())
+      return invalid(`article "${a.number}" has surrounding whitespace`);
     if (!productById.has(a.product_id))
       return invalid(
         `article ${a.number} references unknown product ${a.product_id}`
@@ -126,7 +128,14 @@ export function mapArticles(
       if (text === null) return;
       const quantity = /^\d+$/.test(text) ? Number(text) : 0;
       if (quantity > 0) {
-        if (quantities.has(quantity)) return;
+        if (quantities.has(quantity)) {
+          out.findings.push({
+            kind: "packaging_note",
+            articleNumber: number,
+            text: `duplicate quantity ${quantity}`,
+          });
+          return;
+        }
         quantities.add(quantity);
         out.article_packaging.push({
           article_number: number,

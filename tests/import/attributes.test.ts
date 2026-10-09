@@ -68,6 +68,10 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
     );
   });
 
+  it("strips a lone trailing period from a prefix-rule remainder", () => {
+    expect(parseFragment("Höhe 8 mm.")).toEqual(typed({ height: 8 }));
+  });
+
   it("normalises whitespace before matching", () => {
     expect(parseFragment("Höhe 8  mm ")).toEqual(typed({ height: 8 }));
   });

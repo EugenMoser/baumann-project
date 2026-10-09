@@ -66,6 +66,7 @@ export function snapshot(overrides: Partial<Snapshot> = {}): Snapshot {
     articles: [article()],
     colors: [color()],
     product_colors_connection: [link()],
+    unknownFields: [],
     ...overrides,
   };
 }

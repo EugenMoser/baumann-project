@@ -1,6 +1,6 @@
 // Imports the legacy catalog from a local snapshot directory.
 // Usage: pnpm catalog:import --snapshot <dir> [--dry-run]
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
@@ -45,6 +45,12 @@ export async function runImportCli(
   }
   if (snapshotDir === undefined) {
     io.error(USAGE);
+    return 2;
+  }
+
+  const fromCwd = relative(process.cwd(), resolve(snapshotDir));
+  if (fromCwd === "" || (!fromCwd.startsWith("..") && !isAbsolute(fromCwd))) {
+    io.error("Snapshot must live outside the repository (customer data).");
     return 2;
   }
 
@@ -158,7 +164,7 @@ export async function runImportCli(
       stats
     );
     io.error(
-      `Database rejected the import: ${error.message} — the database was not changed; uploaded images are reused or cleaned up by the next successful run.`
+      `The database reported an error: ${error.message}; the import was not committed if the error came from the database (re-run to be sure). Uploaded images are reused or cleaned up by the next successful run.`
     );
     return 1;
   }
@@ -184,13 +190,20 @@ export async function runImportCli(
     return 1;
   }
 
-  await report("imported", findings, stats, {
-    ...result,
-    deleted_objects: orphans.value,
-  });
   for (const [key, value] of Object.entries(result))
     io.log(`${key}: ${String(value)}`);
   io.log(`deleted_objects: ${orphans.value}`);
+  try {
+    await report("imported", findings, stats, {
+      ...result,
+      deleted_objects: orphans.value,
+    });
+  } catch (error: unknown) {
+    io.error(
+      `Imported, but writing the report failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return 1;
+  }
   return 0;
 }
 

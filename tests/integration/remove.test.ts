@@ -35,26 +35,37 @@ afterAll(async () => {
 
 describe("catalog:remove (FR-12, SC-12)", () => {
   it.each([
-    [[]],
-    [["--confirm", "other.example.test"]],
-    [["--confirm", process.env.IMPORT_SUPABASE_URL ?? "x"]],
-    [["--confirm", ""]],
-  ])("refuses with %j and changes nothing (Review Focus 5)", async (args) => {
-    const before = await tableCounts();
-    const code = await runRemoveCli(args, silentIo(importEnv(server.baseUrl)));
-    expect([1, 2]).toContain(code);
-    expect(await tableCounts()).toEqual(before);
-  });
+    [[], 2],
+    [["--confirm", "other.example.test"], 1],
+    [["--confirm", process.env.IMPORT_SUPABASE_URL ?? "x"], 1],
+    [["--confirm", ""], 1],
+  ])(
+    "refuses with %j (exit %i) and changes nothing (Review Focus 5)",
+    async (args, expected) => {
+      const before = await tableCounts();
+      const objectsBefore = await listObjects(
+        client.storage.from("catalog"),
+        "products"
+      );
+      expect(objectsBefore.ok && objectsBefore.value.length).toBeGreaterThan(0);
+      const code = await runRemoveCli(
+        args,
+        silentIo(importEnv(server.baseUrl))
+      );
+      expect(code).toBe(expected);
+      expect(await tableCounts()).toEqual(before);
+      expect(
+        await listObjects(client.storage.from("catalog"), "products")
+      ).toEqual(objectsBefore);
+    }
+  );
 
   it("removes every catalog row and every object with the right host", async () => {
     const io = silentIo(importEnv(server.baseUrl));
     expect(await runRemoveCli(["--", "--confirm", host()], io)).toBe(0);
     const counts = await tableCounts();
     expect(Object.values(counts).every((n) => n === 0)).toBe(true);
-    const listed = await listObjects(
-      client.storage.from("catalog"),
-      "products"
-    );
+    const listed = await listObjects(client.storage.from("catalog"), "");
     expect(listed.ok && listed.value).toEqual([]);
     expect(io.lines.join("\n")).toContain("products:");
   });

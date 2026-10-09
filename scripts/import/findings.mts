@@ -1,4 +1,5 @@
 export type Finding =
+  | { kind: "unknown_field"; file: string; field: string; count: number }
   | { kind: "failed_image"; url: string; storagePath: string; reason: string }
   | { kind: "unparsed_attribute"; articleNumber: string; text: string }
   | {

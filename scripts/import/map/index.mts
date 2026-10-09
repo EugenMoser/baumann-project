@@ -100,6 +100,10 @@ export function mapSnapshot(
     },
     media: media.value.media,
     findings: [
+      ...snapshot.unknownFields.map((u): Finding => ({
+        kind: "unknown_field",
+        ...u,
+      })),
       ...products.value.findings,
       ...articles.value.findings,
       ...colors.value.findings,
