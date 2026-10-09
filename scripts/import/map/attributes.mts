@@ -55,12 +55,17 @@ const rule = (
   keys: readonly string[],
   mode: Rule["mode"],
   keepOriginal = false
-): Rule => ({
-  pattern: new RegExp(mode === "whole" ? `^${source}$` : `^${source}`),
-  keys,
-  mode,
-  keepOriginal,
-});
+): Rule => {
+  const boundary = mode === "prefix" ? String.raw`(?=$|[\s,;(.:-])` : "";
+  return {
+    pattern: new RegExp(
+      mode === "whole" ? `^${source}$` : `^${source}${boundary}`
+    ),
+    keys,
+    mode,
+    keepOriginal,
+  };
+};
 
 // Order matters: specific rules before general ones.
 const RULES: readonly Rule[] = [

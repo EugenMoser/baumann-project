@@ -95,6 +95,17 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
     expect(parseFragment("ohne Positionierung").kind).toBe("unparsed");
   });
 
+  it("respects word boundaries in prefix rules", () => {
+    expect(parseFragment("für 19 mm Plattendicke")).toEqual({
+      kind: "unparsed",
+      text: "für 19 mm Plattendicke",
+    });
+    expect(parseFragment("Höhe 8 mmx")).toEqual({
+      kind: "unparsed",
+      text: "Höhe 8 mmx",
+    });
+  });
+
   it("recognises full sentences", () => {
     expect(
       parseFragment("Für die Montage wird ein Testwerkzeug benötigt.")
