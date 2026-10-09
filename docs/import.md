@@ -159,7 +159,49 @@ media dimensions until the next successful run.
 | Database rejected the import (RPC error or failed cross-check)                                           | yes    | Read the message. The database was not changed. Uploaded images stay in the bucket; the next successful run reuses or cleans them up. |
 | Imported, but orphan cleanup failed                                                                      | yes    | The data is committed. Re-run the import to finish the cleanup.                                                                       |
 
-## 8. Afterwards
+## 8. Certificates
+
+The ISO certificates are not part of the snapshot. `pnpm certificates:import`
+loads them from a separate directory outside the repository, with a
+hand-written manifest `certificates.json` next to the files:
+
+```json
+[
+  {
+    "standard": "<standard, e.g. ISO 9001>",
+    "title": "<title>",
+    "preview": { "file": "<preview>.png", "alt": "<alt text>" },
+    "documents": [
+      { "language": "de", "file": "<file>.pdf" },
+      { "language": "en", "file": "<file>.pdf" }
+    ]
+  }
+]
+```
+
+File names must be plain names in that directory (no `/`, no `..`). `standard`
+is unique, each language appears once per certificate, previews are PNG, JPEG or
+WebP, documents are PDFs. Take the preview images and PDFs from the quality page
+of the official website.
+
+```bash
+pnpm certificates:import --dir <dir> --dry-run
+pnpm certificates:import --dir <dir>
+```
+
+The environment is the one from section 3 (`IMPORT_SUPABASE_URL`,
+`IMPORT_SUPABASE_SECRET_KEY`); `IMPORT_IMAGE_BASE_URL` is not needed. The run
+validates the manifest and files (a dry run stops here), uploads the files to
+`certificates/` in the bucket `catalog`, replaces all certificate rows in one
+transaction and removes unreferenced files under `certificates/`.
+
+Exit code `0`: success (a dry run counts as success). `1`: manifest, upload or
+database failure; rows are only written after all uploads succeeded, and if only
+the orphan cleanup fails, re-run the command. `2`: wrong usage (missing
+`--dir`, unknown flag, directory inside the repository). Delete the directory
+when you no longer need it.
+
+## 9. Afterwards
 
 The snapshot and the report contain customer data. Delete the snapshot
 directory (including `import-report.md`) as soon as you no longer need it:

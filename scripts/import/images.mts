@@ -129,9 +129,10 @@ export async function listObjects(
 
 export async function deleteOrphans(
   bucket: StorageBucket,
-  keep: ReadonlySet<string>
+  keep: ReadonlySet<string>,
+  prefix = "products"
 ): Promise<Result<number, string>> {
-  const listed = await listObjects(bucket, "products");
+  const listed = await listObjects(bucket, prefix);
   if (!listed.ok) return listed;
   const orphans = listed.value.filter((path) => !keep.has(path));
   for (let i = 0; i < orphans.length; i += 100) {

@@ -30,6 +30,8 @@ export const CATALOG_TABLES = [
   "media",
   "product_media",
   "ai_generation",
+  "certificate_document",
+  "certificate",
 ] as const;
 
 function requireEnv(name: string): string {
