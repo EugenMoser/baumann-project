@@ -118,8 +118,8 @@ the same row ids.
 On an update the importer **overwrites** the fields it owns: names, texts,
 material, sort order, attributes, colours, packaging and media links. It
 **keeps** the fields it does not own: `product.status`, `seo_*`, `*_origin`,
-`category.intro_text`, `category.seo_*` and `media.alt_text` (set on insert
-only). New products are inserted as `published`. Products and articles that
+`media.alt_text` (set on insert only). Category `intro_text` and `seo_*` are
+filled only while empty (see "Category texts"). New products are inserted as `published`. Products and articles that
 carry a legacy id but are missing from the snapshot are deleted; rows without a
 legacy id (seed data, later admin entries) are never touched.
 
@@ -129,6 +129,13 @@ fields. Export what you need to keep, or do not re-import.
 Admin uploads must not use the `products/` Storage prefix: after every
 successful import, all objects under `products/` that no `media` row references
 are deleted.
+
+### Category texts
+
+Category intro and SEO texts live in `scripts/import/categories.mts`. The
+importer writes `intro_text`, `seo_title` and `seo_description` only where the
+stored value is empty. To change an existing text before the admin area exists,
+clear it in the database and re-run the import.
 
 ## 7. Exit codes and failures
 

@@ -4,6 +4,10 @@ export type PayloadCategory = {
   slug: string;
   name: string;
   sort_order: number;
+  // Written only where the stored value is empty (D5 of the feature 4 spec).
+  intro_text: string;
+  seo_title: string | null;
+  seo_description: string | null;
 };
 export type PayloadMaterial = { code: string; name: string };
 export type PayloadAttribute = {
