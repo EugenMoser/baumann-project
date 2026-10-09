@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(22);
 
 select has_table('public', 'certificate', 'certificate table exists');
 select has_table('public', 'certificate_document', 'certificate_document table exists');
@@ -23,6 +23,25 @@ set local request.jwt.claims to '{"role":"anon"}';
 select is((select count(*) from public.certificate), 1::bigint, 'anon reads certificates');
 select is((select count(*) from public.certificate_document), 2::bigint, 'anon reads certificate documents');
 select throws_ok($$delete from public.certificate$$, '42501', null, 'anon cannot delete certificates');
+reset role;
+
+-- authenticated non-admin cannot write
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
+select throws_ok(
+  $$insert into public.certificate (standard, title, preview_path, preview_width, preview_height, preview_alt) values ('NA', 'NA', 'certificates/na.png', 1, 1, 'na')$$,
+  '42501', null, 'non-admin cannot insert certificates');
+reset role;
+
+-- admin can write
+set local role authenticated;
+set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000ad","role":"authenticated","app_metadata":{"role":"admin"}}';
+select lives_ok(
+  $$insert into public.certificate (standard, title, preview_path, preview_width, preview_height, preview_alt) values ('ADM (Test)', 'Admin', 'certificates/adm.png', 1, 1, 'adm')$$,
+  'admin can insert certificates');
+select lives_ok(
+  $$insert into public.certificate_document (certificate_id, language, storage_path) select id, 'de', 'certificates/adm-de.pdf' from public.certificate where standard = 'ADM (Test)'$$,
+  'admin can insert certificate documents');
 reset role;
 
 -- import replaces everything
