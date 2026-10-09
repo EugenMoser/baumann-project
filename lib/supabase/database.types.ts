@@ -320,7 +320,12 @@ isOneToOne: false
                 }
           }
           Functions: {
-            [_ in never]: never
+            "import_catalog":
+{ Args: { "payload": Json }; Returns: Json
+                           },
+"remove_catalog":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           }
           }
           Enums: {
             "attribute_data_type": "decimal"|"text","content_origin": "human"|"ai"|"ai_edited","media_role": "thumbnail"|"gallery","product_status": "draft"|"published"|"archived"
