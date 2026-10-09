@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { branding, brandingSchema } from "./branding";
+import { brandingSchema, branding, placeholderBranding } from "./branding";
 
 const valid = {
   companyName: "Example GmbH",
@@ -49,5 +49,22 @@ describe("brandingSchema (FR-5, SC-5)", () => {
         developer: { name: "Dev", url: "not a url" },
       }).success
     ).toBe(false);
+  });
+});
+
+describe("placeholderBranding (FR-13, SC-13)", () => {
+  it("passes the schema", () => {
+    expect(brandingSchema.safeParse(placeholderBranding).success).toBe(true);
+  });
+
+  it("contains none of the customer strings", () => {
+    const serialized = JSON.stringify(placeholderBranding);
+    for (const value of [
+      branding.companyName,
+      branding.shortName,
+      branding.officialSiteUrl,
+    ]) {
+      expect(serialized).not.toContain(value);
+    }
   });
 });

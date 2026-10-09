@@ -24,3 +24,13 @@ export const branding: Branding = brandingSchema.parse({
   previewLabel: "Kundenprojekt in Entwicklung (Vorschau)",
   developer: { name: "Eugen Moser", url: "https://eugen-moser.com" },
 });
+
+// Used on revocation (docs/revocation.md): switch the export above to this
+// object, commit and deploy. Contains no customer data.
+export const placeholderBranding: Branding = brandingSchema.parse({
+  companyName: "Beispiel Kunststoffteile GmbH",
+  shortName: "Beispiel",
+  officialSiteUrl: "https://example.com",
+  previewLabel: "Referenzprojekt (Vorschau mit Beispieldaten)",
+  developer: { name: "Eugen Moser", url: "https://eugen-moser.com" },
+});
