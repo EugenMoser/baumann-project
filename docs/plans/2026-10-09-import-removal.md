@@ -81,10 +81,12 @@ docs/import.md, docs/revocation.md
 ### Task 1: Result helper, text helpers and snapshot reader (FR-2)
 
 **Files:**
+
 - Create: `scripts/import/result.mts`, `scripts/import/map/text.mts`, `scripts/import/snapshot.mts`
 - Test: `tests/import/text.test.ts`, `tests/import/snapshot.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `type Result<T, E>`, `ok(value)`, `err(error)` (same shape as `lib/result.ts`)
   - `cleanText(value: string | null | undefined): string | null`
@@ -224,8 +226,11 @@ describe("parseSnapshot (FR-2, SC-2)", () => {
   });
 
   it("treats missing image arrays as empty", () => {
-    const { imageUrls_small: _s, imageUrls_big: _b, ...bare } =
-      valid.products[0];
+    const {
+      imageUrls_small: _s,
+      imageUrls_big: _b,
+      ...bare
+    } = valid.products[0];
     const result = parseSnapshot({ ...valid, products: [bare] });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.products[0].imageUrls_small).toEqual([]);
@@ -331,8 +336,8 @@ Expected: FAIL — modules not found.
 // plain Node, which warns when loading the typeless `.ts` modules in lib/.
 export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
-export const ok = <T,>(value: T): Result<T, never> => ({ ok: true, value });
-export const err = <E,>(error: E): Result<never, E> => ({ ok: false, error });
+export const ok = <T>(value: T): Result<T, never> => ({ ok: true, value });
+export const err = <E>(error: E): Result<never, E> => ({ ok: false, error });
 ```
 
 `scripts/import/map/text.mts`:
@@ -487,7 +492,8 @@ function parseFile<S extends z.ZodType<unknown[]>>(
       .join("; ");
     return invalid(`${file}.json: ${details}`);
   }
-  if (result.data.length === 0) return invalid(`${file}.json contains no entries`);
+  if (result.data.length === 0)
+    return invalid(`${file}.json contains no entries`);
   return ok(result.data);
 }
 
@@ -559,10 +565,12 @@ git commit -m "feat(import): snapshot reader and text helpers"
 ### Task 2: Payload types, categories, materials and product mapping (FR-3, FR-5)
 
 **Files:**
+
 - Create: `scripts/import/payload.mts`, `scripts/import/findings.mts`, `scripts/import/categories.mts`, `scripts/import/map/materials.mts`, `scripts/import/map/products.mts`, `tests/import/factory.ts`
 - Test: `tests/import/materials.test.ts`, `tests/import/products.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1 (`Result`, `cleanText`, `cleanBlock`, `slugify`, `SnapshotProduct`, …)
 - Produces:
 
@@ -571,7 +579,11 @@ git commit -m "feat(import): snapshot reader and text helpers"
 ```ts
 // Flat JSON payload for public.import_catalog(jsonb). Every array maps to one
 // jsonb_to_recordset() call in the migration; field names are column names.
-export type PayloadCategory = { slug: string; name: string; sort_order: number };
+export type PayloadCategory = {
+  slug: string;
+  name: string;
+  sort_order: number;
+};
 export type PayloadMaterial = { code: string; name: string };
 export type PayloadAttribute = {
   key: string;
@@ -678,7 +690,12 @@ export type Finding =
     }
   | { kind: "material_fallback"; legacyProductId: number; text: string }
   | { kind: "default_color_by_rule"; legacyProductId: number; suffix: string }
-  | { kind: "merged_color"; name: string; hex: string; legacyColorIds: string[] }
+  | {
+      kind: "merged_color";
+      name: string;
+      hex: string;
+      legacyColorIds: string[];
+    }
   | {
       kind: "shared_article";
       articleNumber: string;
@@ -716,7 +733,9 @@ import type {
   SnapshotProductColor,
 } from "../../scripts/import/snapshot.mts";
 
-export function product(overrides: Partial<SnapshotProduct> = {}): SnapshotProduct {
+export function product(
+  overrides: Partial<SnapshotProduct> = {}
+): SnapshotProduct {
   return {
     product_id: 9001,
     prio: 10000,
@@ -733,7 +752,9 @@ export function product(overrides: Partial<SnapshotProduct> = {}): SnapshotProdu
   };
 }
 
-export function article(overrides: Partial<SnapshotArticle> = {}): SnapshotArticle {
+export function article(
+  overrides: Partial<SnapshotArticle> = {}
+): SnapshotArticle {
   return {
     product_id: 9001,
     number: "98010",
@@ -752,7 +773,12 @@ export function article(overrides: Partial<SnapshotArticle> = {}): SnapshotArtic
 }
 
 export function color(overrides: Partial<SnapshotColor> = {}): SnapshotColor {
-  return { color_id: "1-1", name: "testweiß (ähnlich RAL 9016)", code: "#F2F5F3", ...overrides };
+  return {
+    color_id: "1-1",
+    name: "testweiß (ähnlich RAL 9016)",
+    code: "#F2F5F3",
+    ...overrides,
+  };
 }
 
 export function link(
@@ -781,8 +807,16 @@ import { splitMaterial } from "../../scripts/import/map/materials.mts";
 
 describe("splitMaterial (FR-5, SC-5)", () => {
   it("maps a known code alone", () => {
-    expect(splitMaterial("PA-6")).toEqual({ code: "PA-6", note: null, fallback: false });
-    expect(splitMaterial("PC-ABS")).toEqual({ code: "PC-ABS", note: null, fallback: false });
+    expect(splitMaterial("PA-6")).toEqual({
+      code: "PA-6",
+      note: null,
+      fallback: false,
+    });
+    expect(splitMaterial("PC-ABS")).toEqual({
+      code: "PC-ABS",
+      note: null,
+      fallback: false,
+    });
   });
   it("maps CODE (qualifier)", () => {
     expect(splitMaterial("PA-6 (temperaturbeständig bis 100° C)")).toEqual({
@@ -812,15 +846,31 @@ describe("splitMaterial (FR-5, SC-5)", () => {
       "Topf: PA-6 Dämpfer: TPE",
       "Art.-Nr. 98108 (ABS) / Art.-Nr. 98148 (PP)",
     ]) {
-      expect(splitMaterial(text)).toEqual({ code: null, note: text, fallback: true });
+      expect(splitMaterial(text)).toEqual({
+        code: null,
+        note: text,
+        fallback: true,
+      });
     }
   });
   it("falls back for an unknown code", () => {
-    expect(splitMaterial("PEEK")).toEqual({ code: null, note: "PEEK", fallback: true });
+    expect(splitMaterial("PEEK")).toEqual({
+      code: null,
+      note: "PEEK",
+      fallback: true,
+    });
   });
   it("yields nothing for an empty value", () => {
-    expect(splitMaterial("")).toEqual({ code: null, note: null, fallback: false });
-    expect(splitMaterial(null)).toEqual({ code: null, note: null, fallback: false });
+    expect(splitMaterial("")).toEqual({
+      code: null,
+      note: null,
+      fallback: false,
+    });
+    expect(splitMaterial(null)).toEqual({
+      code: null,
+      note: null,
+      fallback: false,
+    });
   });
 });
 ```
@@ -879,16 +929,30 @@ describe("mapProducts (FR-3, SC-3)", () => {
   });
 
   it("reports a material fallback", () => {
-    const result = mapProducts([product({ material: "Wandteil: PA-6 / Blende: ABS" })]);
+    const result = mapProducts([
+      product({ material: "Wandteil: PA-6 / Blende: ABS" }),
+    ]);
     expect(result.ok && result.value.findings).toEqual([
-      { kind: "material_fallback", legacyProductId: 9001, text: "Wandteil: PA-6 / Blende: ABS" },
+      {
+        kind: "material_fallback",
+        legacyProductId: 9001,
+        text: "Wandteil: PA-6 / Blende: ABS",
+      },
     ]);
   });
 
   it("resolves a name collision with the subtitle", () => {
     const result = mapProducts([
-      product({ product_id: 9001, name: "Testträger", description1: "für 16 mm" }),
-      product({ product_id: 9002, name: "Testträger", description1: "für 19 mm" }),
+      product({
+        product_id: 9001,
+        name: "Testträger",
+        description1: "für 16 mm",
+      }),
+      product({
+        product_id: 9002,
+        name: "Testträger",
+        description1: "für 19 mm",
+      }),
     ]);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -897,8 +961,18 @@ describe("mapProducts (FR-3, SC-3)", () => {
       "testtraeger-fuer-19-mm",
     ]);
     expect(result.value.findings).toEqual([
-      { kind: "slug_collision", legacyProductId: 9001, slug: "testtraeger-fuer-16-mm", level: "subtitle" },
-      { kind: "slug_collision", legacyProductId: 9002, slug: "testtraeger-fuer-19-mm", level: "subtitle" },
+      {
+        kind: "slug_collision",
+        legacyProductId: 9001,
+        slug: "testtraeger-fuer-16-mm",
+        level: "subtitle",
+      },
+      {
+        kind: "slug_collision",
+        legacyProductId: 9002,
+        slug: "testtraeger-fuer-19-mm",
+        level: "subtitle",
+      },
     ]);
   });
 
@@ -915,7 +989,11 @@ describe("mapProducts (FR-3, SC-3)", () => {
       "testgitter-9002",
       "testgitter-9003",
     ]);
-    expect(result.value.findings.every((f) => f.kind === "slug_collision" && f.level === "legacy_id")).toBe(true);
+    expect(
+      result.value.findings.every(
+        (f) => f.kind === "slug_collision" && f.level === "legacy_id"
+      )
+    ).toBe(true);
   });
 
   it("allows the same slug in different categories", () => {
@@ -930,7 +1008,10 @@ describe("mapProducts (FR-3, SC-3)", () => {
     const result = mapProducts([product({ category: "garten" })]);
     expect(result).toEqual({
       ok: false,
-      error: { kind: "invalid_data", message: 'product 9001 has unknown category "garten"' },
+      error: {
+        kind: "invalid_data",
+        message: 'product 9001 has unknown category "garten"',
+      },
     });
   });
 
@@ -1088,14 +1169,19 @@ export function mapProducts(
     const name = cleanText(p.name);
     if (name === null) return invalid(`product ${id} has no name`);
     const slug = slugify(name);
-    if (slug === "") return invalid(`product ${id}: name "${name}" yields no slug`);
+    if (slug === "")
+      return invalid(`product ${id}: name "${name}" yields no slug`);
 
     const paragraphs = [p.description2, p.description3, p.description4]
       .map(cleanBlock)
       .filter((part): part is string => part !== null);
     const material = splitMaterial(p.material);
     if (material.fallback && material.note !== null)
-      findings.push({ kind: "material_fallback", legacyProductId: id, text: material.note });
+      findings.push({
+        kind: "material_fallback",
+        legacyProductId: id,
+        text: material.note,
+      });
 
     drafts.push({
       legacy_product_id: id,
@@ -1113,11 +1199,18 @@ export function mapProducts(
 
   resolveSlugs(drafts);
   if (collidingKeys(drafts).size > 0)
-    return invalid("product slugs are still not unique after collision handling");
+    return invalid(
+      "product slugs are still not unique after collision handling"
+    );
 
   const products: PayloadProduct[] = drafts.map(({ level, ...row }) => {
     if (level !== null)
-      findings.push({ kind: "slug_collision", legacyProductId: row.legacy_product_id, slug: row.slug, level });
+      findings.push({
+        kind: "slug_collision",
+        legacyProductId: row.legacy_product_id,
+        slug: row.slug,
+        level,
+      });
     return row;
   });
   return ok({ products, findings });
@@ -1143,10 +1236,12 @@ git commit -m "feat(import): payload types, materials and product mapping"
 ### Task 3: Attribute rule table and fragment parser (FR-4 part 1)
 
 **Files:**
+
 - Create: `scripts/import/map/attributes.mts`
 - Test: `tests/import/attributes.test.ts`
 
 **Interfaces:**
+
 - Consumes: `cleanText`, `parseDecimal` (Task 1), `PayloadAttribute` (Task 2)
 - Produces:
   - `ATTRIBUTES: readonly PayloadAttribute[]`
@@ -1160,9 +1255,16 @@ git commit -m "feat(import): payload types, materials and product mapping"
 ```ts
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { ATTRIBUTES, parseFragment } from "../../scripts/import/map/attributes.mts";
+import {
+  ATTRIBUTES,
+  parseFragment,
+} from "../../scripts/import/map/attributes.mts";
 
-const typed = (values: Record<string, number>, note: string | null = null, partial = false) => ({
+const typed = (
+  values: Record<string, number>,
+  note: string | null = null,
+  partial = false
+) => ({
   kind: "typed",
   values: Object.entries(values).map(([key, value]) => ({ key, value })),
   note,
@@ -1176,9 +1278,18 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
     ["Fußhöhe 30 mm", { foot_height: 30 }],
     ["für 16 mm Plattenstärke", { panel_thickness: 16 }],
     ["für 19 mm Platte", { panel_thickness: 19 }],
-    ["für Abwasserrohre Ø 40 mm Fußhöhe 30 mm", { pipe_diameter: 40, foot_height: 30 }],
-    ["für isolierte Abwasserrohre Ø 50 mm Fußhöhe 35 mm", { insulated_pipe_diameter: 50, foot_height: 35 }],
-    ["für Heizungsrohre Ø 15 mm Fußhöhe 20 mm", { pipe_diameter: 15, foot_height: 20 }],
+    [
+      "für Abwasserrohre Ø 40 mm Fußhöhe 30 mm",
+      { pipe_diameter: 40, foot_height: 30 },
+    ],
+    [
+      "für isolierte Abwasserrohre Ø 50 mm Fußhöhe 35 mm",
+      { insulated_pipe_diameter: 50, foot_height: 35 },
+    ],
+    [
+      "für Heizungsrohre Ø 15 mm Fußhöhe 20 mm",
+      { pipe_diameter: 15, foot_height: 20 },
+    ],
     ["für Rundrohr Ø 25 mm", { round_tube_diameter: 25 }],
     ["für Schlauch Ø 10 mm R 5 mm", { hose_diameter: 10, radius: 5 }],
     ["für Schlauch Ø 12 mm", { hose_diameter: 12 }],
@@ -1202,10 +1313,12 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
     expect(parseFragment("Höhe 9,5 mm abgesetzt")).toEqual(
       typed({ height: 9.5 }, "abgesetzt", true)
     );
-    expect(parseFragment("für Leistenbreite 20 mm (mit Positionierung)")).toEqual(
-      typed({ strip_width: 20 }, "(mit Positionierung)", true)
-    );
-    expect(parseFragment("Höhe 8 mm und Ø 5 mm Bohrung (für doppelte Böden)")).toEqual(
+    expect(
+      parseFragment("für Leistenbreite 20 mm (mit Positionierung)")
+    ).toEqual(typed({ strip_width: 20 }, "(mit Positionierung)", true));
+    expect(
+      parseFragment("Höhe 8 mm und Ø 5 mm Bohrung (für doppelte Böden)")
+    ).toEqual(
       typed({ height: 8, bore_diameter: 5 }, "(für doppelte Böden)", true)
     );
   });
@@ -1215,12 +1328,17 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
   });
 
   it("does not type a bare diameter", () => {
-    expect(parseFragment("Ø 12 mm")).toEqual({ kind: "unparsed", text: "Ø 12 mm" });
+    expect(parseFragment("Ø 12 mm")).toEqual({
+      kind: "unparsed",
+      text: "Ø 12 mm",
+    });
   });
 
   it("does not type whole-match rules with extra text", () => {
     expect(
-      parseFragment("durch Zapfen Ø 8 mm für Fahrzeugboden und Stift Ø 6 mm für Truhenwand")
+      parseFragment(
+        "durch Zapfen Ø 8 mm für Fahrzeugboden und Stift Ø 6 mm für Truhenwand"
+      )
     ).toEqual({
       kind: "unparsed",
       text: "durch Zapfen Ø 8 mm für Fahrzeugboden und Stift Ø 6 mm für Truhenwand",
@@ -1233,7 +1351,9 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
   });
 
   it("recognises full sentences", () => {
-    expect(parseFragment("Für die Montage wird ein Testwerkzeug benötigt.")).toEqual({
+    expect(
+      parseFragment("Für die Montage wird ein Testwerkzeug benötigt.")
+    ).toEqual({
       kind: "sentence",
       text: "Für die Montage wird ein Testwerkzeug benötigt.",
     });
@@ -1242,12 +1362,26 @@ describe("parseFragment rule table (FR-4, SC-4)", () => {
   it("defines every key used by a rule exactly once", () => {
     const keys = ATTRIBUTES.map((a) => a.key);
     expect(new Set(keys).size).toBe(keys.length);
-    expect(keys).toEqual(expect.arrayContaining([
-      "height", "foot_height", "panel_thickness", "pipe_diameter",
-      "insulated_pipe_diameter", "round_tube_diameter", "hose_diameter", "radius",
-      "cable_diameter", "strip_width", "bore_diameter", "insertion_depth", "pin_diameter",
-    ]));
-    expect(ATTRIBUTES.every((a) => a.data_type === "decimal" && a.unit === "mm")).toBe(true);
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        "height",
+        "foot_height",
+        "panel_thickness",
+        "pipe_diameter",
+        "insulated_pipe_diameter",
+        "round_tube_diameter",
+        "hose_diameter",
+        "radius",
+        "cable_diameter",
+        "strip_width",
+        "bore_diameter",
+        "insertion_depth",
+        "pin_diameter",
+      ])
+    );
+    expect(
+      ATTRIBUTES.every((a) => a.data_type === "decimal" && a.unit === "mm")
+    ).toBe(true);
   });
 });
 ```
@@ -1265,7 +1399,11 @@ Expected: FAIL — module not found.
 import type { PayloadAttribute } from "../payload.mts";
 import { cleanText, parseDecimal } from "./text.mts";
 
-const mm = (key: string, label: string, sort_order: number): PayloadAttribute => ({
+const mm = (
+  key: string,
+  label: string,
+  sort_order: number
+): PayloadAttribute => ({
   key,
   label,
   unit: "mm",
@@ -1291,7 +1429,12 @@ export const ATTRIBUTES: readonly PayloadAttribute[] = [
 ];
 
 export type FragmentResult =
-  | { kind: "typed"; values: { key: string; value: number }[]; note: string | null; partial: boolean }
+  | {
+      kind: "typed";
+      values: { key: string; value: number }[];
+      note: string | null;
+      partial: boolean;
+    }
   | { kind: "sentence"; text: string }
   | { kind: "unparsed"; text: string };
 
@@ -1305,7 +1448,12 @@ type Rule = {
 };
 
 const N = String.raw`(\d+(?:[.,]\d+)?)`;
-const rule = (source: string, keys: readonly string[], mode: Rule["mode"], keepOriginal = false): Rule => ({
+const rule = (
+  source: string,
+  keys: readonly string[],
+  mode: Rule["mode"],
+  keepOriginal = false
+): Rule => ({
   pattern: new RegExp(mode === "whole" ? `^${source}$` : `^${source}`),
   keys,
   mode,
@@ -1314,21 +1462,42 @@ const rule = (source: string, keys: readonly string[], mode: Rule["mode"], keepO
 
 // Order matters: specific rules before general ones.
 const RULES: readonly Rule[] = [
-  rule(`für isolierte Abwasserrohre Ø ${N} mm Fußhöhe ${N} mm`, ["insulated_pipe_diameter", "foot_height"], "whole"),
-  rule(`für (?:Abwasserrohre|Heizungsrohre) Ø ${N} mm Fußhöhe ${N} mm`, ["pipe_diameter", "foot_height"], "whole"),
-  rule(`Höhe ${N} mm und Ø ${N} mm Bohrung`, ["height", "bore_diameter"], "prefix"),
+  rule(
+    `für isolierte Abwasserrohre Ø ${N} mm Fußhöhe ${N} mm`,
+    ["insulated_pipe_diameter", "foot_height"],
+    "whole"
+  ),
+  rule(
+    `für (?:Abwasserrohre|Heizungsrohre) Ø ${N} mm Fußhöhe ${N} mm`,
+    ["pipe_diameter", "foot_height"],
+    "whole"
+  ),
+  rule(
+    `Höhe ${N} mm und Ø ${N} mm Bohrung`,
+    ["height", "bore_diameter"],
+    "prefix"
+  ),
   rule(`Höhe:? ${N} mm`, ["height"], "prefix"),
   rule(`Fußhöhe ${N} mm`, ["foot_height"], "prefix"),
   rule(`für ${N} mm (?:Plattenstärke|Platte)`, ["panel_thickness"], "prefix"),
   rule(`für Rundrohr Ø ${N} mm`, ["round_tube_diameter"], "whole"),
-  rule(`für Schlauch Ø ${N} mm R ${N} mm`, ["hose_diameter", "radius"], "whole"),
+  rule(
+    `für Schlauch Ø ${N} mm R ${N} mm`,
+    ["hose_diameter", "radius"],
+    "whole"
+  ),
   rule(`für Schlauch Ø ${N} mm`, ["hose_diameter"], "whole"),
   rule(`für Kabel Ø ${N} mm`, ["cable_diameter"], "whole"),
   rule(`für Leistenbreite ${N} mm`, ["strip_width"], "prefix"),
   rule(`Tank-Bohrung ${N} mm`, ["bore_diameter"], "whole"),
   rule(`Einschubtiefe:? ${N} mm`, ["insertion_depth"], "whole"),
   rule(`(?:durch )?(?:Stift|Zapfen) Ø ${N} mm`, ["pin_diameter"], "whole"),
-  rule(`(?:durch )?(?:Stift|Zapfen) Ø ${N} x \\d+(?:[.,]\\d+)? mm`, ["pin_diameter"], "whole", true),
+  rule(
+    `(?:durch )?(?:Stift|Zapfen) Ø ${N} x \\d+(?:[.,]\\d+)? mm`,
+    ["pin_diameter"],
+    "whole",
+    true
+  ),
 ];
 
 /** Types one legacy description field, or says why it could not. Never guesses. */
@@ -1337,10 +1506,21 @@ export function parseFragment(raw: string): FragmentResult {
   for (const r of RULES) {
     const match = r.pattern.exec(text);
     if (match === null) continue;
-    const values = r.keys.map((key, index) => ({ key, value: parseDecimal(match[index + 1] ?? "") }));
-    if (r.keepOriginal) return { kind: "typed", values, note: text, partial: false };
-    const remainder = cleanText(text.slice(match[0].length).replace(/^[\s,;:-]+/, ""));
-    return { kind: "typed", values, note: remainder, partial: remainder !== null };
+    const values = r.keys.map((key, index) => ({
+      key,
+      value: parseDecimal(match[index + 1] ?? ""),
+    }));
+    if (r.keepOriginal)
+      return { kind: "typed", values, note: text, partial: false };
+    const remainder = cleanText(
+      text.slice(match[0].length).replace(/^[\s,;:-]+/, "")
+    );
+    return {
+      kind: "typed",
+      values,
+      note: remainder,
+      partial: remainder !== null,
+    };
   }
   if (text.endsWith(".")) return { kind: "sentence", text };
   return { kind: "unparsed", text };
@@ -1364,16 +1544,19 @@ git commit -m "feat(import): attribute rule table"
 ### Task 4: Article mapping — attributes, packaging, shared articles (FR-4 part 2)
 
 **Files:**
+
 - Create: `scripts/import/map/articles.mts`
 - Test: `tests/import/articles.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseFragment` (Task 3), `PayloadProduct`, `Finding`, `MapError` (Task 2), `SnapshotArticle` (Task 1)
 - Produces:
   - `type ArticleMapping = { articles: PayloadArticle[]; article_attributes: PayloadArticleAttribute[]; article_packaging: PayloadArticlePackaging[]; product_accessories: PayloadProductAccessory[]; findings: Finding[]; fragments: { total: number; typed: number } }`
   - `mapArticles(input: readonly SnapshotArticle[], products: readonly PayloadProduct[]): Result<ArticleMapping, MapError>`
 
 Rules:
+
 - Article number kept exactly as exported (no trimming); a blank number is invalid.
 - An article referencing an unknown product is invalid (`article 98010 references unknown product 9009`).
 - The same number twice in the same product is invalid.
@@ -1407,13 +1590,22 @@ const productRow = (id: number, name: string): PayloadProduct => ({
   material_note: null,
   sort_order: 0,
 });
-const products = [productRow(9001, "Testkeil mit Dämpfung"), productRow(9003, "Testschlüssel")];
+const products = [
+  productRow(9001, "Testkeil mit Dämpfung"),
+  productRow(9003, "Testschlüssel"),
+];
 
 describe("mapArticles (FR-4, SC-4)", () => {
   it("maps an article with typed attributes and packaging", () => {
     const result = mapArticles(
       [
-        article({ product_id: 9001, number: "98010", vpe1: "500", vpe2: "100", vpe3: "500" }),
+        article({
+          product_id: 9001,
+          number: "98010",
+          vpe1: "500",
+          vpe2: "100",
+          vpe3: "500",
+        }),
         article({ product_id: 9003, number: "98030", name: "Testschlüssel" }),
       ],
       products
@@ -1434,7 +1626,9 @@ describe("mapArticles (FR-4, SC-4)", () => {
       value_decimal: 8,
       value_text: null,
     });
-    expect(result.value.article_packaging.filter((p) => p.article_number === "98010")).toEqual([
+    expect(
+      result.value.article_packaging.filter((p) => p.article_number === "98010")
+    ).toEqual([
       { article_number: "98010", quantity: 500, sort_order: 0 },
       { article_number: "98010", quantity: 100, sort_order: 1 },
     ]);
@@ -1443,10 +1637,16 @@ describe("mapArticles (FR-4, SC-4)", () => {
 
   it("keeps article numbers with a slash unchanged and stores differing names", () => {
     const result = mapArticles(
-      [article({ number: "98011/80", name: "Testkeil hoch" }), article({ product_id: 9003, number: "98030", name: "Testschlüssel" })],
+      [
+        article({ number: "98011/80", name: "Testkeil hoch" }),
+        article({ product_id: 9003, number: "98030", name: "Testschlüssel" }),
+      ],
       products
     );
-    expect(result.ok && result.value.articles[0]).toMatchObject({ article_number: "98011/80", name: "Testkeil hoch" });
+    expect(result.ok && result.value.articles[0]).toMatchObject({
+      article_number: "98011/80",
+      name: "Testkeil hoch",
+    });
   });
 
   it("routes sentences, partial matches and unknown fragments", () => {
@@ -1468,33 +1668,56 @@ describe("mapArticles (FR-4, SC-4)", () => {
       description: "Für die Montage wird ein Testwerkzeug benötigt.",
       note: "abgesetzt\nØ 12 mm",
     });
-    expect(result.value.findings).toEqual(expect.arrayContaining([
-      { kind: "partial_attribute", articleNumber: "98010", text: "Höhe 9,5 mm abgesetzt", remainder: "abgesetzt" },
-      { kind: "unparsed_attribute", articleNumber: "98010", text: "Ø 12 mm" },
-    ]));
+    expect(result.value.findings).toEqual(
+      expect.arrayContaining([
+        {
+          kind: "partial_attribute",
+          articleNumber: "98010",
+          text: "Höhe 9,5 mm abgesetzt",
+          remainder: "abgesetzt",
+        },
+        { kind: "unparsed_attribute", articleNumber: "98010", text: "Ø 12 mm" },
+      ])
+    );
   });
 
   it("treats a second value for the same key as unparsed", () => {
     const result = mapArticles(
-      [article({ description1: "Höhe 8 mm", description2: "Höhe 9 mm" }), article({ product_id: 9003, number: "98030", name: "Testschlüssel" })],
+      [
+        article({ description1: "Höhe 8 mm", description2: "Höhe 9 mm" }),
+        article({ product_id: 9003, number: "98030", name: "Testschlüssel" }),
+      ],
       products
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.article_attributes.filter((a) => a.article_number === "98010")).toHaveLength(1);
+    expect(
+      result.value.article_attributes.filter(
+        (a) => a.article_number === "98010"
+      )
+    ).toHaveLength(1);
     expect(result.value.articles[0].note).toBe("Höhe 9 mm");
   });
 
   it("moves non-integer packaging to the note", () => {
     const result = mapArticles(
-      [article({ vpe1: "wird passend verpackt …", vpe2: "  " }), article({ product_id: 9003, number: "98030", name: "Testschlüssel" })],
+      [
+        article({ vpe1: "wird passend verpackt …", vpe2: "  " }),
+        article({ product_id: 9003, number: "98030", name: "Testschlüssel" }),
+      ],
       products
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.articles[0].note).toBe("wird passend verpackt …");
-    expect(result.value.findings).toContainEqual({ kind: "packaging_note", articleNumber: "98010", text: "wird passend verpackt …" });
-    expect(result.value.article_packaging.filter((p) => p.article_number === "98010")).toEqual([]);
+    expect(result.value.findings).toContainEqual({
+      kind: "packaging_note",
+      articleNumber: "98010",
+      text: "wird passend verpackt …",
+    });
+    expect(
+      result.value.article_packaging.filter((p) => p.article_number === "98010")
+    ).toEqual([]);
   });
 
   it("gives a shared article one home product and accessory rows elsewhere", () => {
@@ -1508,9 +1731,9 @@ describe("mapArticles (FR-4, SC-4)", () => {
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.articles.filter((a) => a.article_number === "98010")).toEqual([
-      expect.objectContaining({ legacy_product_id: 9001 }),
-    ]);
+    expect(
+      result.value.articles.filter((a) => a.article_number === "98010")
+    ).toEqual([expect.objectContaining({ legacy_product_id: 9001 })]);
     expect(result.value.product_accessories).toEqual([
       { legacy_product_id: 9003, article_number: "98010", sort_order: 12000 },
     ]);
@@ -1526,7 +1749,10 @@ describe("mapArticles (FR-4, SC-4)", () => {
     const result = mapArticles([article({ product_id: 9009 })], products);
     expect(result).toEqual({
       ok: false,
-      error: { kind: "invalid_data", message: "article 98010 references unknown product 9009" },
+      error: {
+        kind: "invalid_data",
+        message: "article 98010 references unknown product 9009",
+      },
     });
   });
 
@@ -1539,8 +1765,21 @@ describe("mapArticles (FR-4, SC-4)", () => {
   });
 
   it("rejects a duplicate number within one product and a blank number", () => {
-    expect(mapArticles([article(), article(), article({ product_id: 9003, number: "98030" })], products).ok).toBe(false);
-    expect(mapArticles([article({ number: " " }), article({ product_id: 9003, number: "98030" })], products).ok).toBe(false);
+    expect(
+      mapArticles(
+        [article(), article(), article({ product_id: 9003, number: "98030" })],
+        products
+      ).ok
+    ).toBe(false);
+    expect(
+      mapArticles(
+        [
+          article({ number: " " }),
+          article({ product_id: 9003, number: "98030" }),
+        ],
+        products
+      ).ok
+    ).toBe(false);
   });
 });
 ```
@@ -1587,12 +1826,17 @@ export function mapArticles(
   const productById = new Map(products.map((p) => [p.legacy_product_id, p]));
   const groups = new Map<string, SnapshotArticle[]>();
   for (const a of input) {
-    if (a.number.trim() === "") return invalid(`article in product ${a.product_id} has no number`);
+    if (a.number.trim() === "")
+      return invalid(`article in product ${a.product_id} has no number`);
     if (!productById.has(a.product_id))
-      return invalid(`article ${a.number} references unknown product ${a.product_id}`);
+      return invalid(
+        `article ${a.number} references unknown product ${a.product_id}`
+      );
     const group = groups.get(a.number) ?? [];
     if (group.some((g) => g.product_id === a.product_id))
-      return invalid(`article ${a.number} appears twice in product ${a.product_id}`);
+      return invalid(
+        `article ${a.number} appears twice in product ${a.product_id}`
+      );
     group.push(a);
     groups.set(a.number, group);
   }
@@ -1607,10 +1851,16 @@ export function mapArticles(
   };
 
   for (const [number, group] of groups) {
-    const [home, ...others] = [...group].sort((a, b) => a.product_id - b.product_id);
+    const [home, ...others] = [...group].sort(
+      (a, b) => a.product_id - b.product_id
+    );
     if (home === undefined) continue;
     for (const o of others)
-      out.product_accessories.push({ legacy_product_id: o.product_id, article_number: number, sort_order: o.prio });
+      out.product_accessories.push({
+        legacy_product_id: o.product_id,
+        article_number: number,
+        sort_order: o.prio,
+      });
     if (others.length > 0)
       out.findings.push({
         kind: "shared_article",
@@ -1622,25 +1872,47 @@ export function mapArticles(
     const paragraphs: string[] = [];
     const notes: string[] = [];
     const usedKeys = new Set<string>();
-    for (const raw of [home.description1, home.description2, home.description3, home.description4]) {
+    for (const raw of [
+      home.description1,
+      home.description2,
+      home.description3,
+      home.description4,
+    ]) {
       const text = cleanText(raw);
       if (text === null) continue;
       out.fragments.total += 1;
       const parsed = parseFragment(text);
-      if (parsed.kind === "typed" && parsed.values.every((v) => !usedKeys.has(v.key))) {
+      if (
+        parsed.kind === "typed" &&
+        parsed.values.every((v) => !usedKeys.has(v.key))
+      ) {
         out.fragments.typed += 1;
         for (const v of parsed.values) {
           usedKeys.add(v.key);
-          out.article_attributes.push({ article_number: number, key: v.key, value_decimal: v.value, value_text: null });
+          out.article_attributes.push({
+            article_number: number,
+            key: v.key,
+            value_decimal: v.value,
+            value_text: null,
+          });
         }
         if (parsed.note !== null) notes.push(parsed.note);
         if (parsed.partial && parsed.note !== null)
-          out.findings.push({ kind: "partial_attribute", articleNumber: number, text, remainder: parsed.note });
+          out.findings.push({
+            kind: "partial_attribute",
+            articleNumber: number,
+            text,
+            remainder: parsed.note,
+          });
       } else if (parsed.kind === "sentence") {
         paragraphs.push(parsed.text);
       } else {
         notes.push(text);
-        out.findings.push({ kind: "unparsed_attribute", articleNumber: number, text });
+        out.findings.push({
+          kind: "unparsed_attribute",
+          articleNumber: number,
+          text,
+        });
       }
     }
 
@@ -1652,10 +1924,18 @@ export function mapArticles(
       if (quantity > 0) {
         if (quantities.has(quantity)) return;
         quantities.add(quantity);
-        out.article_packaging.push({ article_number: number, quantity, sort_order: index });
+        out.article_packaging.push({
+          article_number: number,
+          quantity,
+          sort_order: index,
+        });
       } else {
         notes.push(text);
-        out.findings.push({ kind: "packaging_note", articleNumber: number, text });
+        out.findings.push({
+          kind: "packaging_note",
+          articleNumber: number,
+          text,
+        });
       }
     });
 
@@ -1673,7 +1953,8 @@ export function mapArticles(
 
   const withArticles = new Set(out.articles.map((a) => a.legacy_product_id));
   const empty = products.find((p) => !withArticles.has(p.legacy_product_id));
-  if (empty !== undefined) return invalid(`product ${empty.legacy_product_id} has no articles`);
+  if (empty !== undefined)
+    return invalid(`product ${empty.legacy_product_id} has no articles`);
   return ok(out);
 }
 ```
@@ -1695,10 +1976,12 @@ git commit -m "feat(import): article mapping with packaging and shared articles"
 ### Task 5: Colour mapping (FR-6)
 
 **Files:**
+
 - Create: `scripts/import/map/colors.mts`
 - Test: `tests/import/colors.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1/2 types, `cleanText`
 - Produces:
   - `COLOR_FAMILIES: Readonly<Record<string, string>>` — `0` natur, `1` weiß, `2` schwarz, `3` braun, `4` grau, `5` grün, `6` blau, `8` rot, `9` orange, `10` beige
@@ -1706,6 +1989,7 @@ git commit -m "feat(import): article mapping with packaging and shared articles"
   - `mapColors(colors: readonly SnapshotColor[], links: readonly SnapshotProductColor[], productIds: ReadonlySet<number>): Result<{ colors: PayloadColor[]; product_colors: PayloadProductColor[]; findings: Finding[] }, MapError>`
 
 Rules:
+
 - Only colours referenced by a link are imported. Unused colours are never validated.
 - Hex is upper-cased; it must match `^#[0-9A-F]{6}$` (else invalid).
 - Family from the part of `color_id` before the first `-`; unknown prefix → invalid (`colour 7-1 has unknown family prefix "7"`).
@@ -1728,30 +2012,67 @@ const ids = new Set([9001, 9002]);
 
 describe("splitColorName (FR-6, SC-6)", () => {
   it("splits name and RAL reference", () => {
-    expect(splitColorName("testweiß (ähnlich RAL 9016)")).toEqual({ name: "testweiß", ral_reference: "ähnlich RAL 9016" });
+    expect(splitColorName("testweiß (ähnlich RAL 9016)")).toEqual({
+      name: "testweiß",
+      ral_reference: "ähnlich RAL 9016",
+    });
   });
   it("keeps names without a reference", () => {
-    expect(splitColorName(" test blau Vach ")).toEqual({ name: "test blau Vach", ral_reference: null });
+    expect(splitColorName(" test blau Vach ")).toEqual({
+      name: "test blau Vach",
+      ral_reference: null,
+    });
   });
 });
 
 describe("mapColors (FR-6, SC-6)", () => {
   it("maps used colours with family and default", () => {
     const result = mapColors(
-      [color(), color({ color_id: "3-1", name: "testbraun", code: "#5b3a29" }), color({ color_id: "6-9", name: "ungenutzt", code: "kaputt" })],
-      [link({ color_id: "3-1", color_suffix: 1 }), link({ color_id: "1-1", color_suffix: 0 })],
+      [
+        color(),
+        color({ color_id: "3-1", name: "testbraun", code: "#5b3a29" }),
+        color({ color_id: "6-9", name: "ungenutzt", code: "kaputt" }),
+      ],
+      [
+        link({ color_id: "3-1", color_suffix: 1 }),
+        link({ color_id: "1-1", color_suffix: 0 }),
+      ],
       ids
     );
     expect(result).toEqual({
       ok: true,
       value: {
         colors: [
-          { name: "testbraun", ral_reference: null, hex_code: "#5B3A29", family: "braun" },
-          { name: "testweiß", ral_reference: "ähnlich RAL 9016", hex_code: "#F2F5F3", family: "weiß" },
+          {
+            name: "testbraun",
+            ral_reference: null,
+            hex_code: "#5B3A29",
+            family: "braun",
+          },
+          {
+            name: "testweiß",
+            ral_reference: "ähnlich RAL 9016",
+            hex_code: "#F2F5F3",
+            family: "weiß",
+          },
         ],
         product_colors: [
-          { legacy_product_id: 9001, color_name: "testweiß", color_hex: "#F2F5F3", suffix: "0", is_default: true, sort_order: 0 },
-          { legacy_product_id: 9001, color_name: "testbraun", color_hex: "#5B3A29", suffix: "1", is_default: false, sort_order: 1 },
+          {
+            legacy_product_id: 9001,
+            color_name: "testweiß",
+            color_hex: "#F2F5F3",
+            suffix: "0",
+            is_default: true,
+            sort_order: 0,
+          },
+          {
+            legacy_product_id: 9001,
+            color_name: "testbraun",
+            color_hex: "#5B3A29",
+            suffix: "1",
+            is_default: false,
+            sort_order: 1,
+          },
         ],
         findings: [],
       },
@@ -1761,35 +2082,72 @@ describe("mapColors (FR-6, SC-6)", () => {
   it("picks the lowest suffix when there is no suffix 0 and reports it", () => {
     const result = mapColors(
       [color(), color({ color_id: "3-1", name: "testbraun", code: "#5B3A29" })],
-      [link({ product_id: 9002, color_id: "3-1", color_suffix: 3 }), link({ product_id: 9002, color_id: "1-1", color_suffix: 1 })],
+      [
+        link({ product_id: 9002, color_id: "3-1", color_suffix: 3 }),
+        link({ product_id: 9002, color_id: "1-1", color_suffix: 1 }),
+      ],
       ids
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.value.product_colors.find((c) => c.is_default)).toMatchObject({ color_name: "testweiß", suffix: "1" });
-    expect(result.value.findings).toEqual([{ kind: "default_color_by_rule", legacyProductId: 9002, suffix: "1" }]);
+    expect(result.value.product_colors.find((c) => c.is_default)).toMatchObject(
+      { color_name: "testweiß", suffix: "1" }
+    );
+    expect(result.value.findings).toEqual([
+      { kind: "default_color_by_rule", legacyProductId: 9002, suffix: "1" },
+    ]);
   });
 
   it("merges exact duplicates and reports them", () => {
     const result = mapColors(
-      [color({ color_id: "4-1", name: "testgrau", code: "#8A8D8F" }), color({ color_id: "4-2", name: "testgrau", code: "#8a8d8f" })],
-      [link({ color_id: "4-1", color_suffix: 0 }), link({ color_id: "4-2", color_suffix: 2 }), link({ product_id: 9002, color_id: "4-2", color_suffix: 0 })],
+      [
+        color({ color_id: "4-1", name: "testgrau", code: "#8A8D8F" }),
+        color({ color_id: "4-2", name: "testgrau", code: "#8a8d8f" }),
+      ],
+      [
+        link({ color_id: "4-1", color_suffix: 0 }),
+        link({ color_id: "4-2", color_suffix: 2 }),
+        link({ product_id: 9002, color_id: "4-2", color_suffix: 0 }),
+      ],
       ids
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.colors).toHaveLength(1);
-    expect(result.value.product_colors.filter((c) => c.legacy_product_id === 9001)).toEqual([
-      { legacy_product_id: 9001, color_name: "testgrau", color_hex: "#8A8D8F", suffix: "0", is_default: true, sort_order: 0 },
+    expect(
+      result.value.product_colors.filter((c) => c.legacy_product_id === 9001)
+    ).toEqual([
+      {
+        legacy_product_id: 9001,
+        color_name: "testgrau",
+        color_hex: "#8A8D8F",
+        suffix: "0",
+        is_default: true,
+        sort_order: 0,
+      },
     ]);
-    expect(result.value.findings).toContainEqual({ kind: "merged_color", name: "testgrau", hex: "#8A8D8F", legacyColorIds: ["4-1", "4-2"] });
+    expect(result.value.findings).toContainEqual({
+      kind: "merged_color",
+      name: "testgrau",
+      hex: "#8A8D8F",
+      legacyColorIds: ["4-1", "4-2"],
+    });
   });
 
   it("rejects an unknown family prefix, a bad hex and unknown references", () => {
-    expect(mapColors([color({ color_id: "7-1" })], [link({ color_id: "7-1" })], ids).ok).toBe(false);
-    expect(mapColors([color({ code: "F2F5F3" })], [link()], ids).ok).toBe(false);
-    expect(mapColors([color()], [link({ color_id: "1-9" })], ids).ok).toBe(false);
-    expect(mapColors([color()], [link({ product_id: 9999 })], ids).ok).toBe(false);
+    expect(
+      mapColors([color({ color_id: "7-1" })], [link({ color_id: "7-1" })], ids)
+        .ok
+    ).toBe(false);
+    expect(mapColors([color({ code: "F2F5F3" })], [link()], ids).ok).toBe(
+      false
+    );
+    expect(mapColors([color()], [link({ color_id: "1-9" })], ids).ok).toBe(
+      false
+    );
+    expect(mapColors([color()], [link({ product_id: 9999 })], ids).ok).toBe(
+      false
+    );
   });
 });
 ```
@@ -1827,51 +2185,91 @@ export const COLOR_FAMILIES: Readonly<Record<string, string>> = {
 const invalid = (message: string): Result<never, MapError> =>
   err({ kind: "invalid_data", message });
 
-export function splitColorName(raw: string): { name: string; ral_reference: string | null } {
+export function splitColorName(raw: string): {
+  name: string;
+  ral_reference: string | null;
+} {
   const text = cleanText(raw) ?? "";
   const match = /^(.*?)\s*\((ähnlich RAL [^)]+)\)$/.exec(text);
-  return match ? { name: match[1], ral_reference: match[2] } : { name: text, ral_reference: null };
+  return match
+    ? { name: match[1], ral_reference: match[2] }
+    : { name: text, ral_reference: null };
 }
 
 export function mapColors(
   colors: readonly SnapshotColor[],
   links: readonly SnapshotProductColor[],
   productIds: ReadonlySet<number>
-): Result<{ colors: PayloadColor[]; product_colors: PayloadProductColor[]; findings: Finding[] }, MapError> {
+): Result<
+  {
+    colors: PayloadColor[];
+    product_colors: PayloadProductColor[];
+    findings: Finding[];
+  },
+  MapError
+> {
   const legacy = new Map(colors.map((c) => [c.color_id, c]));
-  const canonical = new Map<string, PayloadColor & { legacyIds: Set<string> }>();
+  const canonical = new Map<
+    string,
+    PayloadColor & { legacyIds: Set<string> }
+  >();
   const keyOf = new Map<string, string>();
 
   for (const l of links) {
-    if (!productIds.has(l.product_id)) return invalid(`colour link references unknown product ${l.product_id}`);
+    if (!productIds.has(l.product_id))
+      return invalid(`colour link references unknown product ${l.product_id}`);
     const source = legacy.get(l.color_id);
-    if (source === undefined) return invalid(`product ${l.product_id} references unknown colour ${l.color_id}`);
+    if (source === undefined)
+      return invalid(
+        `product ${l.product_id} references unknown colour ${l.color_id}`
+      );
     if (keyOf.has(l.color_id)) continue;
     const prefix = l.color_id.split("-")[0] ?? "";
     const family = COLOR_FAMILIES[prefix];
-    if (family === undefined) return invalid(`colour ${l.color_id} has unknown family prefix "${prefix}"`);
+    if (family === undefined)
+      return invalid(
+        `colour ${l.color_id} has unknown family prefix "${prefix}"`
+      );
     const hex = source.code.trim().toUpperCase();
-    if (!/^#[0-9A-F]{6}$/.test(hex)) return invalid(`colour ${l.color_id} has invalid hex code "${source.code}"`);
+    if (!/^#[0-9A-F]{6}$/.test(hex))
+      return invalid(
+        `colour ${l.color_id} has invalid hex code "${source.code}"`
+      );
     const { name, ral_reference } = splitColorName(source.name);
     if (name === "") return invalid(`colour ${l.color_id} has no name`);
     const key = `${name}|${hex}`;
     keyOf.set(l.color_id, key);
     const existing = canonical.get(key);
     if (existing) existing.legacyIds.add(l.color_id);
-    else canonical.set(key, { name, ral_reference, hex_code: hex, family, legacyIds: new Set([l.color_id]) });
+    else
+      canonical.set(key, {
+        name,
+        ral_reference,
+        hex_code: hex,
+        family,
+        legacyIds: new Set([l.color_id]),
+      });
   }
 
   const findings: Finding[] = [];
   for (const c of canonical.values())
     if (c.legacyIds.size > 1)
-      findings.push({ kind: "merged_color", name: c.name, hex: c.hex_code, legacyColorIds: [...c.legacyIds].sort() });
+      findings.push({
+        kind: "merged_color",
+        name: c.name,
+        hex: c.hex_code,
+        legacyColorIds: [...c.legacyIds].sort(),
+      });
 
   const byProduct = new Map<number, SnapshotProductColor[]>();
-  for (const l of links) byProduct.set(l.product_id, [...(byProduct.get(l.product_id) ?? []), l]);
+  for (const l of links)
+    byProduct.set(l.product_id, [...(byProduct.get(l.product_id) ?? []), l]);
 
   const product_colors: PayloadProductColor[] = [];
   for (const [productId, productLinks] of byProduct) {
-    const sorted = [...productLinks].sort((a, b) => a.color_suffix - b.color_suffix);
+    const sorted = [...productLinks].sort(
+      (a, b) => a.color_suffix - b.color_suffix
+    );
     const seen = new Set<string>();
     const rows = sorted.filter((l) => {
       const key = keyOf.get(l.color_id) ?? l.color_id;
@@ -1879,7 +2277,10 @@ export function mapColors(
       seen.add(key);
       return true;
     });
-    const defaultIndex = Math.max(0, rows.findIndex((l) => l.color_suffix === 0));
+    const defaultIndex = Math.max(
+      0,
+      rows.findIndex((l) => l.color_suffix === 0)
+    );
     rows.forEach((l, index) => {
       const c = canonical.get(keyOf.get(l.color_id) ?? "");
       if (c === undefined) return;
@@ -1894,12 +2295,20 @@ export function mapColors(
     });
     const chosen = rows[defaultIndex];
     if (chosen !== undefined && chosen.color_suffix !== 0)
-      findings.push({ kind: "default_color_by_rule", legacyProductId: productId, suffix: String(chosen.color_suffix) });
+      findings.push({
+        kind: "default_color_by_rule",
+        legacyProductId: productId,
+        suffix: String(chosen.color_suffix),
+      });
   }
 
   const payloadColors = [...canonical.values()]
     .map(({ legacyIds: _ids, ...c }) => c)
-    .sort((a, b) => a.name.localeCompare(b.name, "de") || a.hex_code.localeCompare(b.hex_code));
+    .sort(
+      (a, b) =>
+        a.name.localeCompare(b.name, "de") ||
+        a.hex_code.localeCompare(b.hex_code)
+    );
   return ok({ colors: payloadColors, product_colors, findings });
 }
 ```
@@ -1923,10 +2332,12 @@ git commit -m "feat(import): colour mapping with explicit defaults"
 ### Task 6: Media mapping (FR-7 part 1)
 
 **Files:**
+
 - Create: `scripts/import/map/media.mts`
 - Test: `tests/import/media.test.ts`
 
 **Interfaces:**
+
 - Consumes: `slugify`, `cleanText` (Task 1); `PayloadProduct`, `PayloadProductMedia`, `Finding`, `MapError` (Task 2)
 - Produces:
   - `type MediaDraft = { storage_path: string; alt_text: string; url: string; content_type: string; legacy_product_id: number }`
@@ -1935,6 +2346,7 @@ git commit -m "feat(import): colour mapping with explicit defaults"
   - `mapMedia(products: readonly SnapshotProduct[], rows: readonly PayloadProduct[], baseUrl: string): Result<{ media: MediaDraft[]; product_media: PayloadProductMedia[]; findings: Finding[] }, MapError>`
 
 Rules:
+
 - Absolute `http(s)` references are used as they are (via `new URL(...).href`). Relative references: trim, strip leading `/`, replace spaces with `_`, resolve against `baseUrl` (a trailing `/` is added if missing). `new URL` percent-encodes umlauts.
 - File name: last path segment, URL-decoded if possible, extension lower-cased (`webp`, `png`, `jpg`, `jpeg` only), base name `slugify`d.
 - Path: `products/{category_slug}/{slug}/{file}`.
@@ -1949,7 +2361,11 @@ Rules:
 ```ts
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { mapMedia, normaliseFileName, resolveImageUrl } from "../../scripts/import/map/media.mts";
+import {
+  mapMedia,
+  normaliseFileName,
+  resolveImageUrl,
+} from "../../scripts/import/map/media.mts";
 import type { PayloadProduct } from "../../scripts/import/payload.mts";
 import { product } from "./factory";
 
@@ -1978,14 +2394,20 @@ describe("resolveImageUrl (FR-7, SC-7)", () => {
     );
   });
   it("keeps absolute references", () => {
-    expect(resolveImageUrl("https://other.example.test/x/a.webp", base)).toBe("https://other.example.test/x/a.webp");
+    expect(resolveImageUrl("https://other.example.test/x/a.webp", base)).toBe(
+      "https://other.example.test/x/a.webp"
+    );
   });
 });
 
 describe("normaliseFileName (FR-7, SC-7)", () => {
   it("produces ASCII names without spaces", () => {
-    expect(normaliseFileName("/a_98020 Testhalter.webp")).toBe("a-98020-testhalter.webp");
-    expect(normaliseFileName("https://x.test/b1_98030-T%C3%BCrpuffer.WEBP")).toBe("b1-98030-tuerpuffer.webp");
+    expect(normaliseFileName("/a_98020 Testhalter.webp")).toBe(
+      "a-98020-testhalter.webp"
+    );
+    expect(
+      normaliseFileName("https://x.test/b1_98030-T%C3%BCrpuffer.WEBP")
+    ).toBe("b1-98030-tuerpuffer.webp");
   });
   it("rejects unsupported or empty names", () => {
     expect(normaliseFileName("/datei.gif")).toBeNull();
@@ -1997,7 +2419,12 @@ describe("normaliseFileName (FR-7, SC-7)", () => {
 describe("mapMedia (FR-7, SC-7)", () => {
   it("assigns roles, paths and alt texts", () => {
     const result = mapMedia(
-      [product({ imageUrls_small: ["/a_98010-Testkeil.webp", "/a_98010-Extra.webp"], imageUrls_big: ["/b1_98010-Testkeil.webp", "/b2_98010-Testkeil.webp"] })],
+      [
+        product({
+          imageUrls_small: ["/a_98010-Testkeil.webp", "/a_98010-Extra.webp"],
+          imageUrls_big: ["/b1_98010-Testkeil.webp", "/b2_98010-Testkeil.webp"],
+        }),
+      ],
       [row],
       base
     );
@@ -2005,9 +2432,24 @@ describe("mapMedia (FR-7, SC-7)", () => {
     if (!result.ok) return;
     const dir = "products/moebel/testkeil-mit-daempfung";
     expect(result.value.product_media).toEqual([
-      { legacy_product_id: 9001, storage_path: `${dir}/a-98010-testkeil.webp`, role: "thumbnail", sort_order: 0 },
-      { legacy_product_id: 9001, storage_path: `${dir}/b1-98010-testkeil.webp`, role: "gallery", sort_order: 1 },
-      { legacy_product_id: 9001, storage_path: `${dir}/b2-98010-testkeil.webp`, role: "gallery", sort_order: 2 },
+      {
+        legacy_product_id: 9001,
+        storage_path: `${dir}/a-98010-testkeil.webp`,
+        role: "thumbnail",
+        sort_order: 0,
+      },
+      {
+        legacy_product_id: 9001,
+        storage_path: `${dir}/b1-98010-testkeil.webp`,
+        role: "gallery",
+        sort_order: 1,
+      },
+      {
+        legacy_product_id: 9001,
+        storage_path: `${dir}/b2-98010-testkeil.webp`,
+        role: "gallery",
+        sort_order: 2,
+      },
     ]);
     expect(result.value.media[0]).toEqual({
       storage_path: `${dir}/a-98010-testkeil.webp`,
@@ -2016,28 +2458,58 @@ describe("mapMedia (FR-7, SC-7)", () => {
       content_type: "image/webp",
       legacy_product_id: 9001,
     });
-    expect(result.value.findings).toContainEqual({ kind: "skipped_image", legacyProductId: 9001, reference: "/a_98010-Extra.webp" });
-    expect(result.value.findings.filter((f) => f.kind === "alt_text_review")).toHaveLength(3);
+    expect(result.value.findings).toContainEqual({
+      kind: "skipped_image",
+      legacyProductId: 9001,
+      reference: "/a_98010-Extra.webp",
+    });
+    expect(
+      result.value.findings.filter((f) => f.kind === "alt_text_review")
+    ).toHaveLength(3);
   });
 
   it("skips a repeated image within a product", () => {
-    const result = mapMedia([product({ imageUrls_small: ["/a.webp"], imageUrls_big: ["/a.webp", " "] })], [row], base);
+    const result = mapMedia(
+      [
+        product({
+          imageUrls_small: ["/a.webp"],
+          imageUrls_big: ["/a.webp", " "],
+        }),
+      ],
+      [row],
+      base
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.product_media).toHaveLength(1);
-    expect(result.value.findings).toContainEqual({ kind: "skipped_image", legacyProductId: 9001, reference: "/a.webp" });
+    expect(result.value.findings).toContainEqual({
+      kind: "skipped_image",
+      legacyProductId: 9001,
+      reference: "/a.webp",
+    });
   });
 
   it("handles products without images", () => {
-    const result = mapMedia([product({ imageUrls_small: [], imageUrls_big: [] })], [row], base);
+    const result = mapMedia(
+      [product({ imageUrls_small: [], imageUrls_big: [] })],
+      [row],
+      base
+    );
     expect(result.ok && result.value.media).toEqual([]);
   });
 
   it("rejects an unsupported reference", () => {
-    const result = mapMedia([product({ imageUrls_small: ["/datei.gif"] })], [row], base);
+    const result = mapMedia(
+      [product({ imageUrls_small: ["/datei.gif"] })],
+      [row],
+      base
+    );
     expect(result).toEqual({
       ok: false,
-      error: { kind: "invalid_data", message: 'product 9001: unsupported image reference "/datei.gif"' },
+      error: {
+        kind: "invalid_data",
+        message: 'product 9001: unsupported image reference "/datei.gif"',
+      },
     });
   });
 });
@@ -2104,7 +2576,14 @@ export function mapMedia(
   products: readonly SnapshotProduct[],
   rows: readonly PayloadProduct[],
   baseUrl: string
-): Result<{ media: MediaDraft[]; product_media: PayloadProductMedia[]; findings: Finding[] }, MapError> {
+): Result<
+  {
+    media: MediaDraft[];
+    product_media: PayloadProductMedia[];
+    findings: Finding[];
+  },
+  MapError
+> {
   const rowById = new Map(rows.map((r) => [r.legacy_product_id, r]));
   const media: MediaDraft[] = [];
   const product_media: PayloadProductMedia[] = [];
@@ -2112,24 +2591,41 @@ export function mapMedia(
 
   for (const p of products) {
     const row = rowById.get(p.product_id);
-    if (row === undefined) return err({ kind: "invalid_data", message: `media for unknown product ${p.product_id}` });
+    if (row === undefined)
+      return err({
+        kind: "invalid_data",
+        message: `media for unknown product ${p.product_id}`,
+      });
     const small = p.imageUrls_small.filter((r) => cleanText(r) !== null);
     const big = p.imageUrls_big.filter((r) => cleanText(r) !== null);
     for (const reference of small.slice(1))
-      findings.push({ kind: "skipped_image", legacyProductId: row.legacy_product_id, reference });
+      findings.push({
+        kind: "skipped_image",
+        legacyProductId: row.legacy_product_id,
+        reference,
+      });
 
     const entries = [
-      ...small.slice(0, 1).map((reference) => ({ reference, role: "thumbnail" as const })),
+      ...small
+        .slice(0, 1)
+        .map((reference) => ({ reference, role: "thumbnail" as const })),
       ...big.map((reference) => ({ reference, role: "gallery" as const })),
     ];
     const used = new Set<string>();
     for (const { reference, role } of entries) {
       const file = normaliseFileName(reference);
       if (file === null)
-        return err({ kind: "invalid_data", message: `product ${row.legacy_product_id}: unsupported image reference "${reference}"` });
+        return err({
+          kind: "invalid_data",
+          message: `product ${row.legacy_product_id}: unsupported image reference "${reference}"`,
+        });
       const storage_path = `products/${row.category_slug}/${row.slug}/${file}`;
       if (used.has(storage_path)) {
-        findings.push({ kind: "skipped_image", legacyProductId: row.legacy_product_id, reference });
+        findings.push({
+          kind: "skipped_image",
+          legacyProductId: row.legacy_product_id,
+          reference,
+        });
         continue;
       }
       used.add(storage_path);
@@ -2141,7 +2637,12 @@ export function mapMedia(
         content_type: CONTENT_TYPES[extension] ?? "application/octet-stream",
         legacy_product_id: row.legacy_product_id,
       });
-      product_media.push({ legacy_product_id: row.legacy_product_id, storage_path, role, sort_order: used.size - 1 });
+      product_media.push({
+        legacy_product_id: row.legacy_product_id,
+        storage_path,
+        role,
+        sort_order: used.size - 1,
+      });
       findings.push({ kind: "alt_text_review", storagePath: storage_path });
     }
   }
@@ -2168,10 +2669,12 @@ git commit -m "feat(import): media mapping with normalised storage paths"
 ### Task 7: `mapSnapshot` and `completePayload` (FR-3–FR-7 combined)
 
 **Files:**
+
 - Create: `scripts/import/map/index.mts`
 - Test: `tests/import/map-snapshot.test.ts`
 
 **Interfaces:**
+
 - Consumes: Tasks 2–6
 - Produces:
   - `type CatalogStats = { products: number; articles: number; accessories: number; colors: number; materials: number; attributes: number; images: number; fragments: number; typedFragments: number }`
@@ -2181,6 +2684,7 @@ git commit -m "feat(import): media mapping with normalised storage paths"
   - `completePayload(mapped: MappedCatalog, dimensions: ReadonlyMap<string, Dimensions>): Result<ImportPayload, MapError>` — `invalid_data` if a media path has no dimensions
 
 Rules:
+
 - `categories` = all `CATEGORIES`.
 - `materials` = `MATERIALS` entries whose code is used by a product (sorted by code).
 - `attributes` = `ATTRIBUTES` entries used by at least one article attribute (in `ATTRIBUTES` order).
@@ -2195,7 +2699,10 @@ Rules:
 ```ts
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { completePayload, mapSnapshot } from "../../scripts/import/map/index.mts";
+import {
+  completePayload,
+  mapSnapshot,
+} from "../../scripts/import/map/index.mts";
 import { article, color, link, product, snapshot } from "./factory";
 
 const options = { imageBaseUrl: "https://cdn.example.test/base" };
@@ -2204,8 +2711,25 @@ describe("mapSnapshot", () => {
   it("combines all mappings into one payload", () => {
     const result = mapSnapshot(
       snapshot({
-        products: [product(), product({ product_id: 9002, category: "wasser", name: "Testsiphon", material: "TPE", imageUrls_small: [], imageUrls_big: [] })],
-        articles: [article(), article({ product_id: 9002, number: "98020", description1: "für Schlauch Ø 10 mm" })],
+        products: [
+          product(),
+          product({
+            product_id: 9002,
+            category: "wasser",
+            name: "Testsiphon",
+            material: "TPE",
+            imageUrls_small: [],
+            imageUrls_big: [],
+          }),
+        ],
+        articles: [
+          article(),
+          article({
+            product_id: 9002,
+            number: "98020",
+            description1: "für Schlauch Ø 10 mm",
+          }),
+        ],
         colors: [color()],
         product_colors_connection: [link()],
       }),
@@ -2214,22 +2738,45 @@ describe("mapSnapshot", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const { payload, stats, media } = result.value;
-    expect(payload.categories.map((c) => c.slug)).toEqual(["moebel", "halterung", "wasser", "lueftung", "elektro"]);
+    expect(payload.categories.map((c) => c.slug)).toEqual([
+      "moebel",
+      "halterung",
+      "wasser",
+      "lueftung",
+      "elektro",
+    ]);
     expect(payload.materials.map((m) => m.code)).toEqual(["PA-6", "TPE"]);
-    expect(payload.attributes.map((a) => a.key)).toEqual(["height", "hose_diameter"]);
+    expect(payload.attributes.map((a) => a.key)).toEqual([
+      "height",
+      "hose_diameter",
+    ]);
     expect(payload.category_attributes).toEqual([
       { category_slug: "moebel", attribute_key: "height", sort_order: 10 },
-      { category_slug: "wasser", attribute_key: "hose_diameter", sort_order: 70 },
+      {
+        category_slug: "wasser",
+        attribute_key: "hose_diameter",
+        sort_order: 70,
+      },
     ]);
     expect(media).toHaveLength(2);
     expect(stats).toEqual({
-      products: 2, articles: 2, accessories: 0, colors: 1, materials: 2, attributes: 2,
-      images: 2, fragments: 2, typedFragments: 2,
+      products: 2,
+      articles: 2,
+      accessories: 0,
+      colors: 1,
+      materials: 2,
+      attributes: 2,
+      images: 2,
+      fragments: 2,
+      typedFragments: 2,
     });
   });
 
   it("passes mapping errors through", () => {
-    const result = mapSnapshot(snapshot({ articles: [article({ product_id: 9009 })] }), options);
+    const result = mapSnapshot(
+      snapshot({ articles: [article({ product_id: 9009 })] }),
+      options
+    );
     expect(result.ok).toBe(false);
   });
 });
@@ -2239,10 +2786,17 @@ describe("completePayload", () => {
     const mapped = mapSnapshot(snapshot(), options);
     expect(mapped.ok).toBe(true);
     if (!mapped.ok) return;
-    const dims = new Map(mapped.value.media.map((m) => [m.storage_path, { width: 40, height: 30 }]));
+    const dims = new Map(
+      mapped.value.media.map((m) => [m.storage_path, { width: 40, height: 30 }])
+    );
     const result = completePayload(mapped.value, dims);
     expect(result.ok && result.value.media).toEqual(
-      mapped.value.media.map((m) => ({ storage_path: m.storage_path, width: 40, height: 30, alt_text: m.alt_text }))
+      mapped.value.media.map((m) => ({
+        storage_path: m.storage_path,
+        width: 40,
+        height: 30,
+        alt_text: m.alt_text,
+      }))
     );
   });
 
@@ -2267,7 +2821,11 @@ Expected: FAIL — module not found.
 ```ts
 import { CATEGORIES } from "../categories.mts";
 import type { Finding, MapError } from "../findings.mts";
-import type { ImportPayload, PayloadCategoryAttribute, PayloadMedia } from "../payload.mts";
+import type {
+  ImportPayload,
+  PayloadCategoryAttribute,
+  PayloadMedia,
+} from "../payload.mts";
 import { err, ok, type Result } from "../result.mts";
 import type { Snapshot } from "../snapshot.mts";
 import { mapArticles } from "./articles.mts";
@@ -2314,13 +2872,21 @@ export function mapSnapshot(
   const media = mapMedia(snapshot.products, rows, options.imageBaseUrl);
   if (!media.ok) return media;
 
-  const usedCodes = new Set(rows.map((p) => p.material_code).filter((c): c is string => c !== null));
-  const materials = MATERIALS.filter((m) => usedCodes.has(m.code)).sort((a, b) => a.code.localeCompare(b.code));
+  const usedCodes = new Set(
+    rows.map((p) => p.material_code).filter((c): c is string => c !== null)
+  );
+  const materials = MATERIALS.filter((m) => usedCodes.has(m.code)).sort(
+    (a, b) => a.code.localeCompare(b.code)
+  );
   const usedKeys = new Set(articles.value.article_attributes.map((a) => a.key));
   const attributes = ATTRIBUTES.filter((a) => usedKeys.has(a.key));
 
-  const categoryOf = new Map(rows.map((p) => [p.legacy_product_id, p.category_slug]));
-  const productOf = new Map(articles.value.articles.map((a) => [a.article_number, a.legacy_product_id]));
+  const categoryOf = new Map(
+    rows.map((p) => [p.legacy_product_id, p.category_slug])
+  );
+  const productOf = new Map(
+    articles.value.articles.map((a) => [a.article_number, a.legacy_product_id])
+  );
   const sortOf = new Map(ATTRIBUTES.map((a) => [a.key, a.sort_order]));
   const pairs = new Map<string, PayloadCategoryAttribute>();
   for (const value of articles.value.article_attributes) {
@@ -2333,7 +2899,9 @@ export function mapSnapshot(
     });
   }
   const category_attributes = [...pairs.values()].sort(
-    (a, b) => a.category_slug.localeCompare(b.category_slug) || a.sort_order - b.sort_order
+    (a, b) =>
+      a.category_slug.localeCompare(b.category_slug) ||
+      a.sort_order - b.sort_order
   );
 
   return ok({
@@ -2352,7 +2920,12 @@ export function mapSnapshot(
       product_accessories: articles.value.product_accessories,
     },
     media: media.value.media,
-    findings: [...products.value.findings, ...articles.value.findings, ...colors.value.findings, ...media.value.findings],
+    findings: [
+      ...products.value.findings,
+      ...articles.value.findings,
+      ...colors.value.findings,
+      ...media.value.findings,
+    ],
     stats: {
       products: rows.length,
       articles: articles.value.articles.length,
@@ -2374,8 +2947,17 @@ export function completePayload(
   const media: PayloadMedia[] = [];
   for (const m of mapped.media) {
     const size = dimensions.get(m.storage_path);
-    if (size === undefined) return err({ kind: "invalid_data", message: `no dimensions for ${m.storage_path}` });
-    media.push({ storage_path: m.storage_path, width: size.width, height: size.height, alt_text: m.alt_text });
+    if (size === undefined)
+      return err({
+        kind: "invalid_data",
+        message: `no dimensions for ${m.storage_path}`,
+      });
+    media.push({
+      storage_path: m.storage_path,
+      width: size.width,
+      height: size.height,
+      alt_text: m.alt_text,
+    });
   }
   return ok({ ...mapped.payload, media });
 }
@@ -2400,10 +2982,12 @@ git commit -m "feat(import): combine mappings into the import payload"
 ### Task 8: Import report (FR-11)
 
 **Files:**
+
 - Create: `scripts/import/report.mts`
 - Test: `tests/import/report.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Finding` (Task 2), `CatalogStats` (Task 7)
 - Produces:
   - `type ReportInput = { generatedAt: Date; mode: "dry-run" | "import"; outcome: string; stats: CatalogStats | null; findings: readonly Finding[]; result: Readonly<Record<string, unknown>> | null }`
@@ -2453,13 +3037,14 @@ Format (exact headings, sections in this order, empty sections omitted):
 ```
 
 Line formats (one bullet per finding; text values in backticks):
+
 - failed_image: ``- `<storagePath>` ← <url>: <reason>``
 - unparsed_attribute: ``- <articleNumber>: `<text>` ``
 - partial_attribute: ``- <articleNumber>: `<text>` → note `<remainder>` ``
 - material_fallback: ``- product <id>: `<text>` ``
 - default_color_by_rule: ``- product <id>: suffix `<suffix>` ``
 - merged_color: ``- `<name>` <hex>: <ids joined by ", "> ``
-- shared_article: ``- <articleNumber>: home product <id>, accessory of <ids joined by ", "> ``
+- shared_article: `- <articleNumber>: home product <id>, accessory of <ids joined by ", "> `
 - slug_collision: ``- product <id>: `<slug>` (name + subtitle | name + legacy id)``
 - skipped_image: ``- product <id>: `<reference>` ``
 - packaging_note: ``- <articleNumber>: `<text>` ``
@@ -2478,20 +3063,63 @@ import type { Finding } from "../../scripts/import/findings.mts";
 import { renderReport } from "../../scripts/import/report.mts";
 
 const all: Finding[] = [
-  { kind: "failed_image", url: "https://cdn.test/a.webp", storagePath: "products/m/p/a.webp", reason: "HTTP 404" },
+  {
+    kind: "failed_image",
+    url: "https://cdn.test/a.webp",
+    storagePath: "products/m/p/a.webp",
+    reason: "HTTP 404",
+  },
   { kind: "unparsed_attribute", articleNumber: "98020", text: "Ø 12 mm" },
-  { kind: "partial_attribute", articleNumber: "98011/80", text: "Höhe 9,5 mm abgesetzt", remainder: "abgesetzt" },
-  { kind: "material_fallback", legacyProductId: 9002, text: "A: PA-6 / B: ABS" },
+  {
+    kind: "partial_attribute",
+    articleNumber: "98011/80",
+    text: "Höhe 9,5 mm abgesetzt",
+    remainder: "abgesetzt",
+  },
+  {
+    kind: "material_fallback",
+    legacyProductId: 9002,
+    text: "A: PA-6 / B: ABS",
+  },
   { kind: "default_color_by_rule", legacyProductId: 9002, suffix: "1" },
-  { kind: "merged_color", name: "testgrau", hex: "#8A8D8F", legacyColorIds: ["4-1", "4-2"] },
-  { kind: "shared_article", articleNumber: "98010", homeLegacyProductId: 9001, accessoryLegacyProductIds: [9003] },
-  { kind: "slug_collision", legacyProductId: 9004, slug: "testtraeger-fuer-16-mm", level: "subtitle" },
+  {
+    kind: "merged_color",
+    name: "testgrau",
+    hex: "#8A8D8F",
+    legacyColorIds: ["4-1", "4-2"],
+  },
+  {
+    kind: "shared_article",
+    articleNumber: "98010",
+    homeLegacyProductId: 9001,
+    accessoryLegacyProductIds: [9003],
+  },
+  {
+    kind: "slug_collision",
+    legacyProductId: 9004,
+    slug: "testtraeger-fuer-16-mm",
+    level: "subtitle",
+  },
   { kind: "skipped_image", legacyProductId: 9001, reference: "/a_extra.webp" },
-  { kind: "packaging_note", articleNumber: "98020", text: "wird passend verpackt" },
+  {
+    kind: "packaging_note",
+    articleNumber: "98020",
+    text: "wird passend verpackt",
+  },
   { kind: "alt_text_review", storagePath: "products/m/p/a.webp" },
 ];
 
-const stats = { products: 3, articles: 4, accessories: 1, colors: 3, materials: 2, attributes: 1, images: 3, fragments: 5, typedFragments: 2 };
+const stats = {
+  products: 3,
+  articles: 4,
+  accessories: 1,
+  colors: 3,
+  materials: 2,
+  attributes: 1,
+  images: 3,
+  fragments: 5,
+  typedFragments: 2,
+};
 
 describe("renderReport (FR-11, SC-11)", () => {
   it("renders every finding type with its identifiers", () => {
@@ -2524,9 +3152,17 @@ describe("renderReport (FR-11, SC-11)", () => {
       expect(md).toContain(line);
     }
     const order = [
-      "## Failed image downloads", "## Unparsed attribute values", "## Partially parsed attribute values",
-      "## Material fallbacks", "## Default colour set by rule", "## Merged colours", "## Shared articles",
-      "## Slug collisions", "## Skipped images", "## Packaging notes", "## Alt texts to review",
+      "## Failed image downloads",
+      "## Unparsed attribute values",
+      "## Partially parsed attribute values",
+      "## Material fallbacks",
+      "## Default colour set by rule",
+      "## Merged colours",
+      "## Shared articles",
+      "## Slug collisions",
+      "## Skipped images",
+      "## Packaging notes",
+      "## Alt texts to review",
     ].map((heading) => md.indexOf(heading));
     expect(order.every((index) => index > 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
@@ -2538,7 +3174,9 @@ describe("renderReport (FR-11, SC-11)", () => {
       mode: "dry-run",
       outcome: "dry run — nothing written",
       stats: null,
-      findings: [{ kind: "unparsed_attribute", articleNumber: "98020", text: "Ø 12 mm" }],
+      findings: [
+        { kind: "unparsed_attribute", articleNumber: "98020", text: "Ø 12 mm" },
+      ],
       result: null,
     });
     expect(md).toContain("- Mode: dry run");
@@ -2625,27 +3263,45 @@ export function renderReport(input: ReportInput): string {
   if (input.stats !== null) {
     const s = input.stats;
     out.push(
-      "", "## Summary", "", "| Item | Count |", "| --- | --- |",
-      `| Products | ${s.products} |`, `| Articles | ${s.articles} |`,
-      `| Accessory links | ${s.accessories} |`, `| Colours | ${s.colors} |`,
-      `| Materials | ${s.materials} |`, `| Attributes | ${s.attributes} |`,
+      "",
+      "## Summary",
+      "",
+      "| Item | Count |",
+      "| --- | --- |",
+      `| Products | ${s.products} |`,
+      `| Articles | ${s.articles} |`,
+      `| Accessory links | ${s.accessories} |`,
+      `| Colours | ${s.colors} |`,
+      `| Materials | ${s.materials} |`,
+      `| Attributes | ${s.attributes} |`,
       `| Images | ${s.images} |`,
       `| Typed description fragments | ${s.typedFragments} of ${s.fragments} |`
     );
   }
   if (input.result !== null) {
     out.push("", "## Database result", "", "| Key | Value |", "| --- | --- |");
-    for (const [key, value] of Object.entries(input.result)) out.push(`| ${key} | ${String(value)} |`);
+    for (const [key, value] of Object.entries(input.result))
+      out.push(`| ${key} | ${String(value)} |`);
   }
   for (const section of SECTIONS) {
     const entries = input.findings.filter((f) => f.kind === section.kind);
     if (entries.length === 0) continue;
-    out.push("", `## ${section.title}`, "", `${entries.length} entries.`, "", ...entries.map(line));
+    out.push(
+      "",
+      `## ${section.title}`,
+      "",
+      `${entries.length} entries.`,
+      "",
+      ...entries.map(line)
+    );
   }
   return `${out.join("\n")}\n`;
 }
 
-export async function writeReport(path: string, input: ReportInput): Promise<void> {
+export async function writeReport(
+  path: string,
+  input: ReportInput
+): Promise<void> {
   await writeFile(path, renderReport(input), "utf8");
 }
 ```
@@ -2667,11 +3323,13 @@ git commit -m "feat(import): markdown import report"
 ### Task 9: Env schema and image pipeline (FR-1 env part, FR-7 I/O part)
 
 **Files:**
+
 - Create: `scripts/import/env.mts`, `scripts/import/images.mts`, `tests/import/png.ts`
 - Modify: `package.json` (add `image-size` as dev dependency via `pnpm add -D image-size@^2`)
 - Test: `tests/import/env.test.ts`, `tests/import/images.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Result` (Task 1), `MediaDraft` (Task 6)
 - Produces:
   - `type ImportEnv = { IMPORT_SUPABASE_URL: string; IMPORT_SUPABASE_SECRET_KEY: string; IMPORT_IMAGE_BASE_URL: string }`, `type RemoveEnv = Omit<ImportEnv, "IMPORT_IMAGE_BASE_URL">`
@@ -2716,7 +3374,9 @@ export function makePng(width: number, height: number): Buffer {
   header.writeUInt8(0, 9); // greyscale
   const row = Buffer.alloc(width + 1, 0x80);
   row[0] = 0; // filter: none
-  const pixels = deflateSync(Buffer.concat(Array.from({ length: height }, () => row)));
+  const pixels = deflateSync(
+    Buffer.concat(Array.from({ length: height }, () => row))
+  );
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", header),
@@ -2734,7 +3394,11 @@ import { describe, expect, it } from "vitest";
 import { parseImportEnv, parseRemoveEnv } from "../../scripts/import/env.mts";
 
 const jwt = (role: string) =>
-  ["e30", Buffer.from(JSON.stringify({ role })).toString("base64url"), "sig"].join(".");
+  [
+    "e30",
+    Buffer.from(JSON.stringify({ role })).toString("base64url"),
+    "sig",
+  ].join(".");
 const base = {
   IMPORT_SUPABASE_URL: "http://127.0.0.1:54321",
   IMPORT_SUPABASE_SECRET_KEY: "sb_secret_abc123",
@@ -2744,33 +3408,47 @@ const base = {
 describe("parseImportEnv (FR-1, SC-1)", () => {
   it("accepts a secret key and a legacy service_role JWT", () => {
     expect(parseImportEnv(base).ok).toBe(true);
-    expect(parseImportEnv({ ...base, IMPORT_SUPABASE_SECRET_KEY: jwt("service_role") }).ok).toBe(true);
+    expect(
+      parseImportEnv({
+        ...base,
+        IMPORT_SUPABASE_SECRET_KEY: jwt("service_role"),
+      }).ok
+    ).toBe(true);
   });
 
-  it.each([
-    ["sb_publishable_abc123"],
-    [jwt("anon")],
-    ["not-a-key"],
-  ])("rejects %s without echoing it", (key) => {
-    const result = parseImportEnv({ ...base, IMPORT_SUPABASE_SECRET_KEY: key });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error).toContain("IMPORT_SUPABASE_SECRET_KEY");
-      expect(result.error).not.toContain(key);
+  it.each([["sb_publishable_abc123"], [jwt("anon")], ["not-a-key"]])(
+    "rejects %s without echoing it",
+    (key) => {
+      const result = parseImportEnv({
+        ...base,
+        IMPORT_SUPABASE_SECRET_KEY: key,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error).toContain("IMPORT_SUPABASE_SECRET_KEY");
+        expect(result.error).not.toContain(key);
+      }
     }
-  });
+  );
 
   it("rejects missing or invalid URLs", () => {
-    const missing = parseImportEnv({ ...base, IMPORT_IMAGE_BASE_URL: undefined });
+    const missing = parseImportEnv({
+      ...base,
+      IMPORT_IMAGE_BASE_URL: undefined,
+    });
     expect(missing.ok).toBe(false);
     if (!missing.ok) expect(missing.error).toContain("IMPORT_IMAGE_BASE_URL");
-    expect(parseImportEnv({ ...base, IMPORT_SUPABASE_URL: "ftp://x" }).ok).toBe(false);
+    expect(parseImportEnv({ ...base, IMPORT_SUPABASE_URL: "ftp://x" }).ok).toBe(
+      false
+    );
   });
 });
 
 describe("parseRemoveEnv (FR-12)", () => {
   it("does not need the image base URL", () => {
-    expect(parseRemoveEnv({ ...base, IMPORT_IMAGE_BASE_URL: undefined }).ok).toBe(true);
+    expect(
+      parseRemoveEnv({ ...base, IMPORT_IMAGE_BASE_URL: undefined }).ok
+    ).toBe(true);
   });
 });
 ```
@@ -2795,7 +3473,8 @@ const job = (name: string) => ({
   contentType: "image/webp",
 });
 
-const fakeFetch = (routes: Record<string, Response | Error>): typeof fetch =>
+const fakeFetch =
+  (routes: Record<string, Response | Error>): typeof fetch =>
   async (input) => {
     const route = routes[String(input)];
     if (route instanceof Error) throw route;
@@ -2818,7 +3497,10 @@ function fakeBucket(files: string[]) {
         if (head !== undefined) children.set(head, rest.length > 0);
       }
       return {
-        data: [...children].map(([name, isFolder]) => ({ name, id: isFolder ? null : `id-${name}` })),
+        data: [...children].map(([name, isFolder]) => ({
+          name,
+          id: isFolder ? null : `id-${name}`,
+        })),
         error: null,
       };
     },
@@ -2840,22 +3522,34 @@ describe("fetchImages (FR-7, FR-8)", () => {
         "https://cdn.test/d.webp": new Error("socket hang up"),
       })
     );
-    expect(result.fetched.map((f) => [f.storagePath, f.width, f.height])).toEqual([
-      ["products/moebel/p/a.webp", 40, 30],
-    ]);
+    expect(
+      result.fetched.map((f) => [f.storagePath, f.width, f.height])
+    ).toEqual([["products/moebel/p/a.webp", 40, 30]]);
     expect(result.failures).toEqual([
-      { url: "https://cdn.test/b.webp", storagePath: "products/moebel/p/b.webp", reason: "HTTP 404" },
+      {
+        url: "https://cdn.test/b.webp",
+        storagePath: "products/moebel/p/b.webp",
+        reason: "HTTP 404",
+      },
       expect.objectContaining({ storagePath: "products/moebel/p/c.webp" }),
-      { url: "https://cdn.test/d.webp", storagePath: "products/moebel/p/d.webp", reason: "socket hang up" },
+      {
+        url: "https://cdn.test/d.webp",
+        storagePath: "products/moebel/p/d.webp",
+        reason: "socket hang up",
+      },
     ]);
   });
 
   it("gives up on a hanging request after the timeout", async () => {
     const hanging: typeof fetch = (_input, init) =>
       new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener("abort", () => reject(new Error("timed out")));
+        init?.signal?.addEventListener("abort", () =>
+          reject(new Error("timed out"))
+        );
       });
-    const result = await fetchImages([job("a.webp")], hanging, { timeoutMs: 50 });
+    const result = await fetchImages([job("a.webp")], hanging, {
+      timeoutMs: 50,
+    });
     expect(result.failures).toHaveLength(1);
   });
 });
@@ -2886,7 +3580,10 @@ describe("listObjects and deleteOrphans", () => {
 
   it("deletes only objects that are not kept", async () => {
     const { bucket, removed } = fakeBucket(files);
-    const result = await deleteOrphans(bucket, new Set(["products/moebel/p/a.webp", "products/wasser/q/b.webp"]));
+    const result = await deleteOrphans(
+      bucket,
+      new Set(["products/moebel/p/a.webp", "products/wasser/q/b.webp"])
+    );
     expect(result).toEqual({ ok: true, value: 1 });
     expect(removed).toEqual(["products/moebel/p/old.webp"]);
   });
@@ -2912,8 +3609,11 @@ function jwtRole(token: string): string | null {
   const parts = token.split(".");
   if (parts.length !== 3 || !/^[\w-]+$/.test(parts[1] ?? "")) return null;
   try {
-    const payload: unknown = JSON.parse(Buffer.from(parts[1] ?? "", "base64url").toString("utf8"));
-    if (typeof payload !== "object" || payload === null || !("role" in payload)) return null;
+    const payload: unknown = JSON.parse(
+      Buffer.from(parts[1] ?? "", "base64url").toString("utf8")
+    );
+    if (typeof payload !== "object" || payload === null || !("role" in payload))
+      return null;
     return typeof payload.role === "string" ? payload.role : null;
   } catch {
     return null;
@@ -2932,7 +3632,9 @@ const removeEnvSchema = z.object({
   IMPORT_SUPABASE_URL: httpUrl,
   IMPORT_SUPABASE_SECRET_KEY: secretKey,
 });
-const importEnvSchema = removeEnvSchema.extend({ IMPORT_IMAGE_BASE_URL: httpUrl });
+const importEnvSchema = removeEnvSchema.extend({
+  IMPORT_IMAGE_BASE_URL: httpUrl,
+});
 
 export type ImportEnv = z.infer<typeof importEnvSchema>;
 export type RemoveEnv = z.infer<typeof removeEnvSchema>;
@@ -2964,8 +3666,16 @@ Check: Zod's default message for an invalid string must not contain the input; t
 import { imageSize } from "image-size";
 import { err, ok, type Result } from "./result.mts";
 
-export type ImageJob = { url: string; storagePath: string; contentType: string };
-export type FetchedImage = ImageJob & { bytes: Uint8Array; width: number; height: number };
+export type ImageJob = {
+  url: string;
+  storagePath: string;
+  contentType: string;
+};
+export type FetchedImage = ImageJob & {
+  bytes: Uint8Array;
+  width: number;
+  height: number;
+};
 export type ImageFailure = { url: string; storagePath: string; reason: string };
 
 type StorageError = { message: string } | null;
@@ -2979,16 +3689,25 @@ export type StorageBucket = {
   list(
     prefix: string,
     options: { limit: number; offset: number }
-  ): Promise<{ data: { name: string; id: string | null }[] | null; error: StorageError }>;
+  ): Promise<{
+    data: { name: string; id: string | null }[] | null;
+    error: StorageError;
+  }>;
   remove(paths: string[]): Promise<{ error: StorageError }>;
 };
 
 const message = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
-async function fetchOne(job: ImageJob, fetchFn: typeof fetch, timeoutMs: number): Promise<Result<FetchedImage, string>> {
+async function fetchOne(
+  job: ImageJob,
+  fetchFn: typeof fetch,
+  timeoutMs: number
+): Promise<Result<FetchedImage, string>> {
   try {
-    const response = await fetchFn(job.url, { signal: AbortSignal.timeout(timeoutMs) });
+    const response = await fetchFn(job.url, {
+      signal: AbortSignal.timeout(timeoutMs),
+    });
     if (!response.ok) return err(`HTTP ${response.status}`);
     const bytes = new Uint8Array(await response.arrayBuffer());
     if (bytes.length === 0) return err("empty response");
@@ -3016,25 +3735,43 @@ export async function fetchImages(
       if (job === undefined) return;
       const result = await fetchOne(job, fetchFn, timeoutMs);
       if (result.ok) fetched.push(result.value);
-      else failures.push({ url: job.url, storagePath: job.storagePath, reason: result.error });
+      else
+        failures.push({
+          url: job.url,
+          storagePath: job.storagePath,
+          reason: result.error,
+        });
     }
   }
-  await Promise.all(Array.from({ length: Math.min(concurrency, jobs.length) }, worker));
-  const byPath = (a: { storagePath: string }, b: { storagePath: string }) => a.storagePath.localeCompare(b.storagePath);
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, jobs.length) }, worker)
+  );
+  const byPath = (a: { storagePath: string }, b: { storagePath: string }) =>
+    a.storagePath.localeCompare(b.storagePath);
   return { fetched: fetched.sort(byPath), failures: failures.sort(byPath) };
 }
 
-export async function uploadImages(bucket: StorageBucket, images: readonly FetchedImage[]): Promise<Result<number, string>> {
+export async function uploadImages(
+  bucket: StorageBucket,
+  images: readonly FetchedImage[]
+): Promise<Result<number, string>> {
   for (const image of images) {
-    const { error } = await bucket.upload(image.storagePath, image.bytes, { upsert: true, contentType: image.contentType });
-    if (error) return err(`upload of ${image.storagePath} failed: ${error.message}`);
+    const { error } = await bucket.upload(image.storagePath, image.bytes, {
+      upsert: true,
+      contentType: image.contentType,
+    });
+    if (error)
+      return err(`upload of ${image.storagePath} failed: ${error.message}`);
   }
   return ok(images.length);
 }
 
 const PAGE = 1000;
 
-export async function listObjects(bucket: StorageBucket, prefix: string): Promise<Result<string[], string>> {
+export async function listObjects(
+  bucket: StorageBucket,
+  prefix: string
+): Promise<Result<string[], string>> {
   const paths: string[] = [];
   for (let offset = 0; ; offset += PAGE) {
     const { data, error } = await bucket.list(prefix, { limit: PAGE, offset });
@@ -3055,7 +3792,10 @@ export async function listObjects(bucket: StorageBucket, prefix: string): Promis
   }
 }
 
-export async function deleteOrphans(bucket: StorageBucket, keep: ReadonlySet<string>): Promise<Result<number, string>> {
+export async function deleteOrphans(
+  bucket: StorageBucket,
+  keep: ReadonlySet<string>
+): Promise<Result<number, string>> {
   const listed = await listObjects(bucket, "products");
   if (!listed.ok) return listed;
   const orphans = listed.value.filter((path) => !keep.has(path));
@@ -3086,10 +3826,12 @@ git commit -m "feat(import): env schema and image pipeline"
 ### Task 10: Database functions `import_catalog` and `remove_catalog` (FR-9, FR-12 SQL part)
 
 **Files:**
+
 - Create: `supabase/migrations/20261009090000_import_functions.sql`, `supabase/tests/06_import.test.sql`
 - Modify: `lib/supabase/database.types.ts` (regenerated)
 
 **Interfaces:**
+
 - Consumes: payload shape from Task 2 (`ImportPayload`, field names = column names)
 - Produces:
   - `public.import_catalog(payload jsonb) returns jsonb` — keys `products`, `articles`, `accessories`, `colors`, `materials`, `attributes`, `media`, `deleted_products`, `deleted_articles`, `deleted_media`
@@ -3536,10 +4278,12 @@ git commit -m "feat(db): atomic import_catalog and remove_catalog functions"
 ### Task 11: Import CLI and integration tests (FR-1, FR-8, FR-10, SC-7 int)
 
 **Files:**
+
 - Create: `scripts/import/cli.mts`, `tests/integration/import-helpers.ts`, `tests/integration/import.test.ts`, `tests/fixtures/import/snapshot/{products,articles,colors,product_colors_connection}.json`
 - Modify: `package.json` (scripts), `vitest.integration.config.mts` (secret key env, hook timeout)
 
 **Interfaces:**
+
 - Consumes: everything above
 - Produces:
   - `type CliIo = { env: Record<string, string | undefined>; log: (line: string) => void; error: (line: string) => void; fetch?: typeof fetch; now?: () => Date }`
@@ -3616,11 +4360,45 @@ and set `hookTimeout: 120_000` (database reset in `afterAll`).
 
 ```json
 [
-  { "product_id": 9001, "number": "98010", "prio": 10000, "name": "Testkeil mit Dämpfung", "description1": "Höhe 8 mm", "vpe1": "500", "vpe2": "100" },
-  { "product_id": 9001, "number": "98011/80", "prio": 11000, "name": "Testkeil hoch", "description1": "Höhe 9,5 mm abgesetzt" },
-  { "product_id": 9002, "number": "98020", "prio": 10000, "name": "Testhalter", "description1": "Ø 12 mm", "vpe1": "wird passend verpackt" },
-  { "product_id": 9003, "number": "98030", "prio": 10000, "name": "Testsiphon", "description1": "für Schlauch Ø 10 mm", "description2": "Für die Montage wird ein Testwerkzeug benötigt." },
-  { "product_id": 9003, "number": "98010", "prio": 12000, "name": "Testkeil mit Dämpfung", "description1": "Höhe 8 mm" }
+  {
+    "product_id": 9001,
+    "number": "98010",
+    "prio": 10000,
+    "name": "Testkeil mit Dämpfung",
+    "description1": "Höhe 8 mm",
+    "vpe1": "500",
+    "vpe2": "100"
+  },
+  {
+    "product_id": 9001,
+    "number": "98011/80",
+    "prio": 11000,
+    "name": "Testkeil hoch",
+    "description1": "Höhe 9,5 mm abgesetzt"
+  },
+  {
+    "product_id": 9002,
+    "number": "98020",
+    "prio": 10000,
+    "name": "Testhalter",
+    "description1": "Ø 12 mm",
+    "vpe1": "wird passend verpackt"
+  },
+  {
+    "product_id": 9003,
+    "number": "98030",
+    "prio": 10000,
+    "name": "Testsiphon",
+    "description1": "für Schlauch Ø 10 mm",
+    "description2": "Für die Montage wird ein Testwerkzeug benötigt."
+  },
+  {
+    "product_id": 9003,
+    "number": "98010",
+    "prio": 12000,
+    "name": "Testkeil mit Dämpfung",
+    "description1": "Höhe 8 mm"
+  }
 ]
 ```
 
@@ -3628,7 +4406,11 @@ and set `hookTimeout: 120_000` (database reset in `afterAll`).
 
 ```json
 [
-  { "color_id": "1-1", "name": "testweiß (ähnlich RAL 9016)", "code": "#F2F5F3" },
+  {
+    "color_id": "1-1",
+    "name": "testweiß (ähnlich RAL 9016)",
+    "code": "#F2F5F3"
+  },
   { "color_id": "3-1", "name": "testbraun", "code": "#5B3A29" },
   { "color_id": "4-1", "name": "testgrau", "code": "#8A8D8F" },
   { "color_id": "4-2", "name": "testgrau", "code": "#8A8D8F" },
@@ -3678,21 +4460,37 @@ export const FIXTURE_IMAGES: ReadonlyMap<string, Buffer> = new Map([
 ]);
 
 export const CATALOG_TABLES = [
-  "category", "attribute", "category_attribute", "material", "product", "article",
-  "article_attribute", "article_packaging", "product_accessory", "color",
-  "product_color", "media", "product_media", "ai_generation",
+  "category",
+  "attribute",
+  "category_attribute",
+  "material",
+  "product",
+  "article",
+  "article_attribute",
+  "article_packaging",
+  "product_accessory",
+  "color",
+  "product_color",
+  "media",
+  "product_media",
+  "ai_generation",
 ] as const;
 
 function requireEnv(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`${name} is not set (see vitest.integration.config.mts)`);
+  if (!value)
+    throw new Error(`${name} is not set (see vitest.integration.config.mts)`);
   return value;
 }
 
 export function serviceClient(): SupabaseClient<Database> {
-  return createClient<Database>(requireEnv("IMPORT_SUPABASE_URL"), requireEnv("IMPORT_SUPABASE_SECRET_KEY"), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return createClient<Database>(
+    requireEnv("IMPORT_SUPABASE_URL"),
+    requireEnv("IMPORT_SUPABASE_SECRET_KEY"),
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  );
 }
 
 export function importEnv(baseUrl: string): Record<string, string> {
@@ -3703,9 +4501,16 @@ export function importEnv(baseUrl: string): Record<string, string> {
   };
 }
 
-export function silentIo(env: Record<string, string | undefined>): CliIo & { lines: string[] } {
+export function silentIo(
+  env: Record<string, string | undefined>
+): CliIo & { lines: string[] } {
   const lines: string[] = [];
-  return { env, lines, log: (line) => lines.push(line), error: (line) => lines.push(line) };
+  return {
+    env,
+    lines,
+    log: (line) => lines.push(line),
+    error: (line) => lines.push(line),
+  };
 }
 
 export async function startImageServer(files: ReadonlyMap<string, Buffer>) {
@@ -3728,14 +4533,20 @@ export async function startImageServer(files: ReadonlyMap<string, Buffer>) {
 
 export async function copyFixtureSnapshot(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), "import-snapshot-"));
-  await cp(join(process.cwd(), "tests/fixtures/import/snapshot"), dir, { recursive: true });
+  await cp(join(process.cwd(), "tests/fixtures/import/snapshot"), dir, {
+    recursive: true,
+  });
   return dir;
 }
 
-export async function tableCounts(client = serviceClient()): Promise<Record<string, number>> {
+export async function tableCounts(
+  client = serviceClient()
+): Promise<Record<string, number>> {
   const counts: Record<string, number> = {};
   for (const table of CATALOG_TABLES) {
-    const { count, error } = await client.from(table).select("*", { count: "exact", head: true });
+    const { count, error } = await client
+      .from(table)
+      .select("*", { count: "exact", head: true });
     if (error) throw new Error(`count ${table}: ${error.message}`);
     counts[table] = count ?? 0;
   }
@@ -3767,8 +4578,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runImportCli } from "../../scripts/import/cli.mts";
 import { listObjects } from "../../scripts/import/images.mts";
 import {
-  FIXTURE_IMAGES, copyFixtureSnapshot, importEnv, resetDatabase,
-  serviceClient, silentIo, startImageServer, tableCounts,
+  FIXTURE_IMAGES,
+  copyFixtureSnapshot,
+  importEnv,
+  resetDatabase,
+  serviceClient,
+  silentIo,
+  startImageServer,
+  tableCounts,
 } from "./import-helpers";
 
 const PATHS = [
@@ -3801,8 +4618,13 @@ afterAll(async () => {
 describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
   it("refuses to run without valid env", async () => {
     const before = await tableCounts();
-    const io = silentIo({ ...importEnv(server.baseUrl), IMPORT_SUPABASE_SECRET_KEY: "sb_publishable_x" });
-    expect(await runImportCli(["--snapshot", await copyFixtureSnapshot()], io)).toBe(1);
+    const io = silentIo({
+      ...importEnv(server.baseUrl),
+      IMPORT_SUPABASE_SECRET_KEY: "sb_publishable_x",
+    });
+    expect(
+      await runImportCli(["--snapshot", await copyFixtureSnapshot()], io)
+    ).toBe(1);
     expect(await tableCounts()).toEqual(before);
   });
 
@@ -3813,7 +4635,10 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
   it("dry run writes the report and changes nothing", async () => {
     const dir = await copyFixtureSnapshot();
     const before = await tableCounts();
-    const code = await runImportCli(["--", "--snapshot", dir, "--dry-run"], silentIo(importEnv(server.baseUrl)));
+    const code = await runImportCli(
+      ["--", "--snapshot", dir, "--dry-run"],
+      silentIo(importEnv(server.baseUrl))
+    );
     expect(code).toBe(0);
     expect(await tableCounts()).toEqual(before);
     expect(await storedPaths()).toEqual([]);
@@ -3826,17 +4651,29 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
     const dir = await copyFixtureSnapshot();
     await writeFile(join(dir, "articles.json"), "[]");
     const before = await tableCounts();
-    expect(await runImportCli(["--snapshot", dir], silentIo(importEnv(server.baseUrl)))).toBe(1);
+    expect(
+      await runImportCli(
+        ["--snapshot", dir],
+        silentIo(importEnv(server.baseUrl))
+      )
+    ).toBe(1);
     expect(await tableCounts()).toEqual(before);
   });
 
   it("aborts on a missing image, writes the report and changes nothing", async () => {
     const dir = await copyFixtureSnapshot();
-    const products = JSON.parse(await readFile(join(dir, "products.json"), "utf8"));
+    const products = JSON.parse(
+      await readFile(join(dir, "products.json"), "utf8")
+    );
     products[2].imageUrls_small = ["/a_98030-Fehlt.webp"];
     await writeFile(join(dir, "products.json"), JSON.stringify(products));
     const before = await tableCounts();
-    expect(await runImportCli(["--snapshot", dir], silentIo(importEnv(server.baseUrl)))).toBe(1);
+    expect(
+      await runImportCli(
+        ["--snapshot", dir],
+        silentIo(importEnv(server.baseUrl))
+      )
+    ).toBe(1);
     expect(await tableCounts()).toEqual(before);
     const report = await readFile(join(dir, "import-report.md"), "utf8");
     expect(report).toContain("## Failed image downloads");
@@ -3844,11 +4681,19 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
   });
 
   it("aborts when the database rejects the payload, then succeeds on a re-run (Review Focus 4)", async () => {
-    const { data: category } = await client.from("category").insert({ slug: "moebel", name: "Möbel" }).select("id").single();
+    const { data: category } = await client
+      .from("category")
+      .insert({ slug: "moebel", name: "Möbel" })
+      .select("id")
+      .single();
     expect(category).not.toBeNull();
     const blocker = await client
       .from("product")
-      .insert({ category_id: category?.id ?? 0, slug: "testkeil-mit-daempfung", name: "Blocker" })
+      .insert({
+        category_id: category?.id ?? 0,
+        slug: "testkeil-mit-daempfung",
+        name: "Blocker",
+      })
       .select("id")
       .single();
     expect(blocker.error).toBeNull();
@@ -3857,10 +4702,20 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
     const io = silentIo(importEnv(server.baseUrl));
     expect(await runImportCli(["--snapshot", dir], io)).toBe(1);
     expect(await tableCounts()).toEqual(before);
-    expect(await readFile(join(dir, "import-report.md"), "utf8")).toContain("- Outcome: aborted");
+    expect(await readFile(join(dir, "import-report.md"), "utf8")).toContain(
+      "- Outcome: aborted"
+    );
 
-    await client.from("product").delete().eq("id", blocker.data?.id ?? 0);
-    expect(await runImportCli(["--snapshot", dir], silentIo(importEnv(server.baseUrl)))).toBe(0);
+    await client
+      .from("product")
+      .delete()
+      .eq("id", blocker.data?.id ?? 0);
+    expect(
+      await runImportCli(
+        ["--snapshot", dir],
+        silentIo(importEnv(server.baseUrl))
+      )
+    ).toBe(0);
     expect(await storedPaths()).toEqual(PATHS);
   });
 });
@@ -3868,44 +4723,102 @@ describe("catalog:import (FR-1, FR-8, SC-1, SC-8)", () => {
 describe("catalog:import result (FR-7, FR-9, SC-7, SC-8)", () => {
   it("imports products, articles, colours and images", async () => {
     const io = silentIo(importEnv(server.baseUrl));
-    expect(await runImportCli(["--snapshot", await copyFixtureSnapshot()], io)).toBe(0);
+    expect(
+      await runImportCli(["--snapshot", await copyFixtureSnapshot()], io)
+    ).toBe(0);
     expect(io.lines.join("\n")).toContain("products: 3");
 
-    const { data: products } = await client.from("product").select("legacy_product_id, slug, status").not("legacy_product_id", "is", null).order("legacy_product_id");
+    const { data: products } = await client
+      .from("product")
+      .select("legacy_product_id, slug, status")
+      .not("legacy_product_id", "is", null)
+      .order("legacy_product_id");
     expect(products).toEqual([
-      { legacy_product_id: 9001, slug: "testkeil-mit-daempfung", status: "published" },
+      {
+        legacy_product_id: 9001,
+        slug: "testkeil-mit-daempfung",
+        status: "published",
+      },
       { legacy_product_id: 9002, slug: "testhalter", status: "published" },
       { legacy_product_id: 9003, slug: "testsiphon", status: "published" },
     ]);
-    const { data: media } = await client.from("media").select("storage_path, width, height").like("storage_path", "products/%/%/%").order("storage_path");
+    const { data: media } = await client
+      .from("media")
+      .select("storage_path, width, height")
+      .like("storage_path", "products/%/%/%")
+      .order("storage_path");
     expect(media).toEqual([
       { storage_path: PATHS[0], width: 50, height: 50 },
       { storage_path: PATHS[1], width: 40, height: 30 },
       { storage_path: PATHS[2], width: 80, height: 60 },
     ]);
     expect(await storedPaths()).toEqual(PATHS);
-    const { data: variants } = await client.from("variant").select("order_number").like("order_number", "98010%").order("order_number");
-    expect(variants?.map((v) => v.order_number)).toEqual(["98010 - 0", "98010 - 1", "98010 - 2"]);
+    const { data: variants } = await client
+      .from("variant")
+      .select("order_number")
+      .like("order_number", "98010%")
+      .order("order_number");
+    expect(variants?.map((v) => v.order_number)).toEqual([
+      "98010 - 0",
+      "98010 - 1",
+      "98010 - 2",
+    ]);
   });
 });
 
 describe("re-import semantics (FR-10, SC-10)", () => {
   it("keeps owned-elsewhere fields, restores imported fields, keeps ids and removes orphans", async () => {
     const dir = await copyFixtureSnapshot();
-    expect(await runImportCli(["--snapshot", dir], silentIo(importEnv(server.baseUrl)))).toBe(0);
-    const { data: before } = await client.from("product").select("id, legacy_product_id").not("legacy_product_id", "is", null).order("legacy_product_id");
+    expect(
+      await runImportCli(
+        ["--snapshot", dir],
+        silentIo(importEnv(server.baseUrl))
+      )
+    ).toBe(0);
+    const { data: before } = await client
+      .from("product")
+      .select("id, legacy_product_id")
+      .not("legacy_product_id", "is", null)
+      .order("legacy_product_id");
 
-    await client.from("product").update({ status: "archived", name: "Verändert" }).eq("legacy_product_id", 9001);
-    await client.from("category").update({ intro_text: "Redaktioneller Text." }).eq("slug", "moebel");
-    await bucket().upload("products/moebel/alt/verwaist.webp", FIXTURE_IMAGES.get("a_98010-Testkeil.webp") ?? Buffer.alloc(0), { upsert: true, contentType: "image/webp" });
+    await client
+      .from("product")
+      .update({ status: "archived", name: "Verändert" })
+      .eq("legacy_product_id", 9001);
+    await client
+      .from("category")
+      .update({ intro_text: "Redaktioneller Text." })
+      .eq("slug", "moebel");
+    await bucket().upload(
+      "products/moebel/alt/verwaist.webp",
+      FIXTURE_IMAGES.get("a_98010-Testkeil.webp") ?? Buffer.alloc(0),
+      { upsert: true, contentType: "image/webp" }
+    );
 
-    expect(await runImportCli(["--snapshot", dir], silentIo(importEnv(server.baseUrl)))).toBe(0);
+    expect(
+      await runImportCli(
+        ["--snapshot", dir],
+        silentIo(importEnv(server.baseUrl))
+      )
+    ).toBe(0);
 
-    const { data: after } = await client.from("product").select("id, legacy_product_id").not("legacy_product_id", "is", null).order("legacy_product_id");
+    const { data: after } = await client
+      .from("product")
+      .select("id, legacy_product_id")
+      .not("legacy_product_id", "is", null)
+      .order("legacy_product_id");
     expect(after).toEqual(before);
-    const { data: keil } = await client.from("product").select("status, name").eq("legacy_product_id", 9001).single();
+    const { data: keil } = await client
+      .from("product")
+      .select("status, name")
+      .eq("legacy_product_id", 9001)
+      .single();
     expect(keil).toEqual({ status: "archived", name: "Testkeil mit Dämpfung" });
-    const { data: moebel } = await client.from("category").select("intro_text").eq("slug", "moebel").single();
+    const { data: moebel } = await client
+      .from("category")
+      .select("intro_text")
+      .eq("slug", "moebel")
+      .single();
     expect(moebel?.intro_text).toBe("Redaktioneller Text.");
     expect(await storedPaths()).toEqual(PATHS);
   });
@@ -3932,7 +4845,11 @@ import type { Database } from "../../lib/supabase/database.types.ts";
 import { parseImportEnv } from "./env.mts";
 import type { Finding } from "./findings.mts";
 import { deleteOrphans, fetchImages, uploadImages } from "./images.mts";
-import { completePayload, mapSnapshot, type CatalogStats } from "./map/index.mts";
+import {
+  completePayload,
+  mapSnapshot,
+  type CatalogStats,
+} from "./map/index.mts";
 import { writeReport } from "./report.mts";
 import { readSnapshot } from "./snapshot.mts";
 
@@ -3946,7 +4863,10 @@ export type CliIo = {
 
 const USAGE = "usage: pnpm catalog:import --snapshot <dir> [--dry-run]";
 
-export async function runImportCli(argv: readonly string[], io: CliIo): Promise<number> {
+export async function runImportCli(
+  argv: readonly string[],
+  io: CliIo
+): Promise<number> {
   let snapshotDir: string | undefined;
   let dryRun = false;
   try {
@@ -3975,7 +4895,9 @@ export async function runImportCli(argv: readonly string[], io: CliIo): Promise<
     io.error(`Snapshot rejected: ${snapshot.error.message}`);
     return 1;
   }
-  const mapped = mapSnapshot(snapshot.value, { imageBaseUrl: env.value.IMPORT_IMAGE_BASE_URL });
+  const mapped = mapSnapshot(snapshot.value, {
+    imageBaseUrl: env.value.IMPORT_IMAGE_BASE_URL,
+  });
   if (!mapped.ok) {
     io.error(`Invalid data: ${mapped.error.message}`);
     return 1;
@@ -4003,24 +4925,44 @@ export async function runImportCli(argv: readonly string[], io: CliIo): Promise<
 
   if (dryRun) {
     await report("dry run — nothing written", findings, stats);
-    io.log(`Dry run: ${stats.products} products, ${stats.articles} articles, ${stats.images} images mapped.`);
+    io.log(
+      `Dry run: ${stats.products} products, ${stats.articles} articles, ${stats.images} images mapped.`
+    );
     return 0;
   }
 
   const images = await fetchImages(
-    mapped.value.media.map((m) => ({ url: m.url, storagePath: m.storage_path, contentType: m.content_type })),
+    mapped.value.media.map((m) => ({
+      url: m.url,
+      storagePath: m.storage_path,
+      contentType: m.content_type,
+    })),
     io.fetch ?? fetch
   );
   if (images.failures.length > 0) {
-    const failed: Finding[] = images.failures.map((f) => ({ kind: "failed_image", ...f }));
-    await report(`aborted: ${images.failures.length} image download(s) failed`, [...failed, ...findings], stats);
-    io.error(`${images.failures.length} image download(s) failed — nothing was written.`);
+    const failed: Finding[] = images.failures.map((f) => ({
+      kind: "failed_image",
+      ...f,
+    }));
+    await report(
+      `aborted: ${images.failures.length} image download(s) failed`,
+      [...failed, ...findings],
+      stats
+    );
+    io.error(
+      `${images.failures.length} image download(s) failed — nothing was written.`
+    );
     return 1;
   }
 
   const payload = completePayload(
     mapped.value,
-    new Map(images.fetched.map((i) => [i.storagePath, { width: i.width, height: i.height }]))
+    new Map(
+      images.fetched.map((i) => [
+        i.storagePath,
+        { width: i.width, height: i.height },
+      ])
+    )
   );
   if (!payload.ok) {
     await report(`aborted: ${payload.error.message}`, findings, stats);
@@ -4028,9 +4970,13 @@ export async function runImportCli(argv: readonly string[], io: CliIo): Promise<
     return 1;
   }
 
-  const supabase = createClient<Database>(env.value.IMPORT_SUPABASE_URL, env.value.IMPORT_SUPABASE_SECRET_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const supabase = createClient<Database>(
+    env.value.IMPORT_SUPABASE_URL,
+    env.value.IMPORT_SUPABASE_SECRET_KEY,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  );
   const bucket = supabase.storage.from("catalog");
   const uploaded = await uploadImages(bucket, images.fetched);
   if (!uploaded.ok) {
@@ -4039,29 +4985,56 @@ export async function runImportCli(argv: readonly string[], io: CliIo): Promise<
     return 1;
   }
 
-  const { data, error } = await supabase.rpc("import_catalog", { payload: payload.value });
+  const { data, error } = await supabase.rpc("import_catalog", {
+    payload: payload.value,
+  });
   if (error) {
-    await report(`aborted: database rejected the import (${error.message})`, findings, stats);
-    io.error(`Database rejected the import: ${error.message} — nothing was changed.`);
+    await report(
+      `aborted: database rejected the import (${error.message})`,
+      findings,
+      stats
+    );
+    io.error(
+      `Database rejected the import: ${error.message} — nothing was changed.`
+    );
     return 1;
   }
   const result =
-    typeof data === "object" && data !== null && !Array.isArray(data) ? { ...data } : { result: String(data) };
+    typeof data === "object" && data !== null && !Array.isArray(data)
+      ? { ...data }
+      : { result: String(data) };
 
-  const orphans = await deleteOrphans(bucket, new Set(payload.value.media.map((m) => m.storage_path)));
+  const orphans = await deleteOrphans(
+    bucket,
+    new Set(payload.value.media.map((m) => m.storage_path))
+  );
   if (!orphans.ok) {
-    await report(`imported, but orphan cleanup failed (${orphans.error})`, findings, stats, result);
-    io.error(`Imported, but orphan cleanup failed: ${orphans.error}. Re-run the import to finish it.`);
+    await report(
+      `imported, but orphan cleanup failed (${orphans.error})`,
+      findings,
+      stats,
+      result
+    );
+    io.error(
+      `Imported, but orphan cleanup failed: ${orphans.error}. Re-run the import to finish it.`
+    );
     return 1;
   }
 
-  await report("imported", findings, stats, { ...result, deleted_objects: orphans.value });
-  for (const [key, value] of Object.entries(result)) io.log(`${key}: ${String(value)}`);
+  await report("imported", findings, stats, {
+    ...result,
+    deleted_objects: orphans.value,
+  });
+  for (const [key, value] of Object.entries(result))
+    io.log(`${key}: ${String(value)}`);
   io.log(`deleted_objects: ${orphans.value}`);
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   const code = await runImportCli(process.argv.slice(2), {
     env: process.env,
     log: (line) => console.log(line),
@@ -4072,6 +5045,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
 ```
 
 Notes for the implementer:
+
 - `supabase.rpc("import_catalog", { payload: payload.value })` must type-check against the generated `Json` arg type without a cast. `ImportPayload` uses `type` aliases (not interfaces), which TypeScript accepts as `Json`. If it still does not, add a small `toJson(payload: ImportPayload): Json` that does `JSON.parse(JSON.stringify(payload))` with a `Json`-typed return and a comment — no `as`.
 - `bucket` must be assignable to `StorageBucket` without a cast (see Task 9 note).
 - Top-level `await` is fine (`.mts` = ES module).
@@ -4099,10 +5073,12 @@ git commit -m "feat(import): catalog:import CLI with integration tests"
 ### Task 12: Removal CLI and placeholder branding (FR-12, FR-13)
 
 **Files:**
+
 - Create: `scripts/import/remove.mts`, `tests/integration/remove.test.ts`
 - Modify: `config/branding.ts`, `config/branding.test.ts`
 
 **Interfaces:**
+
 - Consumes: `parseRemoveEnv` (Task 9), `remove_catalog()` (Task 10), helpers (Task 11), `CliIo` (Task 11)
 - Produces:
   - `runRemoveCli(argv: readonly string[], io: CliIo): Promise<number>` — `0` removed, `1` refused/failed, `2` usage
@@ -4122,7 +5098,11 @@ describe("placeholderBranding (FR-13, SC-13)", () => {
 
   it("contains none of the customer strings", () => {
     const serialized = JSON.stringify(placeholderBranding);
-    for (const value of [branding.companyName, branding.shortName, branding.officialSiteUrl]) {
+    for (const value of [
+      branding.companyName,
+      branding.shortName,
+      branding.officialSiteUrl,
+    ]) {
       expect(serialized).not.toContain(value);
     }
   });
@@ -4139,17 +5119,29 @@ import { runImportCli } from "../../scripts/import/cli.mts";
 import { listObjects } from "../../scripts/import/images.mts";
 import { runRemoveCli } from "../../scripts/import/remove.mts";
 import {
-  FIXTURE_IMAGES, copyFixtureSnapshot, importEnv, resetDatabase,
-  serviceClient, silentIo, startImageServer, tableCounts,
+  FIXTURE_IMAGES,
+  copyFixtureSnapshot,
+  importEnv,
+  resetDatabase,
+  serviceClient,
+  silentIo,
+  startImageServer,
+  tableCounts,
 } from "./import-helpers";
 
 let server: Awaited<ReturnType<typeof startImageServer>>;
 const client = serviceClient();
-const host = () => new URL(process.env.IMPORT_SUPABASE_URL ?? "http://invalid").host;
+const host = () =>
+  new URL(process.env.IMPORT_SUPABASE_URL ?? "http://invalid").host;
 
 beforeAll(async () => {
   server = await startImageServer(FIXTURE_IMAGES);
-  expect(await runImportCli(["--snapshot", await copyFixtureSnapshot()], silentIo(importEnv(server.baseUrl)))).toBe(0);
+  expect(
+    await runImportCli(
+      ["--snapshot", await copyFixtureSnapshot()],
+      silentIo(importEnv(server.baseUrl))
+    )
+  ).toBe(0);
 });
 
 afterAll(async () => {
@@ -4175,7 +5167,10 @@ describe("catalog:remove (FR-12, SC-12)", () => {
     expect(await runRemoveCli(["--", "--confirm", host()], io)).toBe(0);
     const counts = await tableCounts();
     expect(Object.values(counts).every((n) => n === 0)).toBe(true);
-    const listed = await listObjects(client.storage.from("catalog"), "products");
+    const listed = await listObjects(
+      client.storage.from("catalog"),
+      "products"
+    );
     expect(listed.ok && listed.value).toEqual([]);
     expect(io.lines.join("\n")).toContain("products:");
   });
@@ -4215,9 +5210,13 @@ import type { Database } from "../../lib/supabase/database.types.ts";
 import type { CliIo } from "./cli.mts";
 import { parseRemoveEnv } from "./env.mts";
 
-const USAGE = "usage: pnpm catalog:remove --confirm <host of IMPORT_SUPABASE_URL>";
+const USAGE =
+  "usage: pnpm catalog:remove --confirm <host of IMPORT_SUPABASE_URL>";
 
-export async function runRemoveCli(argv: readonly string[], io: CliIo): Promise<number> {
+export async function runRemoveCli(
+  argv: readonly string[],
+  io: CliIo
+): Promise<number> {
   let confirm: string | undefined;
   try {
     const { values } = parseArgs({
@@ -4241,31 +5240,45 @@ export async function runRemoveCli(argv: readonly string[], io: CliIo): Promise<
   }
   const host = new URL(env.value.IMPORT_SUPABASE_URL).host;
   if (confirm !== host) {
-    io.error(`Refusing: --confirm must be exactly "${host}". Nothing was deleted.`);
+    io.error(
+      `Refusing: --confirm must be exactly "${host}". Nothing was deleted.`
+    );
     return 1;
   }
 
-  const supabase = createClient<Database>(env.value.IMPORT_SUPABASE_URL, env.value.IMPORT_SUPABASE_SECRET_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const supabase = createClient<Database>(
+    env.value.IMPORT_SUPABASE_URL,
+    env.value.IMPORT_SUPABASE_SECRET_KEY,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  );
   const { data, error } = await supabase.rpc("remove_catalog");
   if (error) {
-    io.error(`Database rejected the removal: ${error.message} — nothing was deleted.`);
+    io.error(
+      `Database rejected the removal: ${error.message} — nothing was deleted.`
+    );
     return 1;
   }
   if (typeof data === "object" && data !== null && !Array.isArray(data))
-    for (const [key, value] of Object.entries(data)) io.log(`${key}: ${String(value)}`);
+    for (const [key, value] of Object.entries(data))
+      io.log(`${key}: ${String(value)}`);
 
   const emptied = await supabase.storage.emptyBucket("catalog");
   if (emptied.error) {
-    io.error(`Rows deleted, but emptying the bucket failed: ${emptied.error.message}. Re-run to finish.`);
+    io.error(
+      `Rows deleted, but emptying the bucket failed: ${emptied.error.message}. Re-run to finish.`
+    );
     return 1;
   }
   io.log("Storage bucket catalog emptied.");
   return 0;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   const code = await runRemoveCli(process.argv.slice(2), {
     env: process.env,
     log: (line) => console.log(line),
@@ -4294,12 +5307,14 @@ git commit -m "feat(import): catalog:remove CLI and placeholder branding"
 ### Task 13: Runbooks and project docs (FR-14)
 
 **Files:**
+
 - Create: `docs/import.md`, `docs/revocation.md`
 - Modify: `CLAUDE.md` (Commands: `pnpm catalog:import`, `pnpm catalog:remove`), `docs/data-model.md` ("Removal" section: link to `docs/revocation.md`; import rule 8: one sentence that the legacy data has no alt texts, so the product name is the initial alt text and every image is listed for review), `docs/deploy.md` (section 10 Backups: one line linking to `docs/revocation.md` for deleting backups on revocation)
 
 No tests (SC-14 is review). Content requirements:
 
 `docs/import.md` — sections, English, no hosts/keys/CDN names:
+
 1. **Overview** — what the importer does, D3 in two sentences, where the report goes.
 2. **Snapshot export** — install MongoDB Database Tools; keep the connection string in a shell variable, never in a file inside the repo; exact commands:
    ```bash
@@ -4317,6 +5332,7 @@ No tests (SC-14 is review). Content requirements:
 8. **Afterwards** — delete the snapshot directory and the report when no longer needed (customer data).
 
 `docs/revocation.md` — English, numbered procedure with a ≤ 14-day timeline:
+
 1. Day 0: request received — note the date.
 2. Production removal: env for production (secret key via `read -rs`), `pnpm catalog:remove --confirm <api host>`; record the printed counts.
 3. Verify: product count 0 via the publishable key (`curl` with `apikey` header against `/rest/v1/product?select=id`), bucket empty, `/api/health` → `db: ok`.
@@ -4324,7 +5340,7 @@ No tests (SC-14 is review). Content requirements:
 5. Local copies: delete snapshot directories, reports, local DB data (`pnpm db:reset`).
 6. Backups: database and storage backups age out after 7 days (runbook section 10); delete them earlier if requested.
 7. Confirm to the customer in writing, with the date of each step.
-Plus a short "What is not affected" list: the customer's own website, the Git history (never contained customer data).
+   Plus a short "What is not affected" list: the customer's own website, the Git history (never contained customer data).
 
 - [ ] **Step 1: Write the documents and the small edits**
 

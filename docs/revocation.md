@@ -19,27 +19,42 @@ committed with real values.
    unset IMPORT_SUPABASE_SECRET_KEY
    ```
 
-   Without a matching `--confirm` the command deletes nothing and exits `1`.
+   Without a matching `--confirm` the command deletes nothing and exits `1`
+   (mismatch) or `2` (missing).
    On success it deletes every catalog row in one transaction, then empties the
    Storage bucket `catalog`, and prints the deleted counts per table. Record
    the printed counts. If it reports that the rows were deleted but emptying
    the bucket failed, run the same command again.
 
 3. **Verify (day 0-1).**
-   - Product count is 0 via the publishable key:
-     `curl -s "https://<api host>/rest/v1/product?select=id" -H "apikey: <publishable key>"`
-     returns `[]`.
-   - The bucket `catalog` is empty (Studio or the Storage API).
+   - Run `pnpm catalog:remove --confirm <api host>` a second time.
+     `remove_catalog()` reports the counts before it deletes, so
+     `products: 0`, `articles: 0` and `media: 0` prove the tables are empty
+     (unpublished rows included, which the publishable key cannot see). The CLI
+     also verifies that the bucket `catalog` is empty and exits `1` otherwise.
    - `curl -s https://<app host>/api/health` returns `"db":"ok"`.
 
 4. **Branding (by day 3).** In `config/branding.ts` switch the exported
    `branding` to `placeholderBranding` (one line), open a PR, merge it and let
-   CI deploy. Check that the demo notice and the footer show no customer name
+   CI deploy. Change
+
+   ```ts
+   export const branding: Branding = customerBranding; // revocation: placeholderBranding
+   ```
+
+   to
+
+   ```ts
+   export const branding: Branding = placeholderBranding;
+   ```
+
+   Check that the demo notice and the footer show no customer name
    or URL.
 
 5. **Local copies (by day 3).** Delete snapshot directories and import reports
    (`rm -r <snapshot dir>`), `.env.import` files, and local database data
-   (`pnpm db:reset`). Check other machines that may hold a snapshot.
+   (run `pnpm catalog:remove --confirm 127.0.0.1:54321` first so local Storage
+   files are removed too, then `pnpm db:reset`). Check other machines that may hold a snapshot.
 
 6. **Backups (by day 14).** Database and storage backups age out after 7 days
    (daily backups, keep 7; `docs/deploy.md` section 10). If the customer asks
@@ -51,5 +66,6 @@ committed with real values.
 ## What is not affected
 
 - The customer's own website, which is not part of this repository.
-- The Git history: it never contained customer data. Snapshots, reports and
-  images are not committed; images live only in Supabase Storage.
+- The Git history. No snapshots, reports, images or catalog rows were ever
+  committed. The customer name and URL in `config/branding.ts` are replaced in
+  step 4 but remain in older commits.

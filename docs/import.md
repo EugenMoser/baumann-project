@@ -34,7 +34,7 @@ repo. Write the snapshot outside the repo:
 
 ```bash
 read -rs LEGACY_MONGO_URI && export LEGACY_MONGO_URI
-SNAPSHOT=~/baumann-snapshot-$(date +%F)   # outside the repo
+SNAPSHOT=~/catalog-snapshot-$(date +%F)   # outside the repo
 mkdir -p "$SNAPSHOT"
 for c in products articles colors product_colors_connection; do
   mongoexport --uri "$LEGACY_MONGO_URI" --collection "$c" --jsonArray --out "$SNAPSHOT/$c.json"
@@ -89,10 +89,11 @@ real import without `--dry-run`:
 pnpm catalog:import --snapshot "$SNAPSHOT"
 ```
 
-On success the command prints the counts returned by the database function
-(inserted / updated / deleted per table) and `deleted_objects` (orphaned
-Storage objects removed). `pnpm db:reset` removes the imported data from the
-local database again and restores the seed.
+On success the command prints the keys returned by the database function: the
+payload totals plus the `deleted_*` counts and `deleted_objects` (orphaned
+Storage objects removed). To undo a local import, run
+`pnpm catalog:remove --confirm 127.0.0.1:54321` first so local Storage files
+are removed too, then `pnpm db:reset` to restore the seed.
 
 ## 5. Production run
 
@@ -137,17 +138,18 @@ never exits `0` unless it is a dry run.
 
 Aborts after mapping starts write the report with the reason in its outcome
 line. Environment and snapshot failures happen before that and print to stderr
-only.
+only. After an RPC failure the uploaded files may differ from the committed
+media dimensions until the next successful run.
 
-| Situation                                                                                                           | Report | What to do                                                                                                                            |
-| ------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| Invalid environment variables                                                                                       | no     | Fix the variable named in the message (values are never printed).                                                                     |
-| Snapshot missing, empty or malformed (message names file and path)                                                  | no     | Re-export the snapshot (section 2).                                                                                                   |
-| Invalid data during mapping (zero products or articles, article references an unknown product, unknown category, …) | yes    | Read the message; fix or re-export the snapshot. Nothing was written.                                                                 |
-| One or more image downloads failed                                                                                  | yes    | The report lists each URL. Check `IMPORT_IMAGE_BASE_URL` and the CDN, then re-run. Nothing was written.                               |
-| Image upload failed                                                                                                 | yes    | Check the Storage service and key, then re-run. The database was not changed.                                                         |
-| Database rejected the import (RPC error or failed cross-check)                                                      | yes    | Read the message. The database was not changed. Uploaded images stay in the bucket; the next successful run reuses or cleans them up. |
-| Imported, but orphan cleanup failed                                                                                 | yes    | The data is committed. Re-run the import to finish the cleanup.                                                                       |
+| Situation                                                                                                | Report | What to do                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Invalid environment variables                                                                            | no     | Fix the variable named in the message (values are never printed).                                                                     |
+| Snapshot missing, empty (including zero products or articles) or malformed (message names file and path) | no     | Re-export the snapshot (section 2).                                                                                                   |
+| Invalid data during mapping (article references an unknown product, unknown category, …)                 | yes    | Read the message; fix or re-export the snapshot. Nothing was written.                                                                 |
+| One or more image downloads failed                                                                       | yes    | The report lists each URL. Check `IMPORT_IMAGE_BASE_URL` and the CDN, then re-run. Nothing was written.                               |
+| Image upload failed                                                                                      | yes    | Check the Storage service and key, then re-run. The database was not changed.                                                         |
+| Database rejected the import (RPC error or failed cross-check)                                           | yes    | Read the message. The database was not changed. Uploaded images stay in the bucket; the next successful run reuses or cleans them up. |
+| Imported, but orphan cleanup failed                                                                      | yes    | The data is committed. Re-run the import to finish the cleanup.                                                                       |
 
 ## 8. Afterwards
 
