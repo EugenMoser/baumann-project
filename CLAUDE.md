@@ -27,7 +27,7 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
-- E2E: `pnpm e2e` (runs against the production build — `pnpm build` first)
+- E2E: `pnpm e2e` — runs against the production build and the seeded local stack: `pnpm db:start && pnpm db:reset`, build with `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from `supabase status -o json`, then `pnpm e2e`
 - Local Supabase: `pnpm db:start` / `pnpm db:stop` (Docker required)
 - Reset local DB (migrations + seed): `pnpm db:reset`
 - DB tests (pgTAP + integration, stack must run): `pnpm db:test`

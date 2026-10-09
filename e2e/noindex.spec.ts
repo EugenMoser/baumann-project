@@ -3,7 +3,14 @@ import { expect, test } from "@playwright/test";
 const MISSING_PATH = "/diese-seite-gibt-es-nicht";
 
 test.describe("noindex", () => {
-  for (const path of ["/", MISSING_PATH]) {
+  for (const path of [
+    "/",
+    "/produkte",
+    "/produkte/moebelteile",
+    "/produkte/moebelteile/testkeil-mit-daempfung",
+    "/suche?q=Befestigung",
+    MISSING_PATH,
+  ]) {
     test(`meta robots noindex, nofollow on ${path} (SC-2)`, async ({
       page,
     }) => {
@@ -36,7 +43,13 @@ test.describe("noindex", () => {
     page,
     request,
   }) => {
-    for (const url of ["/", MISSING_PATH, "/robots.txt", "/favicon.ico"]) {
+    for (const url of [
+      "/",
+      "/produkte/moebelteile/testkeil-mit-daempfung",
+      MISSING_PATH,
+      "/robots.txt",
+      "/favicon.ico",
+    ]) {
       const response = await request.get(url);
       expect(response.headers()["x-robots-tag"], url).toBe("noindex, nofollow");
     }
