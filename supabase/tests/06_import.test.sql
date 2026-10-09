@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(28);
 
 create function pg_temp.payload() returns jsonb language sql as $$
 select $j${
@@ -83,7 +83,8 @@ select throws_ok(
   $$select public.import_catalog(jsonb_set(jsonb_set(pg_temp.payload(),
       '{articles}', (pg_temp.payload() -> 'articles') - 2),
       '{product_accessories}', '[]'))$$,
-  'P0001', null, 'a product without articles fails the cross-check');
+  'P0001', 'cross-check failed: products without articles: 9002',
+  'a product without articles fails the cross-check');
 reset role;
 select is((select count(*) from public.article where article_number in ('98010', '98011/80', '98020')), 3::bigint,
   'the failed import left the articles unchanged');
@@ -91,11 +92,25 @@ select is((select count(*) from public.article where article_number in ('98010',
 set local role service_role;
 select throws_ok(
   $$select public.import_catalog(jsonb_set(pg_temp.payload(), '{product_colors,1,is_default}', 'true'))$$,
-  '23505', null, 'two default colours are rejected');
+  '23505', 'duplicate key value violates unique constraint "product_color_one_default_idx"',
+  'two default colours are rejected');
+select throws_ok(
+  $$select public.import_catalog(jsonb_set(jsonb_set(pg_temp.payload(), '{product_colors,0,is_default}', 'false'),
+      '{product_colors,1,is_default}', 'false'))$$,
+  'P0001', 'cross-check failed: products without exactly one default colour: 9001',
+  'zero default colours fail the cross-check');
 select throws_ok(
   $$select public.import_catalog(jsonb_set(pg_temp.payload(), '{articles}', '[]'))$$,
-  'P0001', null, 'a payload without articles is rejected');
+  'P0001', 'import payload contains no articles', 'a payload without articles is rejected');
+
+-- An article number owned by a seed product (no legacy id) is not taken over
+select throws_ok(
+  $$select public.import_catalog(jsonb_set(pg_temp.payload(), '{articles,0,article_number}', '"99010"'))$$,
+  'P0001', 'article numbers belong to products not managed by the import: 99010',
+  'a seed article number in the payload is rejected');
 reset role;
+select is((select p.legacy_product_id is null from public.article a join public.product p on p.id = a.product_id where a.article_number = '99010'),
+  true, 'the seed article keeps its product');
 
 -- A product missing from the next payload is deleted with its children
 set local role service_role;

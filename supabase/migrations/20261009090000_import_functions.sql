@@ -42,6 +42,18 @@ begin
       select x ->> 'article_number' from jsonb_array_elements(payload -> 'articles') x);
   get diagnostics deleted_articles = row_count;
 
+  -- Article numbers are globally unique: a payload number that already belongs
+  -- to a product the import does not manage (no legacy id) must not be taken over.
+  select string_agg(a.article_number, ', ' order by a.article_number) into bad
+  from public.article a
+  join public.product p on p.id = a.product_id
+  where p.legacy_product_id is null
+    and a.article_number in (
+      select x ->> 'article_number' from jsonb_array_elements(payload -> 'articles') x);
+  if bad is not null then
+    raise exception 'article numbers belong to products not managed by the import: %', bad;
+  end if;
+
   -- 2. Reference data by natural key. Fields the importer does not own
   --    (intro texts, SEO, alt texts once set) are not overwritten.
   insert into public.category (slug, name, sort_order)
@@ -181,6 +193,11 @@ begin
     as v(category_slug text, attribute_key text, sort_order integer)
   join public.category c on c.slug = v.category_slug
   join public.attribute at on at.key = v.attribute_key;
+  get diagnostics affected = row_count;
+  expected := jsonb_array_length(coalesce(payload -> 'category_attributes', '[]'));
+  if affected <> expected then
+    raise exception 'cross-check failed: % of % category attributes could be linked', affected, expected;
+  end if;
 
   -- Media of the import area that no product uses any more.
   delete from public.media m
