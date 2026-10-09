@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Result } from "@/lib/result";
 import { getCategoryPage, listCategories } from "./categories";
+import { listCertificates } from "./certificates";
 import { getProductPage } from "./product";
 import type { CatalogError } from "./types";
 
@@ -33,4 +34,8 @@ export const loadProductPage = cache(
       await getProductPage(category, product),
       `product page ${category}/${product}`
     )
+);
+
+export const loadCertificates = cache(async () =>
+  unwrap(await listCertificates(), "certificates")
 );
