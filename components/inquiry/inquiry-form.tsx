@@ -3,6 +3,8 @@
 import Link from "next/link";
 import {
   useActionState,
+  useEffect,
+  useRef,
   useState,
   type FormEvent,
   type ReactNode,
@@ -12,6 +14,7 @@ import type { VariantMatch } from "@/lib/catalog/variant-lookup";
 import {
   fieldErrors,
   inquirySchema,
+  INQUIRY_FIELDS,
   readInquiryForm,
   type FieldErrors,
   type InquiryField,
@@ -41,6 +44,19 @@ export function InquiryForm({
 }: Props) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [clientErrors, setClientErrors] = useState<FieldErrors | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const seenState = useRef(state);
+
+  // After a server response, move focus to the first problem (skips the first render).
+  useEffect(() => {
+    if (seenState.current === state) return;
+    seenState.current = state;
+    if (state.status !== "editing") return;
+    const target =
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ??
+      formRef.current?.querySelector<HTMLElement>('[role="alert"]');
+    target?.focus();
+  }, [state]);
 
   if (state.status === "discarded") {
     return <InquiryResult {...state} officialSiteUrl={officialSiteUrl} />;
@@ -48,6 +64,16 @@ export function InquiryForm({
 
   const errors = clientErrors ?? state.fieldErrors;
   const values = state.values;
+  const prefilled =
+    prefill.kind === "none"
+      ? null
+      : initialState.status === "editing"
+        ? initialState.values.orderNumber
+        : null;
+  const showPrefillHint =
+    !errors.orderNumber &&
+    prefilled !== null &&
+    values.orderNumber === prefilled;
 
   // Same schema as the server (spec D6); the server validates again.
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -59,22 +85,29 @@ export function InquiryForm({
       return;
     }
     event.preventDefault();
-    setClientErrors(fieldErrors(parsed.error));
+    const found = fieldErrors(parsed.error);
+    setClientErrors(found);
+    const first = INQUIRY_FIELDS.find((name) => found[name]);
+    const element = first && event.currentTarget.elements.namedItem(first);
+    if (element instanceof HTMLElement) element.focus();
   }
 
   const field = (
     name: InquiryField,
     label: string,
     input: (props: FieldProps) => ReactNode,
-    extra?: ReactNode
+    extra?: { node: ReactNode; id: string }
   ) => (
-    <Field name={name} label={label} error={errors[name]} extra={extra}>
+    <Field name={name} label={label} error={errors[name]} extra={extra?.node}>
       {input({
         id: `anfrage-${name}`,
         name,
         defaultValue: values[name],
         "aria-invalid": errors[name] ? true : undefined,
-        "aria-describedby": errors[name] ? `anfrage-${name}-fehler` : undefined,
+        "aria-describedby":
+          [extra?.id, errors[name] ? `anfrage-${name}-fehler` : null]
+            .filter(Boolean)
+            .join(" ") || undefined,
         className: "w-full rounded-md border border-line bg-paper px-3 py-2",
       })}
     </Field>
@@ -83,6 +116,7 @@ export function InquiryForm({
   return (
     <form
       action={formAction}
+      ref={formRef}
       onSubmit={onSubmit}
       noValidate
       className="flex max-w-2xl flex-col gap-5"
@@ -101,7 +135,12 @@ export function InquiryForm({
         (p) => (
           <input {...p} maxLength={40} className={`${p.className} font-mono`} />
         ),
-        <PrefillHint prefill={prefill} />
+        showPrefillHint && prefill.kind !== "none"
+          ? {
+              id: "anfrage-orderNumber-hinweis",
+              node: <PrefillHint prefill={prefill} />,
+            }
+          : undefined
       )}
       {field("quantity", "Menge (optional)", (p) => (
         <input {...p} inputMode="numeric" />
@@ -118,9 +157,21 @@ export function InquiryForm({
       {field("phone", "Telefon (optional)", (p) => (
         <input {...p} type="tel" autoComplete="tel" />
       ))}
-      {field("message", "Nachricht", (p) => (
-        <textarea {...p} rows={5} />
-      ))}
+      {field(
+        "message",
+        "Nachricht",
+        (p) => (
+          <textarea {...p} rows={5} />
+        ),
+        {
+          id: "anfrage-message-hinweis",
+          node: (
+            <p id="anfrage-message-hinweis" className="text-sm text-muted">
+              Bitte geben Sie eine Bestellnummer oder eine Nachricht an.
+            </p>
+          ),
+        }
+      )}
       <div className="flex flex-col gap-1">
         <label className="flex items-start gap-2 text-sm">
           <input
@@ -202,7 +253,7 @@ function Field({
 function PrefillHint({ prefill }: { prefill: Prefill }) {
   if (prefill.kind === "found")
     return (
-      <p className="text-sm text-muted">
+      <p id="anfrage-orderNumber-hinweis" className="text-sm text-muted">
         Produkt:{" "}
         <Link
           href={productPath(
@@ -217,7 +268,7 @@ function PrefillHint({ prefill }: { prefill: Prefill }) {
     );
   if (prefill.kind === "unknown")
     return (
-      <p className="text-sm text-muted">
+      <p id="anfrage-orderNumber-hinweis" className="text-sm text-muted">
         Diese Bestellnummer ist nicht im Katalog. Sie können sie korrigieren
         oder leer lassen.
       </p>

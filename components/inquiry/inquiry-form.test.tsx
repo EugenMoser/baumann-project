@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { emptyInquiryValues } from "@/lib/inquiry/schema";
 import { initialInquiryState, type InquiryState } from "@/lib/inquiry/submit";
 import { InquiryForm } from "./inquiry-form";
 
@@ -100,5 +101,125 @@ describe("InquiryForm (FR-8, FR-11)", () => {
       screen.getByRole("link", { name: /offizielle Website/ })
     ).toHaveAttribute("href", PROPS.officialSiteUrl);
     expect(screen.queryByRole("button", { name: /Anfrage prüfen/ })).toBeNull();
+  });
+
+  it("focuses the first invalid field after a failed client validation", async () => {
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={vi.fn()}
+        initialState={initialInquiryState()}
+        prefill={{ kind: "none" }}
+      />
+    );
+    fireEvent.change(screen.getByLabelText(/E-Mail/), {
+      target: { value: "kaputt" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Anfrage prüfen/ }));
+    await screen.findByText(/gültige E-Mail-Adresse/);
+    const firstInvalid = document.querySelector('[aria-invalid="true"]');
+    expect(firstInvalid).not.toBeNull();
+    expect(document.activeElement).toBe(firstInvalid);
+  });
+
+  it("focuses the first invalid field after a server-side error", async () => {
+    const action = vi.fn(async (s: InquiryState): Promise<InquiryState> => {
+      if (s.status !== "editing") return s;
+      return {
+        ...s,
+        fieldErrors: {
+          orderNumber: "Diese Bestellnummer ist nicht im Katalog.",
+        },
+      };
+    });
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={action}
+        initialState={initialInquiryState()}
+        prefill={{ kind: "none" }}
+      />
+    );
+    fireEvent.change(screen.getByLabelText(/Bestellnummer/), {
+      target: { value: "00000" },
+    });
+    fireEvent.change(screen.getByLabelText(/^Name/), {
+      target: { value: "Erika" },
+    });
+    fireEvent.change(screen.getByLabelText(/E-Mail/), {
+      target: { value: "erika@example.com" },
+    });
+    fireEvent.click(screen.getByLabelText(/Datenschutzhinweise/));
+    fireEvent.click(screen.getByRole("button", { name: /Anfrage prüfen/ }));
+    await screen.findByText(/nicht im Katalog\./);
+    await waitFor(() =>
+      expect(document.activeElement).toBe(
+        screen.getByLabelText(/Bestellnummer/)
+      )
+    );
+  });
+
+  it("focuses the result heading when the submit was discarded", () => {
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={vi.fn()}
+        initialState={{
+          status: "discarded",
+          orderNumber: null,
+          productName: null,
+          quantity: null,
+        }}
+        prefill={{ kind: "none" }}
+      />
+    );
+    expect(document.activeElement).toBe(
+      screen.getByText(/Ihre Anfrage ist gültig/)
+    );
+  });
+
+  it("shows no product link once the order number has an error", () => {
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={vi.fn()}
+        initialState={{
+          status: "editing",
+          values: emptyInquiryValues("99010 - 1"),
+          fieldErrors: { orderNumber: "Fehler" },
+          formError: null,
+        }}
+        prefill={{
+          kind: "found",
+          match: {
+            orderNumber: "99010 - 1",
+            productName: "Testkeil mit Dämpfung",
+            categorySlug: "moebelteile",
+            productSlug: "testkeil-mit-daempfung",
+          },
+        }}
+      />
+    );
+    expect(
+      screen.queryByRole("link", { name: "Testkeil mit Dämpfung" })
+    ).toBeNull();
+  });
+
+  it("links the prefill hint and the message rule to their fields", () => {
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={vi.fn()}
+        initialState={initialInquiryState("00000")}
+        prefill={{ kind: "unknown" }}
+      />
+    );
+    expect(screen.getByLabelText(/Bestellnummer/)).toHaveAttribute(
+      "aria-describedby",
+      "anfrage-orderNumber-hinweis"
+    );
+    expect(screen.getByLabelText(/Nachricht/)).toHaveAccessibleDescription(
+      "Bitte geben Sie eine Bestellnummer oder eine Nachricht an."
+    );
   });
 });

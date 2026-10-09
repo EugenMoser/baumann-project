@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
 type Props = {
   orderNumber: string | null;
   productName: string | null;
@@ -11,12 +15,17 @@ export function InquiryResult({
   quantity,
   officialSiteUrl,
 }: Props) {
+  const headingRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
   return (
     <div
       role="status"
       className="flex flex-col gap-3 rounded-md border border-line bg-surface p-6"
     >
-      <p className="font-semibold">
+      <p ref={headingRef} tabIndex={-1} className="font-semibold outline-none">
         Ihre Anfrage ist gültig, wurde aber nicht versendet – dies ist eine
         Vorschau.
       </p>
