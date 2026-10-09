@@ -91,3 +91,14 @@ export type ProductPage = ProductSummary & {
   media: MediaView[];
   accessories: AccessoryView[];
 };
+
+export type MatchKind = "exact_number" | "number" | "text";
+
+export type SearchHit = {
+  categorySlug: string;
+  productSlug: string;
+  name: string;
+  subtitle: string | null;
+  matchedNumbers: string[];
+  matchKind: MatchKind;
+};

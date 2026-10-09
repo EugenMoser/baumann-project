@@ -325,6 +325,11 @@ isOneToOne: false
                            },
 "remove_catalog":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"search_catalog":
+{ Args: { "max_results"?: number,"q": string }; Returns: {
+              "category_slug": string,"match_kind": string,"matched_numbers": (string)[],"name": string,"product_slug": string,"rank": number,"subtitle": string
+            }[]
                            }
           }
           Enums: {

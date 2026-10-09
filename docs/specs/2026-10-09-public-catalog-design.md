@@ -105,8 +105,8 @@ Matching, in order of rank:
 1. `exact_number`: `q` equals an article number or an order number of the
    `variant` view, compared after collapsing whitespace (`6174-1`,
    `6174 - 1` and `6174 -1` are the same).
-2. `number`: an article or order number starts with `q` (uses the trigram
-   index on `article_number`).
+2. `number`: an article or order number starts with `q` (a scan of the
+   `variant` view; fast enough for ~600 variants).
 3. `text`: `product.search @@ websearch_to_tsquery('german', q)` or an article
    name matches the same query; ranked with `ts_rank`.
 
