@@ -150,6 +150,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"certificate": {
+                  Row: {
+                    "id": number,"preview_alt": string,"preview_height": number,"preview_path": string,"preview_width": number,"sort_order": number,"standard": string,"title": string
+                  }
+                  Insert: {
+                    "id"?: never,"preview_alt": string,"preview_height": number,"preview_path": string,"preview_width": number,"sort_order"?: number,"standard": string,"title": string
+                  }
+                  Update: {
+                    "id"?: never,"preview_alt"?: string,"preview_height"?: number,"preview_path"?: string,"preview_width"?: number,"sort_order"?: number,"standard"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"certificate_document": {
+                  Row: {
+                    "certificate_id": number,"language": string,"storage_path": string
+                  }
+                  Insert: {
+                    "certificate_id": number,"language": string,"storage_path": string
+                  }
+                  Update: {
+                    "certificate_id"?: number,"language"?: string,"storage_path"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "certificate_document_certificate_id_fkey"
+      columns: ["certificate_id"]
+isOneToOne: false
+      referencedRelation: "certificate"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"color": {
                   Row: {
                     "family": string,"hex_code": string,"id": number,"name": string,"ral_reference": string | null
@@ -321,6 +353,9 @@ isOneToOne: false
           }
           Functions: {
             "import_catalog":
+{ Args: { "payload": Json }; Returns: Json
+                           },
+"import_certificates":
 { Args: { "payload": Json }; Returns: Json
                            },
 "remove_catalog":

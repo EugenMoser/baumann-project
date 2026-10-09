@@ -186,6 +186,29 @@ Audit log for the AI assistant: `entity`, `entity_id`, `field`, `model`,
 `prompt_version`, `output`, `created_at`, `accepted_at`. Feeds the AI label and
 the cost counter.
 
+### `certificate` and `certificate_document`
+
+| `certificate` column | Type               | Notes                             |
+| -------------------- | ------------------ | --------------------------------- |
+| `id`                 | bigint identity PK |                                   |
+| `standard`           | text, unique       | e.g. `ISO 9001`                   |
+| `title`              | text               | e.g. `Qualitätsmanagement`        |
+| `preview_path`       | text               | Storage path of the preview image |
+| `preview_width`      | int > 0            |                                   |
+| `preview_height`     | int > 0            |                                   |
+| `preview_alt`        | text, not empty    |                                   |
+| `sort_order`         | int                |                                   |
+
+| `certificate_document` column | Type                         | Notes                       |
+| ----------------------------- | ---------------------------- | --------------------------- |
+| `certificate_id`              | FK → `certificate`, cascade  | PK together with `language` |
+| `language`                    | text, check `in ('de','en')` |                             |
+| `storage_path`                | text                         | Storage path of the PDF     |
+
+`pnpm certificates:import` fills both tables (see [import.md](import.md)) and
+`remove_catalog()` deletes them. Files live under `certificates/` in the bucket
+`catalog`.
+
 ### Search
 
 Postgres full-text search (`german` configuration) over product name, subtitle,
@@ -198,6 +221,7 @@ legacy exports contain none.
 - RLS is enabled on every table.
 - Anonymous users read published catalog data only; `status <> 'published'`
   rows and `ai_generation` are invisible.
+- Certificates have no draft state; everyone reads them.
 - Writes are restricted to the admin role. Admin = JWT
   `app_metadata.role = 'admin'`, checked by `private.is_admin()`.
 - Children of a product are visible when the product is visible to the caller.
