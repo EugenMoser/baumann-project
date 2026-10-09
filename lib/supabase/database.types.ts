@@ -352,7 +352,12 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "import_catalog":
+            "find_variant":
+{ Args: { "q": string }; Returns: {
+              "category_slug": string,"order_number": string,"product_name": string,"product_slug": string
+            }[]
+                           },
+"import_catalog":
 { Args: { "payload": Json }; Returns: Json
                            },
 "import_certificates":
