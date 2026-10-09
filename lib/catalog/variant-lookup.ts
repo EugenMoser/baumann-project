@@ -16,13 +16,20 @@ export type VariantMatch = {
   productSlug: string;
 };
 
+const orderNumberParamSchema = z
+  .union([z.string(), z.array(z.string())])
+  .optional()
+  .transform((raw) => {
+    const value = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
+    return value === "" || value.length > ORDER_NUMBER_MAX ? null : value;
+  });
+
 // `?bestellnummer=` on /anfrage: first value, trimmed, 1–40 characters, otherwise ignored.
 export function parseOrderNumberParam(
   raw: string | string[] | undefined
 ): string | null {
-  const first = Array.isArray(raw) ? raw[0] : raw;
-  const value = (first ?? "").trim();
-  return value === "" || value.length > ORDER_NUMBER_MAX ? null : value;
+  const parsed = orderNumberParamSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 const rowSchema = z.object({

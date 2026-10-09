@@ -123,8 +123,8 @@ Flow:
    or WebP; read the preview dimensions with the existing image helpers.
 3. `--dry-run` stops here and prints what would be written.
 4. Upload to `certificates/<normalised file name>` (upsert).
-5. Call `public.import_certificates(payload jsonb)` (`security definer`,
-   execute only for `service_role`): replaces all certificate rows in one
+5. Call `public.import_certificates(payload jsonb)` (`security invoker`, like
+   `import_catalog`; execute only for `service_role`): replaces all certificate rows in one
    transaction and aborts on an empty payload.
 6. Delete objects under `certificates/` that no row references.
 
@@ -203,8 +203,8 @@ Form values are never logged; logs contain only error kinds.
 
 ### D7 — No rate limit, no captcha
 
-Nothing is sent or stored, so spam has no effect beyond one indexed lookup
-per submit. Server Actions check the request origin (CSRF). The AI endpoints
+Nothing is sent or stored, so spam has no effect beyond one small lookup
+per submit (scan over the ~600 variants). Server Actions check the request origin (CSRF). The AI endpoints
 of feature 7 get their own rate limit; it is not shared with this form.
 
 ### D8 — Entry points

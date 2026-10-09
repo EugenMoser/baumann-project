@@ -19,7 +19,7 @@ export function OrderNumberList({
           <li key={`${v.articleNumber}|${v.colorId ?? "none"}`}>
             <Link
               href={inquiryPath(v.orderNumber)}
-              className="font-mono underline-offset-2 hover:text-accent hover:underline"
+              className="font-mono underline underline-offset-2 hover:text-accent"
             >
               {v.orderNumber}
               <span className="sr-only"> anfragen</span>

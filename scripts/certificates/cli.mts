@@ -91,7 +91,7 @@ export async function runCertificatesCli(
     }
   }
 
-  const payload = toPayload(certificates.value) as unknown as Json; // plain JSON data built above
+  const payload: Json = toPayload(certificates.value);
   const { data, error } = await supabase.rpc("import_certificates", {
     payload,
   });

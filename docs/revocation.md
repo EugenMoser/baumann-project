@@ -49,7 +49,7 @@ committed with real values.
    ```
 
    Check that the demo notice and the footer show no customer name
-   or URL.
+   or URL, and that `/qualitaet` shows the placeholder policy text.
 
 5. **Local copies (by day 3).** Delete snapshot directories and import reports
    (`rm -r <snapshot dir>`), the local certificate directory (`rm -r <certificate dir>`), `.env.import` files, and local database data
@@ -67,5 +67,5 @@ committed with real values.
 
 - The customer's own website, which is not part of this repository.
 - The Git history. No snapshots, reports, images or catalog rows were ever
-  committed. The customer name and URL in `config/branding.ts` are replaced in
-  step 4 but remain in older commits.
+  committed. The customer name, URL and quality policy text in
+  `config/branding.ts` are replaced in step 4 but remain in older commits.
