@@ -17,8 +17,8 @@ describe("listCategories (FR-10, SC-10)", () => {
     expect(result).toEqual({
       ok: true,
       value: [
-        { slug: "moebelteile", name: "Möbelteile (Beispiel)" },
-        { slug: "sanitaer", name: "Sanitärteile (Beispiel)" },
+        { slug: "moebelteile", name: "Möbelteile (Beispiel)", productCount: 2 },
+        { slug: "sanitaer", name: "Sanitärteile (Beispiel)", productCount: 1 },
       ],
     });
   });
@@ -46,8 +46,19 @@ describe("getCategoryPage (FR-10, SC-10)", () => {
             slug: "testkeil-mit-daempfung",
             name: "Testkeil mit Dämpfung",
             subtitle: "für Beispielschlösser",
+            thumbnail: {
+              storagePath: "products/testkeil-1.webp",
+              width: 800,
+              height: 600,
+              altText: "Testkeil mit Dämpfung, Seitenansicht",
+            },
           },
-          { slug: "testabdeckung", name: "Testabdeckung", subtitle: null },
+          {
+            slug: "testabdeckung",
+            name: "Testabdeckung",
+            subtitle: null,
+            thumbnail: null,
+          },
         ],
       },
     });
@@ -85,6 +96,10 @@ describe("getProductPage (FR-10, SC-10)", () => {
       category: { slug: "moebelteile", name: "Möbelteile (Beispiel)" },
       material: { code: "PA-6", name: "Polyamid 6" },
     });
+    expect(page.colors.map((c) => c.id)).toEqual([3, 1]);
+    expect(page.variants.map((v) => v.colorId)).toEqual([3, 1, 3, 1]);
+    expect(page.thumbnail?.storagePath).toBe("products/testkeil-1.webp");
+    expect(page.related.map((p) => p.slug)).toEqual(["testabdeckung"]);
     expect(page.articles.map((a) => a.articleNumber)).toEqual([
       "99010",
       "99011",
@@ -126,6 +141,10 @@ describe("getProductPage (FR-10, SC-10)", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.colors).toEqual([]);
+    expect(result.value.variants[0].colorId).toBeNull();
+    expect(result.value.related.map((p) => p.slug)).toEqual([
+      "testkeil-mit-daempfung",
+    ]);
     expect(result.value.variants.map((v) => v.orderNumber)).toEqual(["99300"]);
     expect(result.value.accessories).toEqual([
       {
