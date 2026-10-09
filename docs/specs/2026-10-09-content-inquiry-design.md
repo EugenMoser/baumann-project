@@ -1,6 +1,6 @@
 # Feature 5 — Content pages & inquiry
 
-- **Status:** draft (2026-10-09)
+- **Status:** implemented (2026-10-09)
 - **Roadmap:** feature 5 ([roadmap](../roadmap.md))
 - **Estimate:** 9 h (roadmap: 6 h; the certificate import and the order-number
   check add about 3 h)

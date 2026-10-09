@@ -9,6 +9,8 @@ test.describe("noindex", () => {
     "/produkte/moebelteile",
     "/produkte/moebelteile/testkeil-mit-daempfung",
     "/suche?q=Befestigung",
+    "/qualitaet",
+    "/anfrage",
     MISSING_PATH,
   ]) {
     test(`meta robots noindex, nofollow on ${path} (SC-2)`, async ({
@@ -46,6 +48,8 @@ test.describe("noindex", () => {
     for (const url of [
       "/",
       "/produkte/moebelteile/testkeil-mit-daempfung",
+      "/qualitaet",
+      "/anfrage",
       MISSING_PATH,
       "/robots.txt",
       "/favicon.ico",
