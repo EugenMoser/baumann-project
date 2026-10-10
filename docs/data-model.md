@@ -229,6 +229,14 @@ legacy exports contain none.
   the admin only. Files of draft products are reachable by URL if the path is
   known (accepted trade-off).
 - The service-role key is used server-side only (import, removal scripts).
+- Published products cannot be deleted, not even by the admin (policy
+  "admin delete" requires `status <> 'published'`); archive them instead.
+- Admin writes spanning several tables use two `security invoker` functions,
+  executable by `authenticated` and guarded by `private.is_admin()`:
+  `admin_save_article(payload)` (article + attributes + pack sizes in one
+  transaction; the article number is never updated) and
+  `admin_set_product_colors(product_id, payload)` (replaces the colour set;
+  no colour or suffix twice, exactly one default when colours exist).
 
 ## Pages and visible content
 

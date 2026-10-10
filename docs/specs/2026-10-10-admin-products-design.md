@@ -1,6 +1,6 @@
 # Feature 6a — Admin: auth & product maintenance
 
-- **Status:** draft (2026-10-10)
+- **Status:** implemented (2026-10-10)
 - **Roadmap:** feature 6a ([roadmap](../roadmap.md)); feature 6 is split into 6a
   and 6b (D1)
 - **Estimate:** 12 h (feature 6 total: 22 h → 6a 12 h, 6b 10 h)
@@ -286,3 +286,11 @@ session client → Postgres (RLS, functions) → on success
 - **Cookies on public pages** would make them dynamic; the proxy matcher is
   limited to `/admin/:path*` and SC-1 checks that public pages set no auth
   cookies.
+
+## Deviations
+
+- Admin forms use native `<select>` elements instead of the shadcn `select` component (they submit with FormData and work without client state).
+- `requireAdmin()` (D2) is implemented as `checkAdmin()` returning `admin | forbidden | anonymous`; the protected layout and every action redirect or refuse based on it.
+- Logout ends the admin's sessions on all devices (supabase-js default `global` scope).
+- Duplicate pack quantities per article are rejected in the form ("Diese Menge ist schon erfasst."), matching the primary key of `article_packaging`.
+- Playwright honours `E2E_PORT` (default 3000) and targets `127.0.0.1`.
