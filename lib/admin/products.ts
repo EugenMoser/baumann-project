@@ -1,7 +1,7 @@
 import type { ContentOrigin } from "@/lib/catalog/types";
 import { err, ok, type Result } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
-import { fromPg, type AdminError } from "./errors";
+import { fromPg, STALE_SELECTION, type AdminError } from "./errors";
 import { likePattern, type ProductFilter } from "./filter";
 import type { ProductStatus } from "./labels";
 import { productOrigins } from "./origin";
@@ -337,7 +337,7 @@ export async function saveProduct(
       .insert({ ...fields, ...productOrigins(null, next) })
       .select("id")
       .single();
-    if (error) return err(fromPg(error, PRODUCT_CONFLICTS));
+    if (error) return err(fromPg(error, PRODUCT_CONFLICTS, STALE_SELECTION));
     return ok({ id: data.id });
   }
 
@@ -371,7 +371,7 @@ export async function saveProduct(
     .update({ ...fields, ...origins })
     .eq("id", id)
     .select("id");
-  if (error) return err(fromPg(error, PRODUCT_CONFLICTS));
+  if (error) return err(fromPg(error, PRODUCT_CONFLICTS, STALE_SELECTION));
   if (data.length === 0) return err({ kind: "not_found" });
   return ok({ id });
 }

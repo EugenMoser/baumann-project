@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formErrorFor, fromPg, GENERIC_SAVE_ERROR } from "./errors";
+import {
+  ARTICLE_NUMBER_FIXED,
+  formErrorFor,
+  fromPg,
+  GENERIC_SAVE_ERROR,
+  INVALID_ARTICLE_DATA,
+  INVALID_COLOR_LIST,
+} from "./errors";
 
 describe("fromPg", () => {
   it("maps a known unique violation to a field conflict", () => {
@@ -37,6 +44,26 @@ describe("fromPg", () => {
       fromPg({ code, message: "Genau eine Farbe muss Standard sein." })
     ).toEqual(expected);
   });
+  it("uses the context message for a foreign key violation", () => {
+    const fk = { code: "23503", message: "violates foreign key constraint" };
+    expect(fromPg(fk)).toEqual({
+      kind: "invalid",
+      message: "Ein Wert passt nicht zum Attributtyp.",
+    });
+    expect(fromPg(fk, {}, "Auswahl veraltet.")).toEqual({
+      kind: "invalid",
+      message: "Auswahl veraltet.",
+    });
+  });
+  it.each([INVALID_COLOR_LIST, INVALID_ARTICLE_DATA, ARTICLE_NUMBER_FIXED])(
+    "passes on our own 22023 message %s",
+    (message) => {
+      expect(fromPg({ code: "22023", message })).toEqual({
+        kind: "invalid",
+        message,
+      });
+    }
+  );
   it("does not expose English Postgres 22023 messages", () => {
     expect(
       fromPg({
