@@ -8,6 +8,7 @@ import { publicEnv } from "@/lib/env/public";
 // layout and every action decides; RLS is the boundary.
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  let cacheHeaders: Record<string, string> = {};
   const supabase = createServerClient(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
     publicEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -19,7 +20,8 @@ export async function proxy(request: NextRequest) {
           response = NextResponse.next({ request });
           for (const { name, value, options } of list)
             response.cookies.set(name, value, options);
-          for (const [key, value] of Object.entries(headers ?? {}))
+          cacheHeaders = headers ?? {};
+          for (const [key, value] of Object.entries(cacheHeaders))
             response.headers.set(key, value);
         },
       },
@@ -32,7 +34,14 @@ export async function proxy(request: NextRequest) {
       loginPathFor(path + request.nextUrl.search),
       request.url
     );
-    return NextResponse.redirect(target);
+    // Carry refreshed or cleared auth cookies (and their no-cache headers)
+    // over to the redirect, or the browser keeps a stale session cookie.
+    const redirect = NextResponse.redirect(target);
+    for (const cookie of response.cookies.getAll())
+      redirect.cookies.set(cookie);
+    for (const [key, value] of Object.entries(cacheHeaders))
+      redirect.headers.set(key, value);
+    return redirect;
   }
   return response;
 }
