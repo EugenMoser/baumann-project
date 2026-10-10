@@ -1,13 +1,15 @@
-import Link from "next/link";
+import { NotFoundContent } from "@/components/site/not-found-content";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteHeader } from "@/components/site/site-header";
+import { branding } from "@/config/branding";
 
+// Unmatched URLs render outside the (site) group, so the chrome is added here.
 export default function NotFound() {
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-16">
-      <h1 className="text-3xl font-semibold">Seite nicht gefunden</h1>
-      <p>Die angeforderte Seite existiert nicht.</p>
-      <Link href="/" className="text-accent underline underline-offset-2">
-        Zur Startseite
-      </Link>
-    </main>
+    <>
+      <SiteHeader branding={branding} />
+      <NotFoundContent />
+      <SiteFooter branding={branding} />
+    </>
   );
 }
