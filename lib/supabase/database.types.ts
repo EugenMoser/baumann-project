@@ -352,7 +352,13 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "find_variant":
+            "admin_save_article":
+{ Args: { "payload": Json }; Returns: number
+                           },
+"admin_set_product_colors":
+{ Args: { "p_product_id": number,"payload": Json }; Returns: undefined
+                           },
+"find_variant":
 { Args: { "q": string }; Returns: {
               "category_slug": string,"order_number": string,"product_name": string,"product_slug": string
             }[]
