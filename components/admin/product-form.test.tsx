@@ -1,0 +1,86 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { emptyProductValues } from "@/lib/admin/schemas";
+import { ProductForm } from "./product-form";
+
+vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
+
+const options = {
+  categories: [{ id: 1, name: "Möbelteile" }],
+  materials: [{ id: 1, code: "PA-6", name: "Polyamid 6" }],
+  colors: [],
+  attributes: [],
+};
+const noop = async <S,>(s: S) => s;
+
+describe("ProductForm (SC-6, SC-12)", () => {
+  it("fills the slug from the name on create until the slug is edited", () => {
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={emptyProductValues()}
+        options={options}
+        productId={null}
+        savedStatus={null}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Schließkeil 8 mm" },
+    });
+    expect(screen.getByLabelText("Slug")).toHaveValue("schliesskeil-8-mm");
+    fireEvent.change(screen.getByLabelText("Slug"), {
+      target: { value: "eigener-slug" },
+    });
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Anders" },
+    });
+    expect(screen.getByLabelText("Slug")).toHaveValue("eigener-slug");
+  });
+  it("shows the URL hint and no delete button for a published product", () => {
+    const initial = {
+      ...emptyProductValues(),
+      name: "X",
+      slug: "x",
+      categoryId: "1",
+      status: "published",
+    };
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={initial}
+        options={options}
+        productId={7}
+        savedStatus="published"
+      />
+    );
+    expect(
+      screen.getByText(/ändert die öffentliche Adresse/)
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Produkt löschen" })
+    ).toBeNull();
+  });
+  it("offers delete for a draft", () => {
+    const initial = {
+      ...emptyProductValues(),
+      name: "X",
+      slug: "x",
+      categoryId: "1",
+    };
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={initial}
+        options={options}
+        productId={7}
+        savedStatus="draft"
+      />
+    );
+    expect(
+      screen.getByRole("button", { name: "Produkt löschen" })
+    ).toBeInTheDocument();
+  });
+});
