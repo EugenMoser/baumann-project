@@ -115,13 +115,23 @@ export async function saveArticleAction(
   const types = await loadAttributeTypes(client);
   if (!types.ok) return errorState(values, types.error);
   const parsed = parseArticle(values, types.value);
-  if (!parsed.ok)
+  if (!parsed.ok) {
+    // Errors on fields without a rendered input signal a tampered request.
+    const tampered = Object.keys(parsed.fieldErrors).some(
+      (k) =>
+        k === "id" ||
+        k === "productId" ||
+        k === "form" ||
+        (k.startsWith("attr:") &&
+          parsed.fieldErrors[k] === "Unbekanntes Attribut.")
+    );
     return {
       status: "error",
       values,
       fieldErrors: parsed.fieldErrors,
-      formError: null,
+      formError: tampered ? "Ungültige Anfrage." : null,
     };
+  }
   const done = await runWrite(values, "[admin] save article", (c) =>
     saveArticle(c, parsed.value)
   );

@@ -92,8 +92,14 @@ function ArticleForm({
   materials,
   onSaved,
 }: Props & { onSaved: () => void }) {
+  // Toast in the wrapper so it survives a re-render of the refreshed tree.
+  const run: SaveAction = async (prev, formData) => {
+    const next = await action(prev, formData);
+    if (next.status === "saved") toast.success("Artikel gespeichert.");
+    return next;
+  };
   const [state, formAction, pending] = useActionState(
-    action,
+    run,
     idleState(articleValuesFrom(article, productId))
   );
   const [rows, setRows] = useState(() => emptyRows(state.values.packaging));
@@ -109,10 +115,7 @@ function ArticleForm({
   useEffect(() => {
     if (seen.current === state) return;
     seen.current = state;
-    if (state.status === "saved") {
-      toast.success("Artikel gespeichert.");
-      onSaved();
-    }
+    if (state.status === "saved") onSaved();
   }, [state, onSaved]);
 
   const v = state.values;
@@ -252,6 +255,8 @@ function ArticleForm({
                     id={lid}
                     name="packLabel"
                     value={row.label}
+                    aria-invalid={Boolean(err)}
+                    aria-describedby={err ? `${qid}-row-error` : undefined}
                     onChange={(ev) => setRow(i, { label: ev.target.value })}
                   />
                 </Field>
@@ -259,6 +264,7 @@ function ArticleForm({
                   type="button"
                   variant="outline"
                   size="sm"
+                  aria-label={`Einheit ${i + 1} entfernen`}
                   onClick={() =>
                     setRows((rs) => emptyRows(rs.filter((_, j) => j !== i)))
                   }

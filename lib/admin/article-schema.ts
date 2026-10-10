@@ -35,6 +35,7 @@ export type ArticleInput = {
 };
 
 const DECIMAL = /^\d{1,7}([.,]\d{1,3})?$/;
+const ATTR_KEY = /^[1-9]\d{0,9}$/;
 const QUANTITY = /^[1-9]\d{0,6}$/;
 
 const baseSchema = z.object({
@@ -93,7 +94,7 @@ export function parseArticle(
   const attributes: ArticleInput["attributes"] = [];
   for (const [key, raw] of Object.entries(values.attributes)) {
     const id = Number(key);
-    const type = types.get(id);
+    const type = ATTR_KEY.test(key) ? types.get(id) : undefined;
     const value = raw.trim();
     if (type === undefined) {
       errors[`attr:${key}`] = "Unbekanntes Attribut.";
@@ -122,6 +123,7 @@ export function parseArticle(
   }
 
   const packaging: ArticleInput["packaging"] = [];
+  const seenQuantities = new Set<number>();
   values.packaging.forEach((row, i) => {
     const quantity = row.quantity.trim();
     const label = row.label.trim();
@@ -130,6 +132,11 @@ export function parseArticle(
       errors[`packaging.${i}`] = "Bitte eine positive ganze Zahl eingeben.";
       return;
     }
+    if (seenQuantities.has(Number(quantity))) {
+      errors[`packaging.${i}`] = "Diese Menge ist schon erfasst.";
+      return;
+    }
+    seenQuantities.add(Number(quantity));
     if (label.length > 50) {
       errors[`packaging.${i}`] = "Bezeichnung höchstens 50 Zeichen.";
       return;

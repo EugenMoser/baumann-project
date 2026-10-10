@@ -74,6 +74,17 @@ describe("parseArticle (SC-9)", () => {
       "packaging.0",
       "Bitte eine positive ganze Zahl eingeben.",
     ],
+    [
+      {
+        packaging: [
+          { quantity: "250", label: "" },
+          { quantity: "250", label: "Karton" },
+        ],
+      },
+      "packaging.1",
+      "Diese Menge ist schon erfasst.",
+    ],
+    [{ attributes: { "1.0": "5" } }, "attr:1.0", "Unbekanntes Attribut."],
   ])("rejects %o", (patch, field, message) => {
     const r = parseArticle({ ...base, ...patch } as ArticleValues, types);
     expect(r.ok).toBe(false);

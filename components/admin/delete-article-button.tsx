@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -31,13 +31,13 @@ export function DeleteArticleButton({
   articleId,
   articleNumber,
 }: Props) {
-  const [state, formAction, pending] = useActionState(action, idleState(null));
-  const seen = useRef(state);
-  useEffect(() => {
-    if (seen.current === state) return;
-    seen.current = state;
-    if (state.status === "saved") toast.success("Artikel gelöscht.");
-  }, [state]);
+  // Toast in the wrapper: the row unmounts when the refreshed tree arrives.
+  const run = async (prev: FormState<null>, formData: FormData) => {
+    const next = await action(prev, formData);
+    if (next.status === "saved") toast.success("Artikel gelöscht.");
+    return next;
+  };
+  const [state, formAction, pending] = useActionState(run, idleState(null));
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
