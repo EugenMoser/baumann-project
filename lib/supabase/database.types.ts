@@ -352,10 +352,28 @@ isOneToOne: false
                 }
           }
           Functions: {
-            "admin_save_article":
+            "admin_attach_media":
+{ Args: { "p_alt_text": string,"p_height": number,"p_product_id": number,"p_storage_path": string,"p_width": number }; Returns: number
+                           },
+"admin_delete_product":
+{ Args: { "p_product_id": number }; Returns: (string)[]
+                           },
+"admin_remove_media":
+{ Args: { "p_media_id": number,"p_product_id": number }; Returns: string
+                           },
+"admin_save_article":
 { Args: { "payload": Json }; Returns: number
                            },
+"admin_save_category":
+{ Args: { "payload": Json }; Returns: number
+                           },
+"admin_set_product_accessories":
+{ Args: { "p_product_id": number,"payload": Json }; Returns: undefined
+                           },
 "admin_set_product_colors":
+{ Args: { "p_product_id": number,"payload": Json }; Returns: undefined
+                           },
+"admin_set_product_media":
 { Args: { "p_product_id": number,"payload": Json }; Returns: undefined
                            },
 "find_variant":

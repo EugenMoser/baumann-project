@@ -12,8 +12,7 @@ export const PUBLISH_NEEDS_DEFAULT =
   "Zum Veröffentlichen braucht das Produkt genau eine Standardfarbe.";
 export const LAST_ARTICLE =
   "Ein veröffentlichtes Produkt braucht mindestens einen Artikel. Bitte zuerst archivieren.";
-export const DELETE_PUBLISHED =
-  "Veröffentlichte Produkte können nicht gelöscht werden. Bitte zuerst archivieren.";
+export { DELETE_PUBLISHED } from "./errors";
 
 // Spec D10 — mirrors import cross-check 9.
 export function publishProblem(stats: PublishStats): string | null {

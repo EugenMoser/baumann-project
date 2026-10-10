@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  ALT_TEXT_REQUIRED,
   ARTICLE_NUMBER_FIXED,
+  DELETE_PUBLISHED,
+  DUPLICATE_ACCESSORY,
   formErrorFor,
   fromPg,
   GENERIC_SAVE_ERROR,
   INVALID_ARTICLE_DATA,
   INVALID_COLOR_LIST,
+  NEEDS_ONE_THUMBNAIL,
+  OWN_ARTICLE_ACCESSORY,
+  STALE_MEDIA_LIST,
 } from "./errors";
 
 describe("fromPg", () => {
@@ -77,5 +83,21 @@ describe("fromPg", () => {
       GENERIC_SAVE_ERROR
     );
     expect(formErrorFor({ kind: "conflict", field: "slug" })).toBeNull();
+  });
+});
+
+describe("fromPg — 6b function messages (SC-13)", () => {
+  it.each([
+    STALE_MEDIA_LIST,
+    NEEDS_ONE_THUMBNAIL,
+    ALT_TEXT_REQUIRED,
+    OWN_ARTICLE_ACCESSORY,
+    DUPLICATE_ACCESSORY,
+    DELETE_PUBLISHED,
+  ])("passes on %s as invalid", (message) => {
+    expect(fromPg({ code: "22023", message })).toEqual({
+      kind: "invalid",
+      message,
+    });
   });
 });

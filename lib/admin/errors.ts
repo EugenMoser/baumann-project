@@ -19,6 +19,19 @@ export const INVALID_COLOR_LIST = "Ungültige Farbliste.";
 export const INVALID_ARTICLE_DATA = "Ungültige Artikeldaten.";
 export const ARTICLE_NUMBER_FIXED =
   "Die Artikelnummer kann nicht geändert werden.";
+export const INVALID_MEDIA_LIST = "Ungültige Bildliste.";
+export const STALE_MEDIA_LIST =
+  "Die Bildliste ist veraltet. Bitte die Seite neu laden.";
+export const NEEDS_ONE_THUMBNAIL = "Genau ein Bild muss Vorschaubild sein.";
+export const ALT_TEXT_REQUIRED = "Jedes Bild braucht einen Alt-Text.";
+export const INVALID_ACCESSORY_LIST = "Ungültige Zubehörliste.";
+export const OWN_ARTICLE_ACCESSORY =
+  "Artikel des eigenen Produkts sind kein Zubehör.";
+export const DUPLICATE_ACCESSORY =
+  "Jeder Artikel darf nur einmal Zubehör sein.";
+export const INVALID_CATEGORY_DATA = "Ungültige Kategoriedaten.";
+export const DELETE_PUBLISHED =
+  "Veröffentlichte Produkte können nicht gelöscht werden. Bitte zuerst archivieren.";
 const KNOWN_DB_MESSAGES: readonly string[] = [
   DUPLICATE_COLOR,
   DUPLICATE_SUFFIX,
@@ -26,11 +39,27 @@ const KNOWN_DB_MESSAGES: readonly string[] = [
   INVALID_COLOR_LIST,
   INVALID_ARTICLE_DATA,
   ARTICLE_NUMBER_FIXED,
+  INVALID_MEDIA_LIST,
+  STALE_MEDIA_LIST,
+  NEEDS_ONE_THUMBNAIL,
+  ALT_TEXT_REQUIRED,
+  INVALID_ACCESSORY_LIST,
+  OWN_ARTICLE_ACCESSORY,
+  DUPLICATE_ACCESSORY,
+  INVALID_CATEGORY_DATA,
+  DELETE_PUBLISHED,
 ];
 
 // 23503 on a product save: a chosen category or material was deleted meanwhile.
 export const STALE_SELECTION =
   "Eine Auswahl gibt es nicht mehr. Bitte die Seite neu laden.";
+
+// 23503 on deleting master data that is still referenced (D7, D8).
+export const CATEGORY_IN_USE = "Die Kategorie enthält noch Produkte.";
+export const COLOR_IN_USE = "Die Farbe ist noch Produkten zugeordnet.";
+export const MATERIAL_IN_USE = "Das Material wird noch verwendet.";
+// Storage upload failed (D2); details go to the log only.
+export const UPLOAD_FAILED = "Das Bild konnte nicht hochgeladen werden.";
 
 export const CONFLICT_MESSAGES: Record<string, string> = {
   slug: "Dieser Slug ist in der Kategorie schon vergeben.",
