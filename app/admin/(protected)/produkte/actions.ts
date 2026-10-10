@@ -59,7 +59,16 @@ export async function saveProductAction(
       fieldErrors: zodFieldErrors(parsed.error),
       formError: null,
     };
+  const rawId = formData.get("id");
   const id = idFrom(formData);
+  // Empty id means create; a non-empty malformed id must not fall through to it.
+  if (id === null && rawId !== null && rawId !== "")
+    return {
+      status: "error",
+      values,
+      fieldErrors: {},
+      formError: "Ungültige Anfrage.",
+    };
   const done = await runWrite(values, "[admin] save product", (client) =>
     saveProduct(client, id, parsed.data)
   );

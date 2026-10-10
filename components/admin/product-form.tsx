@@ -45,6 +45,14 @@ export function ProductForm({
   const slugTouched = useRef(productId !== null);
   const seen = useRef(state);
 
+  // Re-sync controlled fields with each action response (e.g. a derived slug).
+  const [syncedState, setSyncedState] = useState(state);
+  if (syncedState !== state) {
+    setSyncedState(state);
+    setName(state.values.name);
+    setSlug(state.values.slug);
+  }
+
   useEffect(() => {
     if (seen.current === state) return;
     seen.current = state;
@@ -97,6 +105,7 @@ export function ProductForm({
           <select
             id="categoryId"
             name="categoryId"
+            key={v.categoryId}
             defaultValue={v.categoryId}
             className={selectClass}
             aria-invalid={Boolean(e.categoryId)}
@@ -114,6 +123,7 @@ export function ProductForm({
           <select
             id="status"
             name="status"
+            key={v.status}
             defaultValue={v.status}
             className={selectClass}
             aria-invalid={Boolean(e.status)}
@@ -161,6 +171,7 @@ export function ProductForm({
           <select
             id="materialId"
             name="materialId"
+            key={v.materialId}
             defaultValue={v.materialId}
             className={selectClass}
             aria-invalid={Boolean(e.materialId)}

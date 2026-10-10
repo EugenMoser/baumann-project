@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { emptyProductValues } from "@/lib/admin/schemas";
 import { ProductForm } from "./product-form";
@@ -61,6 +61,39 @@ describe("ProductForm (SC-6, SC-12)", () => {
     expect(
       screen.queryByRole("button", { name: "Produkt löschen" })
     ).toBeNull();
+  });
+  it("shows the status returned by the action (selects follow state.values)", async () => {
+    const initial = {
+      ...emptyProductValues(),
+      name: "X",
+      slug: "x",
+      categoryId: "1",
+    };
+    const action = vi.fn(async () => ({
+      status: "saved" as const,
+      values: { ...initial, status: "archived" },
+      fieldErrors: {},
+      formError: null,
+    }));
+    render(
+      <ProductForm
+        action={action}
+        deleteAction={noop}
+        initial={initial}
+        options={options}
+        productId={7}
+        savedStatus="draft"
+      />
+    );
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "published" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(action).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(screen.getByLabelText("Status")).toHaveValue("archived")
+    );
+    expect(screen.getByLabelText("Kategorie")).toHaveValue("1");
   });
   it("offers delete for a draft", () => {
     const initial = {
