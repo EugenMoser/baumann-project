@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Light-only site: `dark:` classes from generated components apply only
+   under an explicit .dark class (never set), not under OS dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Light theme only (feature 4 spec, D9). Calm, technical catalogue look. */
 @theme {
   --color-paper: #ffffff;

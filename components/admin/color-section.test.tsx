@@ -35,4 +35,44 @@ describe("ColorSection", () => {
     expect(screen.getByLabelText("Suffix")).toHaveValue("2");
     expect(screen.getByRole("radio")).toBeChecked();
   });
+  it("moves the default to the first remaining row when the default is removed", () => {
+    const initial = [
+      { colorId: 1, suffix: "1", isDefault: false, sortOrder: 0 },
+      { colorId: 2, suffix: "2", isDefault: true, sortOrder: 1 },
+      { colorId: 3, suffix: "3", isDefault: false, sortOrder: 2 },
+    ];
+    render(
+      <ColorSection
+        action={noop}
+        productId={1}
+        initial={initial}
+        colors={colors}
+      />
+    );
+    expect(screen.getAllByRole("radio")[1]).toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Farbe 2 entfernen" }));
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(2);
+    expect(radios[0]).toBeChecked();
+    expect(radios[0]).toHaveAttribute("value", "1");
+  });
+  it("makes an added row the default when no default exists", () => {
+    const initial = [
+      { colorId: 1, suffix: "1", isDefault: false, sortOrder: 0 },
+    ];
+    render(
+      <ColorSection
+        action={noop}
+        productId={1}
+        initial={initial}
+        colors={colors}
+      />
+    );
+    expect(screen.getByRole("radio")).not.toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: "Farbe hinzufügen" }));
+    const radios = screen.getAllByRole("radio");
+    expect(radios[0]).not.toBeChecked();
+    expect(radios[1]).toBeChecked();
+    expect(radios[1]).toHaveAttribute("value", "2");
+  });
 });

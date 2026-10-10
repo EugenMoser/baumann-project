@@ -174,3 +174,18 @@ test("archive, then delete after confirmation (SC-12)", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/produkte$/);
   await expect(page.getByRole("link", { name: `${NAME} neu` })).toHaveCount(0);
 });
+
+test("a deleted product shows the admin 404 page", async ({ page }) => {
+  const response = await page.goto(editUrl);
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Nicht gefunden" })
+  ).toBeVisible();
+  await expect(
+    page.getByText("Diesen Datensatz gibt es nicht (mehr).")
+  ).toBeVisible();
+  // Admin chrome only: no public footer.
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
+  await page.getByRole("link", { name: "← Alle Produkte" }).click();
+  await expect(page).toHaveURL(/\/admin\/produkte$/);
+});

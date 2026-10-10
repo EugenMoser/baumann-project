@@ -147,8 +147,11 @@ export function ColorSection({ action, productId, initial, colors }: Props) {
                 size="sm"
                 aria-label={`Farbe ${i + 1} entfernen`}
                 onClick={() => {
-                  if (defaultId === row.colorId) setDefaultId("");
-                  setRows((rs) => rs.filter((_, j) => j !== i));
+                  const rest = rows.filter((_, j) => j !== i);
+                  // The default moves to the first remaining row.
+                  if (defaultId === row.colorId)
+                    setDefaultId(rest[0]?.colorId ?? "");
+                  setRows(rest);
                 }}
               >
                 Entfernen
@@ -169,7 +172,8 @@ export function ColorSection({ action, productId, initial, colors }: Props) {
               ...rs,
               { colorId: id, suffix: "", sortOrder: String(rs.length) },
             ]);
-            if (rows.length === 0) setDefaultId(id);
+            // Without a default, the new row becomes the default.
+            if (!rows.some((r) => r.colorId === defaultId)) setDefaultId(id);
           }}
         >
           Farbe hinzufügen
