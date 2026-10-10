@@ -12,9 +12,15 @@ as $$
 declare
   v_id bigint;
   v_product bigint := (payload ->> 'product_id')::bigint;
+  -- A missing key or JSON null means "no rows".
+  v_attributes jsonb := coalesce(nullif(payload -> 'attributes', 'null'::jsonb), '[]'::jsonb);
+  v_packaging jsonb := coalesce(nullif(payload -> 'packaging', 'null'::jsonb), '[]'::jsonb);
 begin
   if not (select private.is_admin()) then
     raise exception 'admin only' using errcode = '42501';
+  end if;
+  if jsonb_typeof(v_attributes) <> 'array' or jsonb_typeof(v_packaging) <> 'array' then
+    raise exception 'Ungültige Artikeldaten.' using errcode = '22023';
   end if;
 
   if payload ->> 'id' is not null then
@@ -49,12 +55,12 @@ begin
   delete from public.article_attribute where article_id = v_id;
   insert into public.article_attribute (article_id, attribute_id, value_decimal, value_text)
   select v_id, (a ->> 'attribute_id')::bigint, (a ->> 'value_decimal')::numeric, a ->> 'value_text'
-  from jsonb_array_elements(coalesce(payload -> 'attributes', '[]'::jsonb)) as a;
+  from jsonb_array_elements(v_attributes) as a;
 
   delete from public.article_packaging where article_id = v_id;
   insert into public.article_packaging (article_id, quantity, label, sort_order)
   select v_id, (p ->> 'quantity')::integer, nullif(btrim(p ->> 'label'), ''), (ord - 1)::integer
-  from jsonb_array_elements(coalesce(payload -> 'packaging', '[]'::jsonb)) with ordinality as t(p, ord);
+  from jsonb_array_elements(v_packaging) with ordinality as t(p, ord);
 
   -- "Last change" in the admin list reflects article edits.
   update public.product set updated_at = now() where id = v_product;
@@ -73,6 +79,9 @@ declare
 begin
   if not (select private.is_admin()) then
     raise exception 'admin only' using errcode = '42501';
+  end if;
+  if payload is null or jsonb_typeof(payload) <> 'array' then
+    raise exception 'Ungültige Farbliste.' using errcode = '22023';
   end if;
   if not exists (select 1 from public.product where id = p_product_id) then
     raise exception 'Produkt nicht gefunden.' using errcode = 'P0002';
@@ -107,6 +116,26 @@ revoke all on function public.admin_save_article(jsonb) from public, anon;
 grant execute on function public.admin_save_article(jsonb) to authenticated;
 revoke all on function public.admin_set_product_colors(bigint, jsonb) from public, anon;
 grant execute on function public.admin_set_product_colors(bigint, jsonb) to authenticated;
+
+-- D8: the article number belongs to the numbering system and never changes,
+-- whoever writes (admin UI, API, importer). The importer upserts on the
+-- number, so it never changes it either.
+create function private.keep_article_number()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.article_number is distinct from old.article_number then
+    raise exception 'Die Artikelnummer kann nicht geändert werden.' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger article_keep_number
+  before update on public.article
+  for each row execute function private.keep_article_number();
 
 -- D10: published products are archived, never deleted (defence in depth;
 -- the admin UI hides the button and the action refuses).

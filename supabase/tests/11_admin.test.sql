@@ -1,6 +1,6 @@
 -- supabase/tests/11_admin.test.sql
 begin;
-select plan(27);
+select plan(34);
 
 -- Privileges
 select ok(not has_function_privilege('anon', 'public.admin_save_article(jsonb)', 'execute'), 'anon cannot call admin_save_article');
@@ -39,12 +39,24 @@ select is((select array_agg(p.quantity order by p.sort_order) from public.articl
 
 select throws_ok($$select public.admin_save_article(jsonb_build_object(
   'id', (select id from public.article where article_number = '99401'), 'product_id', 4,
+  'name', 'Kaputt', 'sort_order', 1, 'attributes', '"x"'::jsonb, 'packaging', '[]'::jsonb))$$,
+  '22023', 'Ungültige Artikeldaten.', 'non-array attributes raise');
+select lives_ok($$select public.admin_save_article(jsonb_build_object(
+  'id', (select id from public.article where article_number = '99401'), 'product_id', 4,
+  'name', 'Neu 2', 'sort_order', 1, 'attributes', 'null'::jsonb, 'packaging', 'null'::jsonb))$$,
+  'JSON null lists are treated as empty');
+select is((select count(*) from public.article_packaging p join public.article a on a.id = p.article_id where a.article_number = '99401'), 0::bigint, 'JSON null packaging clears the pack sizes');
+
+select throws_ok($$select public.admin_save_article(jsonb_build_object(
+  'id', (select id from public.article where article_number = '99401'), 'product_id', 4,
   'name', 'Kaputt', 'sort_order', 1,
   'attributes', '[{"attribute_id":1,"value_decimal":null,"value_text":"x"}]'::jsonb,
   'packaging', '[]'::jsonb))$$, '23514', null, 'a wrong attribute type raises');
 select is((select name from public.article where article_number = '99401'), 'Neu 2', 'the failed call changed nothing');
 select throws_ok($$select public.admin_save_article('{"id":999999,"product_id":4,"name":"x","sort_order":0,"attributes":[],"packaging":[]}'::jsonb)$$, 'P0002', null, 'a missing article raises not found');
 select throws_ok($$select public.admin_save_article('{"product_id":4,"article_number":"99010","sort_order":0,"attributes":[],"packaging":[]}'::jsonb)$$, '23505', null, 'a taken article number raises unique violation');
+select throws_ok($$update public.article set article_number = 'X' where article_number = '99010'$$, '22023', 'Die Artikelnummer kann nicht geändert werden.', 'the article number cannot be changed directly (D8)');
+select lives_ok($$update public.article set sort_order = sort_order where article_number = '99010'$$, 'other article columns stay writable');
 
 -- Colours
 select lives_ok($$select public.admin_set_product_colors(1, '[{"color_id":2,"suffix":"7","is_default":true},{"color_id":1,"suffix":null,"is_default":false}]'::jsonb)$$, 'admin replaces the colour set');
@@ -52,6 +64,8 @@ select is((select array_agg(color_id order by sort_order) from public.product_co
 select throws_ok($$select public.admin_set_product_colors(1, '[{"color_id":2,"suffix":"1","is_default":true},{"color_id":2,"suffix":"2","is_default":false}]'::jsonb)$$, '22023', 'Jede Farbe darf nur einmal zugeordnet sein.', 'duplicate colour raises');
 select throws_ok($$select public.admin_set_product_colors(1, '[{"color_id":2,"suffix":"1","is_default":true},{"color_id":1,"suffix":"1","is_default":false}]'::jsonb)$$, '22023', 'Jedes Suffix darf nur einmal vorkommen.', 'duplicate suffix raises');
 select throws_ok($$select public.admin_set_product_colors(1, '[{"color_id":2,"suffix":"1","is_default":false}]'::jsonb)$$, '22023', 'Genau eine Farbe muss Standard sein.', 'no default raises');
+select throws_ok($$select public.admin_set_product_colors(1, null)$$, '22023', 'Ungültige Farbliste.', 'a NULL colour list raises');
+select throws_ok($$select public.admin_set_product_colors(1, '{"color_id":2}'::jsonb)$$, '22023', 'Ungültige Farbliste.', 'a non-array colour list raises');
 select is((select count(*) from public.product_color where product_id = 1), 2::bigint, 'failed calls keep the previous set');
 
 -- Delete rule (D10)
