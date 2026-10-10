@@ -6,7 +6,7 @@ import type { Database } from "./database.types";
 export type CatalogClient = SupabaseClient<Database>;
 
 // Public reads run as `anon` with the publishable key, so RLS decides what is
-// visible. Sessions (admin) come with @supabase/ssr in feature 6.
+// visible. Admin sessions live in session.ts and never touch public pages.
 export function createServerSupabase(): CatalogClient {
   return createClient<Database>(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,

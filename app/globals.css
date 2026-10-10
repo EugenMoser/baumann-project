@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* Light-only site: `dark:` classes from generated components apply only
+   under an explicit .dark class (never set), not under OS dark mode. */
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Light theme only (feature 4 spec, D9). Calm, technical catalogue look. */
 @theme {
@@ -9,6 +14,26 @@
   --color-line: #d8dce0;
   --color-accent: #1d5c96;
   --color-accent-strong: #154675;
+
+  /* shadcn/ui tokens (feature 6a, D5), mapped onto the palette above.
+     `muted` and `accent` keep their public meaning; generated components use
+     `bg-surface` instead of `bg-muted` (see components/ui). */
+  --color-background: #ffffff;
+  --color-foreground: #15191d;
+  --color-card: #ffffff;
+  --color-card-foreground: #15191d;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #15191d;
+  --color-primary: #1d5c96;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f3f4f5;
+  --color-secondary-foreground: #15191d;
+  --color-muted-foreground: #59626b;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #b42318;
+  --color-border: #d8dce0;
+  --color-input: #d8dce0;
+  --color-ring: #1d5c96;
 }
 
 @theme inline {
