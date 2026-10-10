@@ -92,6 +92,7 @@ Unordered; each gets its own spec when picked up.
 - Go-live preparation: indexing, sitemap, 301 redirects via `legacy_product_id`
 - Unique colour suffix per product (`product_color (product_id, suffix)`), so order
   numbers and JSON-LD SKUs stay unique
+- App-side login rate limit (GoTrue's per-IP limit only sees the app server)
 
 ## Risks
 

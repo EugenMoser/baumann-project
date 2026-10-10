@@ -286,6 +286,12 @@ session client → Postgres (RLS, functions) → on success
 - **Cookies on public pages** would make them dynamic; the proxy matcher is
   limited to `/admin/:path*` and SC-1 checks that public pages set no auth
   cookies.
+- **Login rate limit is shared:** sign-in runs server-side, so GoTrue sees
+  the app server's IP; its per-IP limit (`sign_in_sign_ups`) acts as one
+  shared limit. Brute force stays capped, but repeated failures can lock out
+  the admin for a few minutes. Production limits come from the GoTrue
+  environment in Coolify, not from `supabase/config.toml`. An app-side limit
+  is listed under "Later" in the roadmap.
 
 ## Deviations
 
