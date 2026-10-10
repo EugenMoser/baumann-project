@@ -18,4 +18,17 @@ describe("OrderNumberList (FR-5, D6)", () => {
       screen.getByRole("heading", { name: "Alle Bestellnummern" })
     ).toBeInTheDocument();
   });
+
+  it("links every order number to the inquiry form (FR-13, SC-13)", () => {
+    const page = makeProductPage();
+    render(<OrderNumberList page={page} />);
+    for (const v of page.variants) {
+      expect(
+        screen.getByRole("link", { name: new RegExp(v.orderNumber) })
+      ).toHaveAttribute(
+        "href",
+        `/anfrage?bestellnummer=${encodeURIComponent(v.orderNumber)}`
+      );
+    }
+  });
 });

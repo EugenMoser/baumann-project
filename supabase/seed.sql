@@ -70,12 +70,20 @@ insert into public.product_accessory (product_id, article_id, sort_order) values
 insert into public.ai_generation (id, entity, entity_id, field, model, prompt_version, output) overriding system value values
   (1, 'product', 1, 'description', 'test-model', 'v1', 'Beispieltext');
 
+-- Synthetic certificate (no files in Storage; pages render links only).
+insert into public.certificate (id, standard, title, preview_path, preview_width, preview_height, preview_alt, sort_order) overriding system value values
+  (1, 'ISO 9001 (Beispiel)', 'Qualitätsmanagement (Beispiel)', 'certificates/test-iso-9001.png', 600, 848, 'Beispielzertifikat ISO 9001', 0);
+
+insert into public.certificate_document (certificate_id, language, storage_path) values
+  (1, 'de', 'certificates/test-iso-9001-de.pdf'),
+  (1, 'en', 'certificates/test-iso-9001-en.pdf');
+
 -- Fixed ids above; move identity sequences past them.
 do $$
 declare
   t text;
 begin
-  foreach t in array array['category', 'attribute', 'material', 'color', 'product', 'article', 'media', 'ai_generation'] loop
+  foreach t in array array['category', 'attribute', 'material', 'color', 'product', 'article', 'media', 'ai_generation', 'certificate'] loop
     execute format(
       'select setval(pg_get_serial_sequence(%L, ''id''), (select max(id) from public.%I))',
       'public.' || t, t);

@@ -111,3 +111,12 @@ export type SearchHit = {
   matchedNumbers: string[];
   matchKind: MatchKind;
 };
+
+export type CertificateLanguage = "de" | "en";
+
+export type CertificateView = {
+  standard: string;
+  title: string;
+  preview: ImageRef;
+  documents: { language: CertificateLanguage; storagePath: string }[];
+};

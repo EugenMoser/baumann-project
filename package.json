@@ -17,6 +17,7 @@
     "db:test": "supabase test db && vitest run --config vitest.integration.config.mts",
     "db:types": "supabase gen types typescript --local --schema public > lib/supabase/database.types.ts",
     "catalog:import": "node --env-file-if-exists=.env.import scripts/import/cli.mts",
+    "certificates:import": "node --env-file-if-exists=.env.import scripts/certificates/cli.mts",
     "catalog:remove": "node --env-file-if-exists=.env.import scripts/import/remove.mts",
     "prepare": "husky"
   },

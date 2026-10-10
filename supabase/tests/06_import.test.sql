@@ -1,5 +1,5 @@
 begin;
-select plan(28);
+select plan(29);
 
 create function pg_temp.payload() returns jsonb language sql as $$
 select $j${
@@ -137,6 +137,9 @@ select is(
         + (select count(*) from public.product_color) + (select count(*) from public.media)
         + (select count(*) from public.product_media) + (select count(*) from public.ai_generation)),
   0::bigint, 'every catalog table is empty after removal');
+select is(
+  (select (select count(*) from public.certificate) + (select count(*) from public.certificate_document)),
+  0::bigint, 'certificate tables are empty after removal');
 
 select * from finish();
 rollback;

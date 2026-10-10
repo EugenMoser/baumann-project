@@ -29,7 +29,7 @@ committed with real values.
 3. **Verify (day 0-1).**
    - Run `pnpm catalog:remove --confirm <api host>` a second time.
      `remove_catalog()` reports the counts before it deletes, so
-     `products: 0`, `articles: 0` and `media: 0` prove the tables are empty
+     `products: 0`, `articles: 0`, `media: 0` and `certificates: 0` prove the tables are empty
      (unpublished rows included, which the publishable key cannot see). The CLI
      also verifies that the bucket `catalog` is empty and exits `1` otherwise.
    - `curl -s https://<app host>/api/health` returns `"db":"ok"`.
@@ -49,10 +49,10 @@ committed with real values.
    ```
 
    Check that the demo notice and the footer show no customer name
-   or URL.
+   or URL, and that `/qualitaet` shows the placeholder policy text.
 
 5. **Local copies (by day 3).** Delete snapshot directories and import reports
-   (`rm -r <snapshot dir>`), `.env.import` files, and local database data
+   (`rm -r <snapshot dir>`), the local certificate directory (`rm -r <certificate dir>`), `.env.import` files, and local database data
    (run `pnpm catalog:remove --confirm 127.0.0.1:54321` first so local Storage
    files are removed too, then `pnpm db:reset`). Check other machines that may hold a snapshot.
 
@@ -67,5 +67,5 @@ committed with real values.
 
 - The customer's own website, which is not part of this repository.
 - The Git history. No snapshots, reports, images or catalog rows were ever
-  committed. The customer name and URL in `config/branding.ts` are replaced in
-  step 4 but remain in older commits.
+  committed. The customer name, URL and quality policy text in
+  `config/branding.ts` are replaced in step 4 but remain in older commits.

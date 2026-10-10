@@ -15,12 +15,24 @@ export function SiteHeader({ branding }: { branding: Branding }) {
             Produktkatalog
           </span>
         </Link>
-        <nav aria-label="Hauptnavigation">
+        <nav aria-label="Hauptnavigation" className="flex gap-x-6">
           <Link
             href="/produkte"
             className="text-sm font-medium hover:text-accent"
           >
             Produkte
+          </Link>
+          <Link
+            href="/qualitaet"
+            className="text-sm font-medium hover:text-accent"
+          >
+            Qualität
+          </Link>
+          <Link
+            href="/anfrage"
+            className="text-sm font-medium hover:text-accent"
+          >
+            Anfrage
           </Link>
         </nav>
         <div className="w-full sm:ml-auto sm:w-auto">

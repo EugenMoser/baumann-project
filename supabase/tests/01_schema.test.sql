@@ -4,7 +4,8 @@ select plan(26);
 select tables_are('public', array[
   'category', 'attribute', 'category_attribute', 'material', 'product',
   'article', 'article_attribute', 'article_packaging', 'product_accessory',
-  'color', 'product_color', 'media', 'product_media', 'ai_generation'
+  'color', 'product_color', 'media', 'product_media', 'ai_generation',
+  'certificate', 'certificate_document'
 ], 'public schema has exactly the catalog tables');
 select views_are('public', array['variant'], 'public schema has exactly the variant view');
 select enums_are('public', array['product_status', 'content_origin', 'attribute_data_type', 'media_role'], 'catalog enums exist');
