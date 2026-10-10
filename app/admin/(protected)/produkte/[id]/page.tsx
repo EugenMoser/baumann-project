@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
+import { ArticleSection } from "@/components/admin/article-section";
 import { ProductForm } from "@/components/admin/product-form";
 import { StatusBadge } from "@/components/admin/status-badge";
 import {
@@ -12,7 +13,12 @@ import {
 import { unwrapAdmin } from "@/lib/admin/server";
 import { productPath } from "@/lib/catalog/anchors";
 import { createSessionSupabase } from "@/lib/supabase/session";
-import { deleteProductAction, saveProductAction } from "../actions";
+import {
+  deleteArticleAction,
+  deleteProductAction,
+  saveArticleAction,
+  saveProductAction,
+} from "../actions";
 
 const ID_PATTERN = /^[1-9]\d{0,9}$/;
 
@@ -72,6 +78,14 @@ export default async function EditProductPage({
         options={options}
         productId={product.id}
         savedStatus={product.status}
+      />
+      <ArticleSection
+        productId={product.id}
+        articles={editor.articles}
+        categoryAttributeIds={editor.categoryAttributeIds}
+        options={options}
+        saveAction={saveArticleAction}
+        deleteAction={deleteArticleAction}
       />
     </>
   );

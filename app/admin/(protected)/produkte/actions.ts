@@ -1,6 +1,16 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  parseArticle,
+  readArticleForm,
+  type ArticleValues,
+} from "@/lib/admin/article-schema";
+import {
+  deleteArticle,
+  loadAttributeTypes,
+  saveArticle,
+} from "@/lib/admin/articles";
 import { LOGIN_PATH } from "@/lib/admin/auth";
 import type { AdminError } from "@/lib/admin/errors";
 import {
@@ -94,4 +104,47 @@ export async function deleteProductAction(
   );
   if ("state" in done) return done.state;
   redirect("/admin/produkte");
+}
+
+export async function saveArticleAction(
+  _prev: FormState<ArticleValues>,
+  formData: FormData
+): Promise<FormState<ArticleValues>> {
+  const values = readArticleForm(formData);
+  const client = await createSessionSupabase();
+  const types = await loadAttributeTypes(client);
+  if (!types.ok) return errorState(values, types.error);
+  const parsed = parseArticle(values, types.value);
+  if (!parsed.ok)
+    return {
+      status: "error",
+      values,
+      fieldErrors: parsed.fieldErrors,
+      formError: null,
+    };
+  const done = await runWrite(values, "[admin] save article", (c) =>
+    saveArticle(c, parsed.value)
+  );
+  if ("state" in done) return done.state;
+  return { status: "saved", values, fieldErrors: {}, formError: null };
+}
+
+export async function deleteArticleAction(
+  _prev: FormState<null>,
+  formData: FormData
+): Promise<FormState<null>> {
+  const productId = idFrom(formData, "productId");
+  const articleId = idFrom(formData, "articleId");
+  if (productId === null || articleId === null)
+    return {
+      status: "error",
+      values: null,
+      fieldErrors: {},
+      formError: "Ungültige Anfrage.",
+    };
+  const done = await runWrite(null, "[admin] delete article", (c) =>
+    deleteArticle(c, productId, articleId)
+  );
+  if ("state" in done) return done.state;
+  return { status: "saved", values: null, fieldErrors: {}, formError: null };
 }
