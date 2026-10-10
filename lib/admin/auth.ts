@@ -46,7 +46,8 @@ export function safeNext(raw: unknown): string {
     url.origin !== "http://admin.invalid" ||
     raw.startsWith("//") ||
     !path.startsWith("/admin/") ||
-    path.startsWith(LOGIN_PATH)
+    path === LOGIN_PATH ||
+    path.startsWith(`${LOGIN_PATH}/`)
   )
     return ADMIN_HOME;
   return path + url.search;

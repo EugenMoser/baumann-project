@@ -23,7 +23,9 @@ export function parseFilter(params: Params): ProductFilter {
   };
 }
 
-// For .ilike(): user text is matched literally (Review Focus 1).
+// For .ilike(): user text is matched literally (Review Focus 1). PostgREST
+// reads `*` as `%`, so it becomes a single-character match instead.
 export function likePattern(q: string): string {
-  return `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+  const escaped = q.replace(/[\\%_]/g, (c) => `\\${c}`).replaceAll("*", "_");
+  return `%${escaped}%`;
 }

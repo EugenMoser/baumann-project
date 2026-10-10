@@ -35,6 +35,13 @@ describe("product schema (SC-6)", () => {
       "Nur Kleinbuchstaben, Ziffern und Bindestriche.",
     ],
     [{ categoryId: "" }, "categoryId", "Bitte eine Kategorie wählen."],
+    [
+      { categoryId: "12345678901" },
+      "categoryId",
+      "Bitte eine Kategorie wählen.",
+    ],
+    [{ materialId: "12345678901" }, "materialId", "Ungültige Auswahl."],
+    [{ slug: "a".repeat(121) }, "slug", "Höchstens 120 Zeichen."],
     [{ seoTitle: "x".repeat(71) }, "seoTitle", "Höchstens 70 Zeichen."],
     [
       { seoDescription: "x".repeat(161) },

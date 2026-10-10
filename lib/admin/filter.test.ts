@@ -22,4 +22,7 @@ describe("likePattern (Review Focus 1)", () => {
   it("escapes LIKE wildcards and backslashes", () => {
     expect(likePattern("50%_a\\b")).toBe("%50\\%\\_a\\\\b%");
   });
+  it("maps the PostgREST wildcard * to a single-character match", () => {
+    expect(likePattern("a*b")).toBe("%a_b%");
+  });
 });

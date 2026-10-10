@@ -40,7 +40,7 @@ export const requiredText = (max: number, message: string) =>
   z.string().trim().min(1, message).max(max, `Höchstens ${max} Zeichen.`);
 export const optionalId = z
   .string()
-  .regex(/^([1-9]\d*)?$/, "Ungültige Auswahl.")
+  .regex(/^([1-9]\d{0,9})?$/, "Ungültige Auswahl.")
   .transform((v) => (v === "" ? null : Number(v)));
 export const integer = z
   .string()
@@ -51,12 +51,13 @@ export const integer = z
 export const productSchema = z.object({
   categoryId: z
     .string()
-    .regex(/^[1-9]\d*$/, "Bitte eine Kategorie wählen.")
+    .regex(/^[1-9]\d{0,9}$/, "Bitte eine Kategorie wählen.")
     .transform(Number),
   name: requiredText(200, "Bitte einen Namen eingeben."),
   slug: z
     .string()
     .trim()
+    .max(120, "Höchstens 120 Zeichen.")
     .regex(SLUG_PATTERN, "Nur Kleinbuchstaben, Ziffern und Bindestriche."),
   subtitle: optionalText(200),
   description: optionalText(10_000),

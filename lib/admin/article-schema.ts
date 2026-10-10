@@ -42,7 +42,7 @@ const baseSchema = z.object({
   id: optionalId,
   productId: z
     .string()
-    .regex(/^[1-9]\d*$/, "Ungültiges Produkt.")
+    .regex(/^[1-9]\d{0,9}$/, "Ungültiges Produkt.")
     .transform(Number),
   articleNumber: requiredText(40, "Bitte eine Artikelnummer eingeben."),
   name: optionalText(200),

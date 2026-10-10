@@ -7,6 +7,7 @@ import {
   listProducts,
   saveProduct,
 } from "@/lib/admin/products";
+import { STALE_SELECTION } from "@/lib/admin/errors";
 import { productSchema, emptyProductValues } from "@/lib/admin/schemas";
 import {
   deleteProductsBySlugPrefix,
@@ -26,6 +27,8 @@ const input = (patch: Record<string, string>) =>
   });
 
 beforeAll(async () => {
+  // Self-heal: remove leftovers of an aborted earlier run.
+  await deleteProductsBySlugPrefix("int-");
   admin = await sessionClient(ADMIN, true);
 });
 afterAll(async () => {
@@ -82,6 +85,16 @@ describe("listProducts (SC-5)", () => {
       if (result.ok) expect(result.value).toEqual([]);
     }
   );
+  it("does not let * span several characters (PostgREST wildcard)", async () => {
+    // Unescaped, PostgREST would read this as %Testkeil%Dämpfung% and find
+    // "Testkeil mit Dämpfung"; mapped to _ it matches one character only.
+    const result = await listProducts(admin, {
+      categoryId: null,
+      status: null,
+      q: "Testkeil*Dämpfung",
+    });
+    expect(result.ok && result.value).toEqual([]);
+  });
   it("counts articles", async () => {
     const r = await listProducts(admin, {
       categoryId: null,
@@ -114,6 +127,18 @@ describe("saveProduct / deleteProduct", () => {
     expect(await deleteProduct(admin, created.value.id)).toEqual({
       ok: true,
       value: null,
+    });
+  });
+  it("maps a vanished selection to a reload hint (23503)", async () => {
+    expect(
+      await saveProduct(
+        admin,
+        null,
+        input({ slug: "int-fk", materialId: "999999" })
+      )
+    ).toEqual({
+      ok: false,
+      error: { kind: "invalid", message: STALE_SELECTION },
     });
   });
   it("refuses deleting a published product", async () => {

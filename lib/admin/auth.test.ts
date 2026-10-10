@@ -55,12 +55,13 @@ describe("checkAdmin", () => {
 });
 
 describe("safeNext (SC-2)", () => {
-  it.each(["/admin/produkte/3", "/admin/produkte?status=draft"])(
-    "accepts %s",
-    (path) => {
-      expect(safeNext(path)).toBe(path);
-    }
-  );
+  it.each([
+    "/admin/produkte/3",
+    "/admin/produkte?status=draft",
+    "/admin/login-verlauf",
+  ])("accepts %s", (path) => {
+    expect(safeNext(path)).toBe(path);
+  });
   it.each([
     "//evil.example",
     "https://evil.example/admin/x",
@@ -69,6 +70,10 @@ describe("safeNext (SC-2)", () => {
     "/admin/login",
     "/admin/..//evil.example",
     "/admin\\evil",
+    "\t//evil.example",
+    "/admin/%2e%2e//evil",
+    "/admin/login?x=1",
+    "/admin/login/",
     null,
     42,
   ])("rejects %s", (value) => {

@@ -64,6 +64,7 @@ describe("parseArticle (SC-9)", () => {
       "Bitte eine Zahl eingeben, z. B. 8,5.",
     ],
     [{ attributes: { "99": "1" } }, "attr:99", "Unbekanntes Attribut."],
+    [{ productId: "12345678901" }, "productId", "Ungültiges Produkt."],
     [
       { packaging: [{ quantity: "0", label: "" }] },
       "packaging.0",
