@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { ArticleSection } from "@/components/admin/article-section";
+import { ColorSection } from "@/components/admin/color-section";
 import { ProductForm } from "@/components/admin/product-form";
 import { StatusBadge } from "@/components/admin/status-badge";
 import {
@@ -17,6 +18,7 @@ import {
   deleteArticleAction,
   deleteProductAction,
   saveArticleAction,
+  saveColorsAction,
   saveProductAction,
 } from "../actions";
 
@@ -86,6 +88,12 @@ export default async function EditProductPage({
         options={options}
         saveAction={saveArticleAction}
         deleteAction={deleteArticleAction}
+      />
+      <ColorSection
+        action={saveColorsAction}
+        productId={product.id}
+        initial={editor.colors}
+        colors={options.colors}
       />
     </>
   );

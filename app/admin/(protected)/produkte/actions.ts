@@ -12,6 +12,12 @@ import {
   saveArticle,
 } from "@/lib/admin/articles";
 import { LOGIN_PATH } from "@/lib/admin/auth";
+import {
+  parseColors,
+  readColorsForm,
+  type ColorValues,
+} from "@/lib/admin/color-schema";
+import { setProductColors } from "@/lib/admin/colors";
 import type { AdminError } from "@/lib/admin/errors";
 import {
   errorState,
@@ -157,4 +163,25 @@ export async function deleteArticleAction(
   );
   if ("state" in done) return done.state;
   return { status: "saved", values: null, fieldErrors: {}, formError: null };
+}
+
+export async function saveColorsAction(
+  _prev: FormState<ColorValues>,
+  formData: FormData
+): Promise<FormState<ColorValues>> {
+  const values = readColorsForm(formData);
+  const parsed = parseColors(values);
+  if (!parsed.ok)
+    return {
+      status: "error",
+      values,
+      fieldErrors: parsed.fieldErrors,
+      formError: null,
+    };
+  const { productId, rows } = parsed.value;
+  const done = await runWrite(values, "[admin] save colours", (c) =>
+    setProductColors(c, productId, rows)
+  );
+  if ("state" in done) return done.state;
+  return { status: "saved", values, fieldErrors: {}, formError: null };
 }
