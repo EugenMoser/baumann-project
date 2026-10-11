@@ -22,6 +22,12 @@ const nextConfig: NextConfig = {
     // One day: keeps re-encoding work on the shared VPS low.
     minimumCacheTTL: 86_400,
   },
+  experimental: {
+    serverActions: {
+      // 5 MiB images plus multipart overhead (spec D2).
+      bodySizeLimit: "6mb",
+    },
+  },
   // Applies to every response independent of page code, incl. assets and errors.
   headers() {
     return [
