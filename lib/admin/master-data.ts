@@ -64,7 +64,7 @@ export async function saveColor(
     id === null
       ? await client.from("color").insert(row).select("id")
       : await client.from("color").update(row).eq("id", id).select("id");
-  if (error) return err(fromPg(error));
+  if (error) return err(fromPg(error, { color_name_hex_idx: "name" }));
   if (data.length === 0) return err({ kind: "not_found" });
   return ok(null);
 }

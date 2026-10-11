@@ -3,6 +3,7 @@
 import { readFields, zodFieldErrors, type FormState } from "@/lib/admin/form";
 import { deleteColor, saveColor } from "@/lib/admin/master-data";
 import {
+  COLOR_CONFLICTS,
   COLOR_FIELDS,
   colorSchema,
   type ColorMasterValues,
@@ -36,7 +37,7 @@ export async function saveColorAction(
     values,
     "[admin] save colour",
     (client) => saveColor(client, id, parsed.data),
-    undefined
+    COLOR_CONFLICTS
   );
   if ("state" in done) return done.state;
   return { status: "saved", values, fieldErrors: {}, formError: null };

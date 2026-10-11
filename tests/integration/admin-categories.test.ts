@@ -50,6 +50,22 @@ describe("categories (SC-10)", () => {
     expect((await deleteCategory(admin, saved.value.id)).ok).toBe(true);
   });
 
+  it("maps an attribute deleted in the meantime to a reload hint", async () => {
+    const input = categorySchema.parse({
+      ...emptyCategoryValues(),
+      name: "Int Verwaist",
+      slug: "int-verwaist",
+      attributes: [{ attributeId: "999999", sortOrder: "0" }],
+    });
+    expect(await saveCategory(admin, null, input)).toEqual({
+      ok: false,
+      error: {
+        kind: "invalid",
+        message: "Eine Auswahl gibt es nicht mehr. Bitte die Seite neu laden.",
+      },
+    });
+  });
+
   it("maps a taken slug and a used category", async () => {
     const input = categorySchema.parse({
       ...emptyCategoryValues(),

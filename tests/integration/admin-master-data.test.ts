@@ -61,6 +61,20 @@ describe("colours and materials (SC-11)", () => {
     });
   });
 
+  it("maps a duplicate colour to a field conflict", async () => {
+    const input = colorSchema.parse({
+      name: "Int Doppelt",
+      ralReference: "",
+      hexCode: "#00aa00",
+      family: "gruen",
+    });
+    expect((await saveColor(admin, null, input)).ok).toBe(true);
+    expect(await saveColor(admin, null, input)).toEqual({
+      ok: false,
+      error: { kind: "conflict", field: "name" },
+    });
+  });
+
   it("maps a taken code and a used material", async () => {
     expect(
       await saveMaterial(

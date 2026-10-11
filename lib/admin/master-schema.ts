@@ -39,6 +39,10 @@ export const materialSchema = z.object({
 });
 export type MaterialInput = z.output<typeof materialSchema>;
 
+export const COLOR_CONFLICTS: Record<string, string> = {
+  name: "Diese Farbe gibt es schon.",
+};
+
 export const MATERIAL_CONFLICTS: Record<string, string> = {
   code: "Dieses Kürzel gibt es schon.",
 };

@@ -1,7 +1,12 @@
 import { err, ok, type Result } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
 import type { CategoryInput, CategoryValues } from "./category-schema";
-import { CATEGORY_IN_USE, fromPg, type AdminError } from "./errors";
+import {
+  CATEGORY_IN_USE,
+  fromPg,
+  STALE_SELECTION,
+  type AdminError,
+} from "./errors";
 
 export type CategoryListItem = {
   id: number;
@@ -100,7 +105,8 @@ export async function saveCategory(
       })),
     },
   });
-  if (error) return err(fromPg(error, { category_slug_key: "slug" }));
+  if (error)
+    return err(fromPg(error, { category_slug_key: "slug" }, STALE_SELECTION));
   return ok({ id: data });
 }
 
