@@ -77,3 +77,24 @@ export async function removeFiles(
   const { error } = await storage.remove([...paths]);
   if (error) log("[admin] remove files", error.message);
 }
+
+// SC-6: the DB result decides; files go only after the rows are gone.
+export async function removeImage(deps: {
+  remove: () => Promise<Result<string, AdminError>>;
+  storage: MediaStorage;
+  log: FileLog;
+}): Promise<Result<string, AdminError>> {
+  const removed = await deps.remove();
+  if (removed.ok) await removeFiles(deps.storage, [removed.value], deps.log);
+  return removed;
+}
+
+export async function deleteProductWithFiles(deps: {
+  remove: () => Promise<Result<string[], AdminError>>;
+  storage: MediaStorage;
+  log: FileLog;
+}): Promise<Result<string[], AdminError>> {
+  const deleted = await deps.remove();
+  if (deleted.ok) await removeFiles(deps.storage, deleted.value, deps.log);
+  return deleted;
+}

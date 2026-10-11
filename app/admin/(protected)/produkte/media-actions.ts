@@ -1,9 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { LOGIN_PATH } from "@/lib/admin/auth";
-import type { AdminError } from "@/lib/admin/errors";
-import { errorState, type FormState } from "@/lib/admin/form";
+import type { FormState } from "@/lib/admin/form";
 import {
   checkImage,
   IMAGE_MESSAGES,
@@ -15,7 +12,7 @@ import {
   removeMediaRow,
   setProductMedia,
 } from "@/lib/admin/media";
-import { removeFiles, storeImage, type FileLog } from "@/lib/admin/media-flow";
+import { removeImage, storeImage } from "@/lib/admin/media-flow";
 import {
   parseMedia,
   parseUploadMeta,
@@ -25,37 +22,16 @@ import {
   type MediaValues,
   type UploadValues,
 } from "@/lib/admin/media-schema";
-import { writeDeps } from "@/lib/admin/server";
-import { adminWrite } from "@/lib/admin/write";
-import type { Result } from "@/lib/result";
-import {
-  createSessionSupabase,
-  type AdminClient,
-} from "@/lib/supabase/session";
+import { CATALOG_BUCKET, fileLog, idFrom, runWrite } from "@/lib/admin/server";
+import type { AdminClient } from "@/lib/supabase/session";
 
-const log: FileLog = (context, detail) => console.error(context, detail);
-const bucket = (client: AdminClient) => client.storage.from("catalog");
+const bucket = (client: AdminClient) => client.storage.from(CATALOG_BUCKET);
 const invalid = <V>(values: V): FormState<V> => ({
   status: "error",
   values,
   fieldErrors: {},
   formError: "Ungültige Anfrage.",
 });
-
-async function runWrite<T, V>(
-  values: V,
-  context: string,
-  write: (client: AdminClient) => Promise<Result<T, AdminError>>
-): Promise<{ state: FormState<V> } | { value: T }> {
-  const client = await createSessionSupabase();
-  const outcome = await adminWrite(writeDeps(client), context, () =>
-    write(client)
-  );
-  if (outcome.kind === "anonymous") redirect(LOGIN_PATH);
-  if (!outcome.result.ok)
-    return { state: errorState(values, outcome.result.error) };
-  return { value: outcome.result.value };
-}
 
 export async function uploadImageAction(
   _prev: FormState<UploadValues>,
@@ -85,7 +61,7 @@ export async function uploadImageAction(
         storage: bucket(client),
         attach: (input) => attachMedia(client, input),
         uuid: () => crypto.randomUUID(),
-        log,
+        log: fileLog,
       },
       {
         productId: meta.value.productId,
@@ -133,13 +109,6 @@ export async function saveMediaAction(
   return { status: "saved", values, fieldErrors: {}, formError: null };
 }
 
-const idFrom = (formData: FormData, name: string): number | null => {
-  const raw = formData.get(name);
-  return typeof raw === "string" && /^[1-9]\d{0,9}$/.test(raw)
-    ? Number(raw)
-    : null;
-};
-
 export async function removeImageAction(
   _prev: FormState<null>,
   formData: FormData
@@ -147,11 +116,13 @@ export async function removeImageAction(
   const productId = idFrom(formData, "productId");
   const mediaId = idFrom(formData, "mediaId");
   if (productId === null || mediaId === null) return invalid(null);
-  const done = await runWrite(null, "[admin] remove image", async (client) => {
-    const removed = await removeMediaRow(client, productId, mediaId);
-    if (removed.ok) await removeFiles(bucket(client), [removed.value], log);
-    return removed;
-  });
+  const done = await runWrite(null, "[admin] remove image", (client) =>
+    removeImage({
+      remove: () => removeMediaRow(client, productId, mediaId),
+      storage: bucket(client),
+      log: fileLog,
+    })
+  );
   if ("state" in done) return done.state;
   return { status: "saved", values: null, fieldErrors: {}, formError: null };
 }

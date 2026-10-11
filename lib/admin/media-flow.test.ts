@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { err, ok } from "@/lib/result";
 import { UPLOAD_FAILED } from "./errors";
 import {
+  deleteProductWithFiles,
   newImagePath,
+  removeImage,
   removeFiles,
   storeImage,
   type MediaStorage,
@@ -102,6 +104,79 @@ describe("removeFiles (SC-6)", () => {
   });
 });
 
+const failure = err({ kind: "db_error" as const, code: "XX000" });
+
+describe("removeImage (SC-6)", () => {
+  it("removes the returned file after the row is gone", async () => {
+    const storage = fakeStorage();
+    const result = await removeImage({
+      remove: async () => ok("products/1/a.png"),
+      storage,
+      log: vi.fn(),
+    });
+    expect(result).toEqual(ok("products/1/a.png"));
+    expect(storage.remove).toHaveBeenCalledWith(["products/1/a.png"]);
+  });
+  it("removes nothing when the DB step fails", async () => {
+    const storage = fakeStorage();
+    const result = await removeImage({
+      remove: async () => failure,
+      storage,
+      log: vi.fn(),
+    });
+    expect(result).toEqual(failure);
+    expect(storage.remove).not.toHaveBeenCalled();
+  });
+  it("logs a storage error but stays ok", async () => {
+    const log = vi.fn();
+    const result = await removeImage({
+      remove: async () => ok("products/1/a.png"),
+      storage: fakeStorage({
+        remove: vi.fn(async () => ({ error: { message: "x" } })),
+      }),
+      log,
+    });
+    expect(result).toEqual(ok("products/1/a.png"));
+    expect(log).toHaveBeenCalledWith("[admin] remove files", "x");
+  });
+});
+
+describe("deleteProductWithFiles (SC-6)", () => {
+  it("removes all returned files after the product is gone", async () => {
+    const storage = fakeStorage();
+    const paths = ["products/1/a.png", "products/1/b.jpg"];
+    const result = await deleteProductWithFiles({
+      remove: async () => ok(paths),
+      storage,
+      log: vi.fn(),
+    });
+    expect(result).toEqual(ok(paths));
+    expect(storage.remove).toHaveBeenCalledWith(paths);
+  });
+  it("removes nothing when the DB step fails", async () => {
+    const storage = fakeStorage();
+    const result = await deleteProductWithFiles({
+      remove: async () => failure,
+      storage,
+      log: vi.fn(),
+    });
+    expect(result).toEqual(failure);
+    expect(storage.remove).not.toHaveBeenCalled();
+  });
+  it("logs a storage error but stays ok", async () => {
+    const log = vi.fn();
+    const result = await deleteProductWithFiles({
+      remove: async () => ok(["products/1/a.png"]),
+      storage: fakeStorage({
+        remove: vi.fn(async () => ({ error: { message: "x" } })),
+      }),
+      log,
+    });
+    expect(result).toEqual(ok(["products/1/a.png"]));
+    expect(log).toHaveBeenCalledWith("[admin] remove files", "x");
+  });
+});
+
 describe("remove flow through adminWrite (SC-6, SC-13)", () => {
   it("revalidates after the row is gone even if the file removal fails", async () => {
     const revalidate = vi.fn();
@@ -120,11 +195,12 @@ describe("remove flow through adminWrite (SC-6, SC-13)", () => {
         logError: vi.fn(),
       },
       "[admin] remove image",
-      async () => {
-        const path = "products/1/a.png";
-        await removeFiles(storage, [path], log);
-        return ok(path);
-      }
+      () =>
+        removeImage({
+          remove: async () => ok("products/1/a.png"),
+          storage,
+          log,
+        })
     );
     expect(outcome).toEqual({ kind: "done", result: ok("products/1/a.png") });
     expect(revalidate).toHaveBeenCalledOnce();
