@@ -237,6 +237,48 @@ legacy exports contain none.
   transaction; the article number is never updated) and
   `admin_set_product_colors(product_id, payload)` (replaces the colour set;
   no colour or suffix twice, exactly one default when colours exist).
+- Feature 6b adds six more `security invoker` functions with the same guard
+  (`private.is_admin()`, error `42501` otherwise), executable by
+  `authenticated` only:
+  - `admin_attach_media(product_id, storage_path, width, height, alt_text)`
+    inserts a `media` row (`alt_origin = 'human'`) and its `product_media` row;
+    the image becomes the thumbnail if the product has none, else a gallery
+    image at the end; an empty alt text is refused.
+  - `admin_set_product_media(product_id, payload)` rewrites role, order and alt
+    text of all images of a product; the payload must name exactly the current
+    images, exactly one thumbnail when images exist, no empty alt text. The
+    order is the array position.
+  - `admin_remove_media(product_id, media_id)` deletes the `media` row
+    (`product_media` cascades), promotes the first remaining image to
+    thumbnail if the thumbnail was removed, and returns the storage path.
+  - `admin_delete_product(product_id)` refuses published products, deletes the
+    product and its own `media` rows, and returns their storage paths.
+  - `admin_set_product_accessories(product_id, payload)` replaces the
+    accessory list in the array order; no duplicate article and no article of
+    the product itself.
+  - `admin_save_category(payload)` inserts or updates a category and replaces
+    its `category_attribute` rows in one transaction.
+
+## Media lifecycle
+
+- An image belongs to exactly one product (one `media` row, one `product_media`
+  row). There is no shared media library; `admin_remove_media` deletes the
+  `media` row even if another product were linked to it.
+- Uploads go to `products/{product_id}/{uuid}.{ext}` with `ext` one of `jpg`,
+  `png`, `webp`. A path never changes after upload. Imported files keep their
+  slug-based paths.
+- Removing an image or deleting a product deletes the database rows first and
+  the files second. A failed file removal is logged and does not fail the
+  action; an orphan file is invisible, a row without a file would show a
+  broken image.
+- `pnpm media:prune` removes the leftovers: `media` rows without a product and
+  files under `products/` without a `media` row (see `docs/deploy.md`).
+
+## Master data deletion
+
+Deleting is refused by the database (`on delete restrict`, error `23503`) for
+categories that still have products, colours that are assigned to products and
+materials that are in use. The admin shows a message instead of deleting.
 
 ## Pages and visible content
 

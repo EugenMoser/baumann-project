@@ -1,6 +1,6 @@
 # Feature 6b — Admin: images & master data
 
-- **Status:** approved for planning
+- **Status:** implemented (2026-10-11)
 - **Roadmap:** feature 6b ([roadmap](../roadmap.md)); second half of feature 6
   ([6a spec](2026-10-10-admin-products-design.md), D1)
 - **Estimate:** 10 h
@@ -300,3 +300,32 @@ None. `image-size` moves from `devDependencies` to `dependencies` (D2).
   normal paths; `media:prune` covers the rest.
 - **Next.js 16 conventions** (`bodySizeLimit` under `experimental`, File in
   FormData): the implementation reads the bundled docs first.
+
+## Deviations
+
+- The accessory article-number lookup runs read-only before the write; only the
+  save goes through `adminWrite` (D9).
+- Colour and material delete buttons are always shown. The foreign key guard
+  (`23503`) refuses deleting anything still in use, with the D8 message (D8
+  says "delete only when unused").
+- `admin_set_product_media` and `admin_set_product_accessories` take the order
+  from the array position; the payload has no `sort_order` field (D4, D9).
+- `admin_remove_media` deletes the `media` row even if another product were
+  linked to it, because D1 makes images single-product; the rule is documented
+  in `docs/data-model.md`.
+- Form validation in `lib/admin/media-schema.ts` is hand-written like
+  `color-schema.ts`, not Zod (D11).
+- Shared server helpers live in `lib/admin/server.ts` (`runWrite` with optional
+  conflict messages, `idFrom`, `editIdFrom`, `CATALOG_BUCKET`, `fileLog`); the
+  upload, remove and delete-with-files flows live in `lib/admin/media-flow.ts`.
+  Colour and material modules are `lib/admin/colors.ts` and
+  `lib/admin/master-data.ts`.
+- `DeleteRecordButton` closes its dialog on a "saved" action state as well as
+  on redirect (colour and material deletes return a state, the category delete
+  redirects).
+- `pnpm media:prune` reads `media` rows in pages of 1000 (PostgREST caps
+  responses), keeps files with a missing or invalid creation date, and exits 1
+  when linked rows exist but the `products/` listing is empty.
+- Open point: a colour with the same name and hex code as an existing one hits
+  the unique index `color_name_hex_idx` and shows the generic save error
+  instead of a field message.
