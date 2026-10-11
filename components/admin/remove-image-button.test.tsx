@@ -8,6 +8,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
 
 const result = (over: Partial<FormState<null>>) =>
   vi.fn(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (prev: FormState<null>, _fd: FormData): Promise<FormState<null>> => ({
       ...prev,
       ...over,
