@@ -56,11 +56,35 @@ test("create a category with an attribute (SC-10)", async ({ page }) => {
   await page.getByRole("checkbox", { name: "Oberfläche" }).check();
   await page.getByRole("button", { name: "Kategorie anlegen" }).click();
   await expect(page).toHaveURL(/\/admin\/kategorien\/\d+$/);
+  const categoryId = Number(page.url().split("/").pop());
 
   await page.goto("/admin/produkte/neu");
   await expect(
     page.getByLabel("Kategorie").locator("option", { hasText: CATEGORY })
   ).toHaveCount(1);
+
+  // The attribute shows up as a field in the article dialog of that category.
+  const svc = serviceClient();
+  const { data: product, error } = await svc
+    .from("product")
+    .insert({
+      category_id: categoryId,
+      slug: `e2e-attr-${run}`,
+      name: `E2E Attribut ${run}`,
+      status: "draft",
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  await page.goto(`/admin/produkte/${product.id}`);
+  await page.getByRole("button", { name: "Artikel hinzufügen" }).click();
+  await expect(page.getByRole("dialog").getByLabel("Oberfläche")).toBeVisible();
+  await page.keyboard.press("Escape");
+  const { error: deleteError } = await svc
+    .from("product")
+    .delete()
+    .eq("id", product.id);
+  if (deleteError) throw deleteError;
 });
 
 test("delete an empty category redirects to the list (SC-10)", async ({

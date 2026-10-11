@@ -1,6 +1,6 @@
 -- supabase/tests/12_admin_media.test.sql
 begin;
-select plan(42);
+select plan(46);
 
 -- Privileges (SC-13)
 select ok(not has_function_privilege('anon', 'public.admin_attach_media(bigint, text, integer, integer, text)', 'execute'), 'anon cannot attach media');
@@ -48,6 +48,14 @@ select throws_ok($$select public.admin_set_product_media(3, jsonb_build_array(
   jsonb_build_object('media_id', (select id from public.media where storage_path = 'products/3/b.png'), 'alt_text', 'B', 'alt_origin', 'human', 'is_thumbnail', true),
   jsonb_build_object('media_id', (select id from public.media where storage_path = 'products/3/a.png'), 'alt_text', ' ', 'alt_origin', 'human', 'is_thumbnail', false)))$$,
   '22023', 'Jedes Bild braucht einen Alt-Text.', 'an empty alt text raises');
+select throws_ok($$select public.admin_set_product_media(3, jsonb_build_array(
+  jsonb_build_object('media_id', (select id from public.media where storage_path = 'products/3/b.png'), 'alt_text', 'B', 'alt_origin', 'human', 'is_thumbnail', true),
+  jsonb_build_object('media_id', (select media_id from public.product_media where product_id <> 3 order by media_id limit 1), 'alt_text', 'X', 'alt_origin', 'human', 'is_thumbnail', false)))$$,
+  '22023', 'Die Bildliste ist veraltet. Bitte die Seite neu laden.', 'a media id of another product raises');
+select throws_ok($$select public.admin_set_product_media(3, jsonb_build_array(
+  jsonb_build_object('media_id', (select id from public.media where storage_path = 'products/3/b.png'), 'alt_text', 'B', 'alt_origin', 'human', 'is_thumbnail', false),
+  jsonb_build_object('media_id', (select id from public.media where storage_path = 'products/3/a.png'), 'alt_text', 'A', 'alt_origin', 'human', 'is_thumbnail', false)))$$,
+  '22023', 'Genau ein Bild muss Vorschaubild sein.', 'zero thumbnails raise');
 select is((select alt_text from public.media where storage_path = 'products/3/a.png'), 'Bild A neu', 'failed calls keep the previous rows');
 
 -- Remove (SC-6)
@@ -68,6 +76,7 @@ select lives_ok($$select public.admin_set_product_accessories(3, '[{"article_id"
 select is((select array_agg(article_id order by sort_order) from public.product_accessory where product_id = 3), array[3::bigint, 1::bigint], 'rows replaced in display order');
 select throws_ok($$select public.admin_set_product_accessories(3, '[{"article_id":4}]'::jsonb)$$, '22023', 'Artikel des eigenen Produkts sind kein Zubehör.', 'an own article raises');
 select throws_ok($$select public.admin_set_product_accessories(3, '[{"article_id":1},{"article_id":1}]'::jsonb)$$, '22023', 'Jeder Artikel darf nur einmal Zubehör sein.', 'a duplicate raises');
+select is((select array_agg(article_id order by sort_order) from public.product_accessory where product_id = 3), array[3::bigint, 1::bigint], 'failed calls keep the previous accessory rows');
 
 -- Categories (SC-10)
 select isnt(public.admin_save_category('{"name":"Neue Kategorie","slug":"neue-kategorie","intro_text":"Text","seo_title":null,"seo_description":null,"sort_order":5,"attributes":[{"attribute_id":1,"sort_order":0},{"attribute_id":2,"sort_order":1}]}'::jsonb), null, 'admin creates a category with attributes');
