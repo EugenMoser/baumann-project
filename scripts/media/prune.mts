@@ -60,6 +60,14 @@ export async function runPrune(
     io.error(objects.error);
     return 1;
   }
+  // A listing that finds nothing although media rows are linked means a wrong
+  // bucket or key; planning on it could not tell live files from orphans.
+  if (objects.value.length === 0 && rows.value.some((r) => r.linked)) {
+    io.error(
+      "Linked media rows exist but no files were found under products/. Nothing was changed."
+    );
+    return 1;
+  }
   const plan = planPrune(rows.value, objects.value, now);
   io.log(`unlinked media rows: ${plan.rowIds.length}`);
   io.log(`orphan files: ${plan.files.length}`);
@@ -86,6 +94,32 @@ export async function runPrune(
   return 0;
 }
 
+// PostgREST caps a response at the server's max_rows, so read in windows.
+export const PAGE_SIZE = 1000;
+
+export async function fetchAllPages<T>(
+  fetchPage: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<Result<T[], string>> {
+  const all: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await fetchPage(from, from + PAGE_SIZE - 1);
+    if (error) return err(error.message);
+    const page = data ?? [];
+    all.push(...page);
+    if (page.length < PAGE_SIZE) return ok(all);
+  }
+}
+
+// A missing or unparsable date counts as "just created" so the file is kept.
+export function parseCreatedAt(value: string | null | undefined, now: Date) {
+  if (!value) return now;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? now : date;
+}
+
 async function listWithDates(
   client: SupabaseClient<Database>,
   prefix: string
@@ -103,7 +137,10 @@ async function listWithDates(
         if (!nested.ok) return nested;
         found.push(...nested.value);
       } else {
-        found.push({ path, createdAt: new Date(entry.created_at ?? 0) });
+        found.push({
+          path,
+          createdAt: parseCreatedAt(entry.created_at, new Date()),
+        });
       }
     }
     if ((data ?? []).length < 1000) return ok(found);
@@ -113,13 +150,16 @@ async function listWithDates(
 export function supabaseDeps(client: SupabaseClient<Database>): PruneDeps {
   return {
     async readRows() {
-      const { data, error } = await client
-        .from("media")
-        .select("id, storage_path, product_media(product_id)")
-        .range(0, 99_999);
-      if (error) return err(`reading media failed: ${error.message}`);
+      const rows = await fetchAllPages((from, to) =>
+        client
+          .from("media")
+          .select("id, storage_path, product_media(product_id)")
+          .order("id")
+          .range(from, to)
+      );
+      if (!rows.ok) return err(`reading media failed: ${rows.error}`);
       return ok(
-        data.map((m) => ({
+        rows.value.map((m) => ({
           id: m.id,
           storagePath: m.storage_path,
           linked: m.product_media.length > 0,
