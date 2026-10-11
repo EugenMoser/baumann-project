@@ -5,12 +5,17 @@ describe("parseFilter (Review Focus 2)", () => {
   it("parses valid params", () => {
     expect(
       parseFilter({ kategorie: "2", status: "draft", q: " 99211/80 " })
-    ).toEqual({ categoryId: 2, status: "draft", q: "99211/80" });
+    ).toEqual({
+      categoryId: 2,
+      status: "draft",
+      q: "99211/80",
+      altReview: false,
+    });
   });
   it("ignores invalid values and uses the first of repeated params", () => {
     expect(
       parseFilter({ kategorie: ["abc", "1"], status: "foo", q: "" })
-    ).toEqual({ categoryId: null, status: null, q: null });
+    ).toEqual({ categoryId: null, status: null, q: null, altReview: false });
     expect(parseFilter({ kategorie: ["1", "2"] }).categoryId).toBe(1);
   });
   it("caps the search text at 100 characters", () => {
@@ -25,4 +30,10 @@ describe("likePattern (Review Focus 1)", () => {
   it("maps the PostgREST wildcard * to a single-character match", () => {
     expect(likePattern("a*b")).toBe("%a_b%");
   });
+});
+
+it("reads the alt-text filter (SC-8)", () => {
+  expect(parseFilter({ alt: "pruefen" }).altReview).toBe(true);
+  expect(parseFilter({ alt: "x" }).altReview).toBe(false);
+  expect(parseFilter({}).altReview).toBe(false);
 });
