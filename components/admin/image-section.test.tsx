@@ -1,5 +1,7 @@
 // components/admin/image-section.test.tsx
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { FormState } from "@/lib/admin/form";
+import type { MediaValues } from "@/lib/admin/media-schema";
 import { describe, expect, it, vi } from "vitest";
 import type { MediaItem } from "@/lib/admin/media";
 import { ImageSection } from "./image-section";
@@ -61,5 +63,43 @@ describe("ImageSection (SC-5)", () => {
     expect(
       screen.queryByRole("button", { name: "Bilder speichern" })
     ).toBeNull();
+  });
+});
+
+describe("ImageSection error display", () => {
+  it("shows row, thumbnail and form errors with aria wiring", async () => {
+    const save = vi.fn(
+      async (
+        prev: FormState<MediaValues>
+      ): Promise<FormState<MediaValues>> => ({
+        ...prev,
+        status: "error",
+        fieldErrors: {
+          "rows.1.altText": "Bitte einen Alt-Text eingeben.",
+          media: "Genau ein Vorschaubild wählen.",
+        },
+        formError: "Speichern fehlgeschlagen.",
+      })
+    );
+    render(
+      <ImageSection
+        productId={1}
+        items={[item(1, "Eins", true), item(2, "Zwei", false)]}
+        saveAction={save}
+        uploadAction={noop}
+        removeAction={noop}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Bilder speichern" }));
+    expect(
+      await screen.findByText("Bitte einen Alt-Text eingeben.")
+    ).toBeInTheDocument();
+    const alts = screen.getAllByLabelText("Alt-Text");
+    expect(alts[0]).toHaveAttribute("aria-invalid", "false");
+    expect(alts[1]).toHaveAttribute("aria-invalid", "true");
+    expect(alts[1]).toHaveAttribute("aria-describedby", "alt-2-error");
+    const alerts = screen.getAllByRole("alert").map((a) => a.textContent);
+    expect(alerts).toContain("Genau ein Vorschaubild wählen.");
+    expect(alerts).toContain("Speichern fehlgeschlagen.");
   });
 });

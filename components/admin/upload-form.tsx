@@ -33,7 +33,11 @@ export function UploadForm({
   );
   // Quick client-side check (D2); the server check is authoritative.
   const [sizeError, setSizeError] = useState<string | null>(null);
-  const fileError = sizeError ?? state.fieldErrors.file;
+  // A server file error is stale once the user picks another file.
+  const [dismissedFor, setDismissedFor] = useState<unknown>(null);
+  const serverFileError =
+    dismissedFor === state ? undefined : state.fieldErrors.file;
+  const fileError = sizeError ?? serverFileError;
   const altError = state.fieldErrors.altText;
   return (
     <form
@@ -58,6 +62,7 @@ export function UploadForm({
           aria-describedby={describedBy("upload-file", fileError, "hint")}
           onChange={(ev) => {
             const file = ev.target.files?.[0];
+            setDismissedFor(state);
             setSizeError(
               file && file.size > MAX_IMAGE_BYTES
                 ? IMAGE_MESSAGES.tooLarge
