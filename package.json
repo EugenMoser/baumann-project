@@ -20,6 +20,7 @@
     "certificates:import": "node --env-file-if-exists=.env.import scripts/certificates/cli.mts",
     "catalog:remove": "node --env-file-if-exists=.env.import scripts/import/remove.mts",
     "admin:create": "node --env-file-if-exists=.env.import scripts/admin/create.mts",
+    "media:prune": "node --env-file-if-exists=.env.import scripts/media/prune.mts",
     "prepare": "husky"
   },
   "dependencies": {
