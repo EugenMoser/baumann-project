@@ -326,6 +326,6 @@ None. `image-size` moves from `devDependencies` to `dependencies` (D2).
 - `pnpm media:prune` reads `media` rows in pages of 1000 (PostgREST caps
   responses), keeps files with a missing or invalid creation date, and exits 1
   when linked rows exist but the `products/` listing is empty.
-- Open point: a colour with the same name and hex code as an existing one hits
-  the unique index `color_name_hex_idx` and shows the generic save error
-  instead of a field message.
+- The upload action (`app/admin/(protected)/produkte/media-actions.ts`)
+  validates the file and metadata before the admin check; D2 step 1 puts
+  `checkAdmin` first. No write happens before the check.

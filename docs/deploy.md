@@ -362,7 +362,9 @@ not change for this.
   enforced in the app; `serverActions.bodySizeLimit` is `6mb` to leave room for
   the multipart overhead. The reverse proxy in front of the app must accept
   request bodies of at least 6 MB, otherwise uploads fail before they reach the
-  app.
+  app. `serverActions.bodySizeLimit` is global, so the public inquiry action
+  accepts 6 MB as well. Allow 6 MB request bodies at the proxy only for
+  `/admin/*` paths and keep the default (about 1 MB) elsewhere.
 - `pnpm media:prune` removes orphans: `media` rows without a product and files
   under `products/` without a `media` row. It needs `IMPORT_SUPABASE_URL` and
   `IMPORT_SUPABASE_SECRET_KEY` of the target (see `docs/import.md`):
@@ -374,7 +376,8 @@ not change for this.
 
   Safety properties:
   - It is a dry run unless `--apply` is given.
-  - Unreferenced files are removed only when older than one hour, so an upload
+  - Files of unlinked `media` rows are removed regardless of age. Files with no
+    `media` row at all are removed only when older than one hour, so an upload
     in flight is safe. A file with a missing or invalid creation date counts as
     young and is kept.
   - It exits 1 and changes nothing when linked media rows exist but the
@@ -383,4 +386,4 @@ not change for this.
 
 - Run it once after deploying the admin image feature (it also catches files of
   products deleted before it existed), and again whenever failed file removals
-  show up in the app logs (`[admin] remove files`, `[admin] upload image`).
+  show up in the app logs (`[admin] remove files`).

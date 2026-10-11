@@ -244,8 +244,8 @@ legacy exports contain none.
     inserts a `media` row (`alt_origin = 'human'`) and its `product_media` row;
     the image becomes the thumbnail if the product has none, else a gallery
     image at the end; an empty alt text is refused.
-  - `admin_set_product_media(product_id, payload)` rewrites role, order and alt
-    text of all images of a product; the payload must name exactly the current
+  - `admin_set_product_media(product_id, payload)` rewrites role, order, alt
+    text and `alt_origin` of all images of a product; the payload must name exactly the current
     images, exactly one thumbnail when images exist, no empty alt text. The
     order is the array position.
   - `admin_remove_media(product_id, media_id)` deletes the `media` row
@@ -257,7 +257,9 @@ legacy exports contain none.
     accessory list in the array order; no duplicate article and no article of
     the product itself.
   - `admin_save_category(payload)` inserts or updates a category and replaces
-    its `category_attribute` rows in one transaction.
+    its `category_attribute` rows in one transaction. Unchecking an attribute
+    only removes it from the category; existing `article_attribute` values of
+    its articles are kept.
 
 ## Media lifecycle
 
