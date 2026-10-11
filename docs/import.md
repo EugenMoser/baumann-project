@@ -127,9 +127,11 @@ entries) are never touched.
 Once the admin area exists, a re-import overwrites admin edits of imported
 fields. Export what you need to keep, or do not re-import.
 
-Admin uploads must not use the `products/` Storage prefix: after every
-successful import, all objects under `products/` that no `media` row references
-are deleted.
+After every successful import, the importer removes the objects under
+`products/` that are neither in the snapshot nor referenced by any `media` row.
+It reads all `media.storage_path` values from the database for this, so admin
+uploads (`products/{product_id}/{uuid}.{ext}`) survive a re-import. If the paths
+cannot be read, nothing is deleted and the import exits with an error.
 
 ### Category texts
 
