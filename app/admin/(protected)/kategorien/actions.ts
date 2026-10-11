@@ -10,7 +10,7 @@ import {
   type CategoryValues,
 } from "@/lib/admin/category-schema";
 import { zodFieldErrors, type FormState } from "@/lib/admin/form";
-import { idFrom, runWrite } from "@/lib/admin/server";
+import { editIdFrom, idFrom, runWrite } from "@/lib/admin/server";
 
 export async function saveCategoryAction(
   _prev: FormState<CategoryValues>,
@@ -25,10 +25,8 @@ export async function saveCategoryAction(
       fieldErrors: zodFieldErrors(parsed.error),
       formError: null,
     };
-  const rawId = formData.get("id");
-  const id = idFrom(formData);
-  // Empty id means create; a non-empty malformed id must not fall through to it.
-  if (id === null && rawId !== null && rawId !== "")
+  const id = editIdFrom(formData);
+  if (id === "invalid")
     return {
       status: "error",
       values,

@@ -17,7 +17,7 @@ vi.mock("./auth", () => ({
   checkAdmin: () => check(),
 }));
 
-import { runWrite } from "./server";
+import { editIdFrom, runWrite } from "./server";
 
 beforeEach(() => {
   check.mockReset();
@@ -58,5 +58,31 @@ describe("runWrite", () => {
       "redirect:/admin/login"
     );
     expect(write).not.toHaveBeenCalled();
+  });
+});
+
+describe("editIdFrom", () => {
+  const form = (id?: string) => {
+    const fd = new FormData();
+    if (id !== undefined) fd.set("id", id);
+    return fd;
+  };
+  it("treats an absent or empty id as create", () => {
+    expect(editIdFrom(form())).toBeNull();
+    expect(editIdFrom(form(""))).toBeNull();
+  });
+  it("returns the number of a valid id", () => {
+    expect(editIdFrom(form("12"))).toBe(12);
+  });
+  it.each(["0", "abc", "-3", "1.5", "12345678901", " 4"])(
+    "flags the malformed id %j",
+    (raw) => {
+      expect(editIdFrom(form(raw))).toBe("invalid");
+    }
+  );
+  it("flags a file value as malformed", () => {
+    const fd = new FormData();
+    fd.set("id", new Blob(["x"]), "x.txt");
+    expect(editIdFrom(fd)).toBe("invalid");
   });
 });

@@ -55,4 +55,16 @@ describe("DeleteRecordButton", () => {
     expect(action).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).toBeNull();
   });
+
+  it("closes the dialog once the action reports saved", async () => {
+    const action = vi.fn(async (): Promise<FormState<null>> => ({
+      ...idle,
+      status: "saved",
+    }));
+    render(<DeleteRecordButton action={action} {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Kategorie löschen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Endgültig löschen" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(action).toHaveBeenCalledTimes(1);
+  });
 });

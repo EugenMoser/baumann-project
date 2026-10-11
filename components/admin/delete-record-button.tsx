@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -26,6 +26,7 @@ type Props = {
 };
 
 // Master data deletion (D7, D8): confirmation, then the DB guard decides.
+// The dialog closes on a redirect or when the action reports "saved".
 export function DeleteRecordButton({
   action,
   id,
@@ -34,8 +35,14 @@ export function DeleteRecordButton({
   buttonLabel,
 }: Props) {
   const [state, formAction, pending] = useActionState(action, idleState(null));
+  const [open, setOpen] = useState(false);
+  const [seen, setSeen] = useState(state);
+  if (seen !== state) {
+    setSeen(state);
+    if (state.status === "saved") setOpen(false);
+  }
   return (
-    <AlertDialog>
+    <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button type="button" variant="outline" size="sm">
           {buttonLabel}

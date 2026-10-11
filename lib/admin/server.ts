@@ -24,6 +24,16 @@ export const idFrom = (formData: FormData, name = "id"): number | null => {
     : null;
 };
 
+/**
+ * Id of a save form: null when absent or empty (create), "invalid" when
+ * present but malformed (must not fall through to create), else the number.
+ */
+export const editIdFrom = (formData: FormData): number | null | "invalid" => {
+  const raw = formData.get("id");
+  if (raw === null || raw === "") return null;
+  return idFrom(formData) ?? "invalid";
+};
+
 // D11: the catalog is small; revalidating every page is cheaper than tracking
 // which category, related-product and search pages a change touches.
 export function writeDeps(client: AdminClient): WriteDeps {
