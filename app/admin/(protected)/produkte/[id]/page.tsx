@@ -3,10 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { ArticleSection } from "@/components/admin/article-section";
+import { AccessorySection } from "@/components/admin/accessory-section";
 import { ColorSection } from "@/components/admin/color-section";
 import { ImageSection } from "@/components/admin/image-section";
 import { ProductForm } from "@/components/admin/product-form";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { listAccessories } from "@/lib/admin/accessories";
 import { listProductMedia } from "@/lib/admin/media";
 import {
   getProductEditor,
@@ -16,6 +18,7 @@ import {
 import { unwrapAdmin } from "@/lib/admin/server";
 import { productPath } from "@/lib/catalog/anchors";
 import { createSessionSupabase } from "@/lib/supabase/session";
+import { saveAccessoriesAction } from "../accessory-actions";
 import {
   deleteArticleAction,
   deleteProductAction,
@@ -34,15 +37,17 @@ const ID_PATTERN = /^[1-9]\d{0,9}$/;
 // Shared by generateMetadata and the page so the editor loads once per request.
 const loadEditor = cache(async (id: number) => {
   const client = await createSessionSupabase();
-  const [editor, options, media] = await Promise.all([
+  const [editor, options, media, accessories] = await Promise.all([
     getProductEditor(client, id),
     loadEditorOptions(client),
     listProductMedia(client, id),
+    listAccessories(client, id),
   ]);
   return {
     editor: unwrapAdmin(editor, "product editor"),
     options: unwrapAdmin(options, "editor options"),
     media: unwrapAdmin(media, "product media"),
+    accessories: unwrapAdmin(accessories, "product accessories"),
   };
 });
 
@@ -60,7 +65,7 @@ export default async function EditProductPage({
 }: PageProps<"/admin/produkte/[id]">) {
   const { id } = await params;
   if (!ID_PATTERN.test(id)) notFound();
-  const { editor, options, media } = await loadEditor(Number(id));
+  const { editor, options, media, accessories } = await loadEditor(Number(id));
   const { product } = editor;
   return (
     <>
@@ -112,6 +117,13 @@ export default async function EditProductPage({
         saveAction={saveMediaAction}
         uploadAction={uploadImageAction}
         removeAction={removeImageAction}
+      />
+      <AccessorySection
+        // Remount when the saved accessory list changes.
+        key={accessories.map((a) => a.articleNumber).join("|")}
+        productId={product.id}
+        items={accessories}
+        action={saveAccessoriesAction}
       />
     </>
   );
