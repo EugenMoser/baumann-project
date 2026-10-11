@@ -35,11 +35,12 @@ export function writeDeps(client: AdminClient): WriteDeps {
 }
 
 // Runs one admin write for a Server Action; an anonymous caller is sent to
-// the login (Review Focus 3).
+// the login (Review Focus 3). `messages` overrides the conflict texts.
 export async function runWrite<T, V>(
   values: V,
   context: string,
-  write: (client: AdminClient) => Promise<Result<T, AdminError>>
+  write: (client: AdminClient) => Promise<Result<T, AdminError>>,
+  messages?: Record<string, string>
 ): Promise<{ state: FormState<V> } | { value: T }> {
   const client = await createSessionSupabase();
   const outcome = await adminWrite(writeDeps(client), context, () =>
@@ -47,7 +48,7 @@ export async function runWrite<T, V>(
   );
   if (outcome.kind === "anonymous") redirect(LOGIN_PATH);
   if (!outcome.result.ok)
-    return { state: errorState(values, outcome.result.error) };
+    return { state: errorState(values, outcome.result.error, messages) };
   return { value: outcome.result.value };
 }
 

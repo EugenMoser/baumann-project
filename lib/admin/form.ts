@@ -39,13 +39,17 @@ export const idleState = <V>(values: V): FormState<V> => ({
   formError: null,
 });
 
-export function errorState<V>(values: V, error: AdminError): FormState<V> {
+export function errorState<V>(
+  values: V,
+  error: AdminError,
+  messages: Record<string, string> = CONFLICT_MESSAGES
+): FormState<V> {
   if (error.kind === "conflict")
     return {
       status: "error",
       values,
       fieldErrors: {
-        [error.field]: CONFLICT_MESSAGES[error.field] ?? "Wert schon vergeben.",
+        [error.field]: messages[error.field] ?? "Wert schon vergeben.",
       },
       formError: null,
     };
