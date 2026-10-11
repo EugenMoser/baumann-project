@@ -1,6 +1,6 @@
 -- supabase/tests/12_admin_media.test.sql
 begin;
-select plan(46);
+select plan(45);
 
 -- Privileges (SC-13)
 select ok(not has_function_privilege('anon', 'public.admin_attach_media(bigint, text, integer, integer, text)', 'execute'), 'anon cannot attach media');
