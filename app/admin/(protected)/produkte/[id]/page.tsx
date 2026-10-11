@@ -4,8 +4,10 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { ArticleSection } from "@/components/admin/article-section";
 import { ColorSection } from "@/components/admin/color-section";
+import { ImageSection } from "@/components/admin/image-section";
 import { ProductForm } from "@/components/admin/product-form";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { listProductMedia } from "@/lib/admin/media";
 import {
   getProductEditor,
   loadEditorOptions,
@@ -21,19 +23,26 @@ import {
   saveColorsAction,
   saveProductAction,
 } from "../actions";
+import {
+  removeImageAction,
+  saveMediaAction,
+  uploadImageAction,
+} from "../media-actions";
 
 const ID_PATTERN = /^[1-9]\d{0,9}$/;
 
 // Shared by generateMetadata and the page so the editor loads once per request.
 const loadEditor = cache(async (id: number) => {
   const client = await createSessionSupabase();
-  const [editor, options] = await Promise.all([
+  const [editor, options, media] = await Promise.all([
     getProductEditor(client, id),
     loadEditorOptions(client),
+    listProductMedia(client, id),
   ]);
   return {
     editor: unwrapAdmin(editor, "product editor"),
     options: unwrapAdmin(options, "editor options"),
+    media: unwrapAdmin(media, "product media"),
   };
 });
 
@@ -51,7 +60,7 @@ export default async function EditProductPage({
 }: PageProps<"/admin/produkte/[id]">) {
   const { id } = await params;
   if (!ID_PATTERN.test(id)) notFound();
-  const { editor, options } = await loadEditor(Number(id));
+  const { editor, options, media } = await loadEditor(Number(id));
   const { product } = editor;
   return (
     <>
@@ -94,6 +103,15 @@ export default async function EditProductPage({
         productId={product.id}
         initial={editor.colors}
         colors={options.colors}
+      />
+      <ImageSection
+        // Remount when the set of images changes (upload, removal).
+        key={media.map((m) => m.mediaId).join("-")}
+        productId={product.id}
+        items={media}
+        saveAction={saveMediaAction}
+        uploadAction={uploadImageAction}
+        removeAction={removeImageAction}
       />
     </>
   );
