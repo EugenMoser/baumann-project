@@ -379,7 +379,7 @@ export async function saveProduct(
 export async function deleteProduct(
   client: AdminClient,
   id: number
-): Promise<Result<null, AdminError>> {
+): Promise<Result<string[], AdminError>> {
   const { data: row, error: readError } = await client
     .from("product")
     .select("status")
@@ -389,12 +389,11 @@ export async function deleteProduct(
   if (row === null) return err({ kind: "not_found" });
   if (row.status === "published")
     return err({ kind: "invalid", message: DELETE_PUBLISHED });
-  const { data, error } = await client
-    .from("product")
-    .delete()
-    .eq("id", id)
-    .select("id");
+  // D5: product, its rows and its media rows in one transaction; returns
+  // the storage paths the caller removes afterwards.
+  const { data, error } = await client.rpc("admin_delete_product", {
+    p_product_id: id,
+  });
   if (error) return err(fromPg(error));
-  if (data.length === 0) return err({ kind: "not_found" });
-  return ok(null);
+  return ok(data);
 }

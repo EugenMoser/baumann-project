@@ -25,6 +25,7 @@ import {
   zodFieldErrors,
   type FormState,
 } from "@/lib/admin/form";
+import { removeFiles } from "@/lib/admin/media-flow";
 import { deleteProduct, saveProduct } from "@/lib/admin/products";
 import {
   PRODUCT_FIELDS,
@@ -105,8 +106,19 @@ export async function deleteProductAction(
       fieldErrors: {},
       formError: "Ungültige Anfrage.",
     };
-  const done = await runWrite(null, "[admin] delete product", (client) =>
-    deleteProduct(client, id)
+  const done = await runWrite(
+    null,
+    "[admin] delete product",
+    async (client) => {
+      const deleted = await deleteProduct(client, id);
+      if (deleted.ok)
+        await removeFiles(
+          client.storage.from("catalog"),
+          deleted.value,
+          (context, detail) => console.error(context, detail)
+        );
+      return deleted;
+    }
   );
   if ("state" in done) return done.state;
   redirect("/admin/produkte");

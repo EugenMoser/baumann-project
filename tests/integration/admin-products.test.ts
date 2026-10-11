@@ -126,7 +126,7 @@ describe("saveProduct / deleteProduct", () => {
     expect(editor.ok && editor.value.product.status).toBe("draft");
     expect(await deleteProduct(admin, created.value.id)).toEqual({
       ok: true,
-      value: null,
+      value: [],
     });
   });
   it("maps a vanished selection to a reload hint (23503)", async () => {
