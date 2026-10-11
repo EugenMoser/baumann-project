@@ -58,4 +58,14 @@ test.describe("admin auth", () => {
       (await context.cookies()).filter((c) => c.name.startsWith("sb-"))
     ).toEqual([]);
   });
+
+  for (const path of [
+    "/admin/kategorien",
+    "/admin/farben",
+    "/admin/materialien",
+  ])
+    test(`${path} redirects without a session (SC-12)`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/admin\/login\?next=/);
+    });
 });
