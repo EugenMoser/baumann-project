@@ -10,6 +10,8 @@ playwright-report
 test-results
 e2e
 tests
+# Generated test images used by colocated unit tests (lib/**/*.test.ts are type-checked by next build).
+!tests/fixtures
 supabase
 docs
 *.md
