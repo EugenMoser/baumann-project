@@ -13,10 +13,10 @@ describe("colorSchema (SC-11, Review Focus 3)", () => {
     hexCode: "#F4F4F4",
     family: "weiß",
   };
-  it("accepts upper- and lower-case hex codes as typed", () => {
+  it("accepts lower-case hex codes and stores them in upper case", () => {
     expect(colorSchema.parse(valid).hexCode).toBe("#F4F4F4");
     expect(colorSchema.parse({ ...valid, hexCode: "#a1b2c3" }).hexCode).toBe(
-      "#a1b2c3"
+      "#A1B2C3"
     );
   });
   it.each(["#abc", "a1b2c3", "#GGGGGG", "#", ""])("rejects %s", (hexCode) => {

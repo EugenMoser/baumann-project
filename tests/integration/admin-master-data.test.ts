@@ -50,7 +50,7 @@ describe("colours and materials (SC-11)", () => {
       ? list.value.find((c) => c.name === "Int Rot")
       : undefined;
     expect(created?.productCount).toBe(0);
-    expect(created?.hexCode).toBe("#aa0000");
+    expect(created?.hexCode).toBe("#AA0000");
     expect((await deleteColor(admin, created!.id)).ok).toBe(true);
     expect(await deleteColor(admin, 1)).toEqual({
       ok: false,

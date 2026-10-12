@@ -21,7 +21,8 @@ export const colorSchema = z.object({
   hexCode: z
     .string()
     .trim()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Bitte einen Farbcode wie #A1B2C3 eingeben."),
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Bitte einen Farbcode wie #A1B2C3 eingeben.")
+    .transform((s) => s.toUpperCase()),
   family: requiredText(40, "Bitte eine Farbfamilie eingeben."),
 });
 export type ColorMasterInput = z.output<typeof colorSchema>;
