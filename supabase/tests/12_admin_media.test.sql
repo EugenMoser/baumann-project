@@ -1,6 +1,6 @@
 -- supabase/tests/12_admin_media.test.sql
 begin;
-select plan(45);
+select plan(48);
 
 -- Privileges (SC-13)
 select ok(not has_function_privilege('anon', 'public.admin_attach_media(bigint, text, integer, integer, text)', 'execute'), 'anon cannot attach media');
@@ -16,6 +16,9 @@ set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a1","
 select throws_ok($$select public.admin_attach_media(3, 'products/3/x.png', 10, 10, 'x')$$, '42501', null, 'non-admin cannot attach media');
 select throws_ok($$select public.admin_delete_product(4)$$, '42501', null, 'non-admin cannot delete products');
 select throws_ok($$select public.admin_save_category('{"name":"x","slug":"x","intro_text":"","sort_order":0,"attributes":[]}'::jsonb)$$, '42501', null, 'non-admin cannot save categories');
+select throws_ok($$select public.admin_set_product_media(3, '[]'::jsonb)$$, '42501', null, 'non-admin cannot set media');
+select throws_ok($$select public.admin_remove_media(3, 1)$$, '42501', null, 'non-admin cannot remove media');
+select throws_ok($$select public.admin_set_product_accessories(3, '[]'::jsonb)$$, '42501', null, 'non-admin cannot set accessories');
 reset role;
 
 set local role authenticated;
