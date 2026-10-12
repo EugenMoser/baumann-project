@@ -4,6 +4,7 @@ export type ProductFilter = {
   categoryId: number | null;
   status: ProductStatus | null;
   q: string | null;
+  altReview: boolean;
 };
 type Params = Record<string, string | string[] | undefined>;
 
@@ -20,6 +21,7 @@ export function parseFilter(params: Params): ProductFilter {
       category && /^[1-9]\d{0,9}$/.test(category) ? Number(category) : null,
     status: status ?? null,
     q: q ? q : null,
+    altReview: first(params.alt) === "pruefen",
   };
 }
 

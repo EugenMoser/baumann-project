@@ -11,20 +11,19 @@ import {
   loadAttributeTypes,
   saveArticle,
 } from "@/lib/admin/articles";
-import { LOGIN_PATH } from "@/lib/admin/auth";
 import {
   parseColors,
   readColorsForm,
   type ColorValues,
 } from "@/lib/admin/color-schema";
 import { setProductColors } from "@/lib/admin/colors";
-import type { AdminError } from "@/lib/admin/errors";
 import {
   errorState,
   readFields,
   zodFieldErrors,
   type FormState,
 } from "@/lib/admin/form";
+import { deleteProductWithFiles } from "@/lib/admin/media-flow";
 import { deleteProduct, saveProduct } from "@/lib/admin/products";
 import {
   PRODUCT_FIELDS,
@@ -32,35 +31,8 @@ import {
   withDefaultSlug,
   type ProductValues,
 } from "@/lib/admin/schemas";
-import { writeDeps } from "@/lib/admin/server";
-import { adminWrite } from "@/lib/admin/write";
-import type { Result } from "@/lib/result";
-import {
-  createSessionSupabase,
-  type AdminClient,
-} from "@/lib/supabase/session";
-
-const idFrom = (formData: FormData, name = "id"): number | null => {
-  const raw = formData.get(name);
-  return typeof raw === "string" && /^[1-9]\d{0,9}$/.test(raw)
-    ? Number(raw)
-    : null;
-};
-
-async function runWrite<T, V>(
-  values: V,
-  context: string,
-  write: (client: AdminClient) => Promise<Result<T, AdminError>>
-): Promise<{ state: FormState<V> } | { value: T }> {
-  const client = await createSessionSupabase();
-  const outcome = await adminWrite(writeDeps(client), context, () =>
-    write(client)
-  );
-  if (outcome.kind === "anonymous") redirect(LOGIN_PATH); // Review Focus 3
-  if (!outcome.result.ok)
-    return { state: errorState(values, outcome.result.error) };
-  return { value: outcome.result.value };
-}
+import { CATALOG_BUCKET, fileLog, idFrom, runWrite } from "@/lib/admin/server";
+import { createSessionSupabase } from "@/lib/supabase/session";
 
 export async function saveProductAction(
   _prev: FormState<ProductValues>,
@@ -106,7 +78,11 @@ export async function deleteProductAction(
       formError: "Ungültige Anfrage.",
     };
   const done = await runWrite(null, "[admin] delete product", (client) =>
-    deleteProduct(client, id)
+    deleteProductWithFiles({
+      remove: () => deleteProduct(client, id),
+      storage: client.storage.from(CATALOG_BUCKET),
+      log: fileLog,
+    })
   );
   if ("state" in done) return done.state;
   redirect("/admin/produkte");

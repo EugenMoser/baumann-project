@@ -42,6 +42,7 @@ describe("listProducts (SC-5)", () => {
       categoryId: null,
       status: "draft",
       q: null,
+      altReview: false,
     });
     expect(drafts.ok && drafts.value.map((p) => p.slug)).toContain(
       "entwurfsteil"
@@ -50,6 +51,7 @@ describe("listProducts (SC-5)", () => {
       categoryId: 2,
       status: null,
       q: null,
+      altReview: false,
     });
     expect(
       cat2.ok && cat2.value.every((p) => p.categorySlug === "sanitaer")
@@ -60,6 +62,7 @@ describe("listProducts (SC-5)", () => {
       categoryId: null,
       status: null,
       q: "99211/80",
+      altReview: false,
     });
     expect(byNumber.ok && byNumber.value.map((p) => p.slug)).toEqual([
       "testrohrschelle",
@@ -68,6 +71,7 @@ describe("listProducts (SC-5)", () => {
       categoryId: null,
       status: null,
       q: "testkeil",
+      altReview: false,
     });
     expect(byName.ok && byName.value.map((p) => p.slug)).toEqual([
       "testkeil-mit-daempfung",
@@ -80,6 +84,7 @@ describe("listProducts (SC-5)", () => {
         categoryId: null,
         status: null,
         q,
+        altReview: false,
       });
       expect(result.ok).toBe(true);
       if (result.ok) expect(result.value).toEqual([]);
@@ -92,6 +97,7 @@ describe("listProducts (SC-5)", () => {
       categoryId: null,
       status: null,
       q: "Testkeil*Dämpfung",
+      altReview: false,
     });
     expect(result.ok && result.value).toEqual([]);
   });
@@ -100,8 +106,20 @@ describe("listProducts (SC-5)", () => {
       categoryId: null,
       status: null,
       q: "testkeil",
+      altReview: false,
     });
     expect(r.ok && r.value[0]?.articleCount).toBe(2);
+  });
+  it("filters products whose alt text needs review (SC-8)", async () => {
+    const result = await listProducts(admin, {
+      categoryId: null,
+      status: null,
+      q: null,
+      altReview: true,
+    });
+    expect(result.ok && result.value.map((p) => p.slug)).toEqual([
+      "entwurfsteil",
+    ]);
   });
 });
 
@@ -126,7 +144,7 @@ describe("saveProduct / deleteProduct", () => {
     expect(editor.ok && editor.value.product.status).toBe("draft");
     expect(await deleteProduct(admin, created.value.id)).toEqual({
       ok: true,
-      value: null,
+      value: [],
     });
   });
   it("maps a vanished selection to a reload hint (23503)", async () => {

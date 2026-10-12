@@ -71,7 +71,7 @@ Estimates in hours at ~10 h/week, ±30 %.
 | 4   | **Public catalog** — redesign, home, category pages with intro text, product page (variants, colours, derived order number, visible article numbers, related products, `ProductGroup` JSON-LD), search by name and article number, ISR; afterwards the repo is switched from private to public (with approval)                                                                                                         | done   | 22 h |
 | 5   | **Content pages & inquiry** — quality page (certificates from Storage via their own import CLI), imprint and privacy as links to the operator's pages, inquiry form (order number checked against the catalog, validate + discard, visible demo notice, link to the official site) — [spec](specs/2026-10-09-content-inquiry-design.md)                                                                                | done   | 9 h  |
 | 6a  | **Admin: auth & products** — Supabase Auth (e-mail + password, single admin role), admin shell (shadcn/ui), CRUD for products, articles (attributes, pack sizes) and colour assignments, status rules, on-demand revalidation — [spec](specs/2026-10-10-admin-products-design.md)                                                                                                                                      | done   | 12 h |
-| 6b  | **Admin: images & master data** — image upload with alt text and order, CRUD for categories, colours, materials and accessories                                                                                                                                                                                                                                                                                        | open   | 10 h |
+| 6b  | **Admin: images & master data** — image upload with alt text and order, CRUD for categories, colours, materials and accessories — [spec](specs/2026-10-10-admin-media-master-data-design.md)                                                                                                                                                                                                                           | done   | 10 h |
 | 7   | **AI text assistant** — generate product description and SEO title/description from structured data as a suggestion; human reviews and accepts; AI-generated fields stay labelled; rate limit and cost cap                                                                                                                                                                                                             | open   | 10 h |
 | 8   | **Showcase** — `README.md` (goal, demo link, stack, architecture, setup, preview notice), screenshots/video of the admin, `docs/ai-workflow.md` complete                                                                                                                                                                                                                                                               | open   | 4 h  |
 
@@ -93,6 +93,9 @@ Unordered; each gets its own spec when picked up.
 - Unique colour suffix per product (`product_color (product_id, suffix)`), so order
   numbers and JSON-LD SKUs stay unique
 - App-side login rate limit (GoTrue's per-IP limit only sees the app server)
+- Keep admin uploads to imported products across a re-import (today a
+  re-import replaces their images), with the same 1 h age guard as `media:prune`
+- Zod schemas for the hand-rolled media, accessory and colour form parsing
 
 ## Risks
 

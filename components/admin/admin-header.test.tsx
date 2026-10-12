@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AdminHeader } from "./admin-header";
 
@@ -38,5 +38,26 @@ describe("AdminHeader (SC-4)", () => {
     expect(
       screen.getByRole("button", { name: "Abmelden" })
     ).toBeInTheDocument();
+  });
+  it("renders all admin sections (SC-12)", () => {
+    render(
+      <AdminHeader
+        email="a@example.test"
+        shortName="Demo"
+        logoutAction={async () => {}}
+      />
+    );
+    const nav = screen.getByRole("navigation", { name: "Admin" });
+    const hrefs = {
+      Produkte: "/admin/produkte",
+      Kategorien: "/admin/kategorien",
+      Farben: "/admin/farben",
+      Materialien: "/admin/materialien",
+    };
+    for (const [name, href] of Object.entries(hrefs))
+      expect(within(nav).getByRole("link", { name })).toHaveAttribute(
+        "href",
+        href
+      );
   });
 });

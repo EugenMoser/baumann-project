@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 5 of 8 features done, plus 6a (admin auth & products). Next: feature 6b (Admin: images & master data).
+Active. MVP: 6 of 8 features done (6 = admin, in two parts). Next: feature 7 (AI text assistant).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
@@ -35,6 +35,7 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Import legacy catalog: `pnpm catalog:import --snapshot <dir> [--dry-run]` (see `docs/import.md`)
 - Remove all customer data: `pnpm catalog:remove --confirm <api host>` (see `docs/revocation.md`)
 - Create or reset an admin user: `printf '%s' "$PW" | pnpm admin:create --email <address>` (see `docs/deploy.md`)
+- Remove orphan images: `pnpm media:prune [--apply]` (see `docs/deploy.md`)
 - E2E on another port (e.g. when 3000 is taken): `E2E_PORT=3100 pnpm e2e`
 - Build: `pnpm build` (needs `NEXT_PUBLIC_SITE_URL`, see `.env.example`)
 - Fresh clone: run `pnpm exec next typegen` (or `build`/`dev`) once before `pnpm typecheck`

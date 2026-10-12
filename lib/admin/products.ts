@@ -2,6 +2,7 @@ import type { ContentOrigin } from "@/lib/catalog/types";
 import { err, ok, type Result } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
 import { fromPg, STALE_SELECTION, type AdminError } from "./errors";
+import { needsAltReview } from "./alt-review";
 import { likePattern, type ProductFilter } from "./filter";
 import type { ProductStatus } from "./labels";
 import { productOrigins } from "./origin";
@@ -22,6 +23,7 @@ export type ProductListItem = {
   categorySlug: string;
   articleCount: number;
   updatedAt: string;
+  altReview: boolean;
 };
 
 export type AttributeOption = {
@@ -126,7 +128,7 @@ export async function listProducts(
   let query = client
     .from("product")
     .select(
-      "id, name, slug, status, sort_order, updated_at, category!inner(name, slug, sort_order), article!article_product_id_fkey(count)"
+      "id, name, slug, status, sort_order, updated_at, category!inner(name, slug, sort_order), article!article_product_id_fkey(count), product_media(media(alt_text))"
     );
   if (filter.categoryId !== null)
     query = query.eq("category_id", filter.categoryId);
@@ -140,18 +142,21 @@ export async function listProducts(
       a.sort_order - b.sort_order ||
       a.name.localeCompare(b.name, "de")
   );
-  return ok(
-    sorted.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      status: p.status,
-      categoryName: p.category.name,
-      categorySlug: p.category.slug,
-      articleCount: countOf(p.article),
-      updatedAt: p.updated_at,
-    }))
-  );
+  const items = sorted.map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    status: p.status,
+    categoryName: p.category.name,
+    categorySlug: p.category.slug,
+    articleCount: countOf(p.article),
+    updatedAt: p.updated_at,
+    altReview: needsAltReview(
+      p.name,
+      p.product_media.map((m) => m.media.alt_text)
+    ),
+  }));
+  return ok(filter.altReview ? items.filter((i) => i.altReview) : items);
 }
 
 export async function loadEditorOptions(
@@ -379,7 +384,7 @@ export async function saveProduct(
 export async function deleteProduct(
   client: AdminClient,
   id: number
-): Promise<Result<null, AdminError>> {
+): Promise<Result<string[], AdminError>> {
   const { data: row, error: readError } = await client
     .from("product")
     .select("status")
@@ -389,12 +394,11 @@ export async function deleteProduct(
   if (row === null) return err({ kind: "not_found" });
   if (row.status === "published")
     return err({ kind: "invalid", message: DELETE_PUBLISHED });
-  const { data, error } = await client
-    .from("product")
-    .delete()
-    .eq("id", id)
-    .select("id");
+  // D5: product, its rows and its media rows in one transaction; returns
+  // the storage paths the caller removes afterwards.
+  const { data, error } = await client.rpc("admin_delete_product", {
+    p_product_id: id,
+  });
   if (error) return err(fromPg(error));
-  if (data.length === 0) return err({ kind: "not_found" });
-  return ok(null);
+  return ok(data);
 }

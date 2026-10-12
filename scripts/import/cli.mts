@@ -7,7 +7,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../../lib/supabase/database.types.ts";
 import { parseImportEnv } from "./env.mts";
 import type { Finding } from "./findings.mts";
-import { deleteOrphans, fetchImages, uploadImages } from "./images.mts";
+import { fetchImages, uploadImages } from "./images.mts";
+import { cleanupOrphans, readMediaPaths } from "./keep-set.mts";
 import {
   completePayload,
   mapSnapshot,
@@ -173,9 +174,17 @@ export async function runImportCli(
       ? { ...data }
       : { result: String(data) };
 
-  const orphans = await deleteOrphans(
+  const orphans = await cleanupOrphans(
     bucket,
-    new Set(payload.value.media.map((m) => m.storage_path))
+    new Set(payload.value.media.map((m) => m.storage_path)),
+    () =>
+      readMediaPaths((from, to) =>
+        supabase
+          .from("media")
+          .select("storage_path")
+          .order("id")
+          .range(from, to)
+      )
   );
   if (!orphans.ok) {
     await report(

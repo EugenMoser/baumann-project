@@ -53,3 +53,62 @@ export function createAdmin(email: string, password: string): void {
     stdio: ["pipe", "ignore", "inherit"],
   });
 }
+
+// Published e2e product with one article, created directly (service role).
+export async function createPublishedProduct(
+  slug: string,
+  name: string,
+  articleNumber: string
+): Promise<number> {
+  const svc = serviceClient();
+  const { data, error } = await svc
+    .from("product")
+    .insert({ category_id: 1, slug, name, status: "published" })
+    .select("id")
+    .single();
+  if (error) throw error;
+  const { error: articleError } = await svc
+    .from("article")
+    .insert({ product_id: data.id, article_number: articleNumber });
+  if (articleError) throw articleError;
+  return data.id;
+}
+
+// Removes e2e products with their media rows and files, then e2e master data.
+export async function removeE2eData(): Promise<void> {
+  const svc = serviceClient();
+  const { data: products, error } = await svc
+    .from("product")
+    .select("id, product_media(media(id, storage_path))")
+    .like("slug", "e2e-%");
+  if (error) throw error;
+  const media = products.flatMap((p) =>
+    p.product_media.flatMap((pm) => pm.media)
+  );
+  if (media.length > 0) {
+    const { error: rowError } = await svc
+      .from("media")
+      .delete()
+      .in(
+        "id",
+        media.map((m) => m.id)
+      );
+    if (rowError) throw rowError;
+    const { error: fileError } = await svc.storage
+      .from("catalog")
+      .remove(media.map((m) => m.storage_path));
+    if (fileError) throw fileError;
+  }
+  for (const [table, column, pattern] of [
+    ["product", "slug", "e2e-%"],
+    ["category", "slug", "e2e-%"],
+    ["color", "name", "E2E %"],
+    ["material", "code", "E2E-%"],
+  ] as const) {
+    const { error: deleteError } = await svc
+      .from(table)
+      .delete()
+      .like(column, pattern);
+    if (deleteError) throw deleteError;
+  }
+}

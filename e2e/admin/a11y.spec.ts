@@ -50,4 +50,26 @@ test.describe("admin accessibility and noindex (SC-4)", () => {
     await expect(banner).toBeVisible();
     await expect(banner).toContainText("Vorschau");
   });
+  test("new admin pages: axe, noindex, banner", async ({ page }) => {
+    for (const path of [
+      "/admin/kategorien",
+      "/admin/kategorien/1",
+      "/admin/farben",
+      "/admin/materialien",
+    ]) {
+      const response = await page.goto(path);
+      expect(response?.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+      await expect(
+        page.getByRole("region", { name: "Hinweis zur Vorschau" })
+      ).toBeVisible();
+      expect(await blocking(page), path).toEqual([]);
+    }
+    await page.goto("/admin/farben");
+    await page.getByRole("button", { name: "Farbe anlegen" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    expect(await blocking(page)).toEqual([]);
+    await page.goto("/admin/produkte/1");
+    await expect(page.getByRole("heading", { name: "Bilder" })).toBeVisible();
+    expect(await blocking(page)).toEqual([]);
+  });
 });
