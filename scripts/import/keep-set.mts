@@ -18,8 +18,9 @@ export async function readMediaPaths(
 
 /**
  * Removes files under `products/` that neither the snapshot nor any `media`
- * row references, so admin uploads survive a re-import. Deletes nothing when
- * the database paths cannot be read.
+ * row references. `import_catalog` has already dropped the media rows of
+ * imported products, so only files of admin-created products stay. Deletes
+ * nothing when the database paths cannot be read.
  */
 export async function cleanupOrphans(
   bucket: StorageBucket,

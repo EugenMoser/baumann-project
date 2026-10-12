@@ -127,11 +127,14 @@ entries) are never touched.
 Once the admin area exists, a re-import overwrites admin edits of imported
 fields. Export what you need to keep, or do not re-import.
 
-After every successful import, the importer removes the objects under
-`products/` that are neither in the snapshot nor referenced by any `media` row.
-It reads all `media.storage_path` values from the database for this, so admin
-uploads (`products/{product_id}/{uuid}.{ext}`) survive a re-import. If the paths
-cannot be read, nothing is deleted and the import exits with an error.
+A re-import replaces the images of imported products, including admin uploads
+to them: `import_catalog` deletes their `product_media` links and every
+unlinked `media` row under `products/`. Afterwards the importer removes the
+objects under `products/` that are neither in the snapshot nor referenced by
+any `media` row. It reads all `media.storage_path` values from the database for
+this, so admin uploads to products created in the admin
+(`products/{product_id}/{uuid}.{ext}`) are kept. If the paths cannot be read,
+nothing is deleted and the import exits with an error.
 
 ### Category texts
 

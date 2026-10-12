@@ -273,8 +273,10 @@ legacy exports contain none.
   the files second. A failed file removal is logged and does not fail the
   action; an orphan file is invisible, a row without a file would show a
   broken image.
-- The importer's orphan cleanup keeps every file that the snapshot or any
-  `media` row references, so admin uploads survive a re-import.
+- A re-import replaces the images of imported products, including admin
+  uploads to them (rows and files). Images of products created in the admin
+  are kept: the importer's orphan cleanup keeps every file that the snapshot
+  or any `media` row references.
 - `pnpm media:prune` removes the leftovers: `media` rows without a product and
   files under `products/` without a `media` row (see `docs/deploy.md`).
 
