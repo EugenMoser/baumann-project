@@ -38,7 +38,8 @@ push to main
 - The smoke check polls `/api/health` for up to 10 minutes until it reports the
   commit that was pushed. `/api/health` always answers 200 with
   `{ commit, db }`; `db` is `error` when the database is slow or down. The
-  Dockerfile has a `HEALTHCHECK` on the same endpoint.
+  Dockerfile has a `HEALTHCHECK` on the same endpoint. A 401 from the basic
+  auth (section 6) ends the check at once.
 - Migrations run before the new app is deployed, except in the residual
   window described above.
 
@@ -210,6 +211,13 @@ it (it is stored as a GitHub secret).
   neither curl nor wget.
 - Create an API token with deploy permission and copy the deploy webhook URL
   of the resource.
+- Access protection until the preview is public: **General → Security →
+  Authentication → HTTP Basic Authentication** with a user name and password,
+  label management stays "Managed by Coolify". Redeploy afterwards. The
+  container health check runs inside the container and is not affected; the
+  CI smoke check sends the credentials from `PREVIEW_BASIC_AUTH` (section 7).
+  To make the preview public, switch the authentication off, redeploy and
+  delete the secret.
 
 ## 7. GitHub repository secrets
 
@@ -227,6 +235,7 @@ paid plan for private repositories.
 | `COOLIFY_WEBHOOK_URL`     | Deploy webhook URL of the app resource                           | step 6                                     |
 | `COOLIFY_TOKEN`           | Coolify API token with deploy permission                         | step 6                                     |
 | `PREVIEW_URL`             | `https://baumann.eugen-moser.com`                                | step 2                                     |
+| `PREVIEW_BASIC_AUTH`      | `user:password` while basic auth is on (optional)                | step 6                                     |
 
 `PROD_DB_URL` uses the tunnel's local end, not the VPS: the workflow forwards
 local port 54329 to `DEPLOY_DB_TUNNEL_TARGET`.
@@ -259,7 +268,8 @@ gh secret set PROD_DB_URL --body "postgresql://postgres:${PW}@127.0.0.1:54329/po
 gh secret set COOLIFY_WEBHOOK_URL   # paste at the prompt
 gh secret set COOLIFY_TOKEN         # paste at the prompt, without "Bearer "
 gh secret set PREVIEW_URL --body "https://baumann.eugen-moser.com"
-gh secret list                      # 9 secrets
+gh secret set PREVIEW_BASIC_AUTH    # optional, user:password at the prompt
+gh secret list                      # 9 secrets, 10 with basic auth
 ```
 
 Check the URL before the first deploy with a dry run through the tunnel (from
@@ -281,7 +291,8 @@ to collect (SC-14, SC-15):
 - Job log: tunnel opened, `supabase db push` applied the migrations, webhook
   call succeeded, smoke check passed for the pushed commit.
 - `curl -s https://baumann.eugen-moser.com/api/health` returns the commit SHA
-  and `"db":"ok"`.
+  and `"db":"ok"`. While basic auth is on, use `curl -s -u <user> …`; curl
+  asks for the password, so it stays out of the shell history.
 - `nc -vz <vps-host> 5432` from another machine fails.
 - `ssh -i ~/.ssh/baumann_deploy_key deploy@<vps-host>` gets no shell.
 - The demo notice is visible and `noindex` is set (meta, `X-Robots-Tag`,
