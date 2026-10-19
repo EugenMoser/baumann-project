@@ -2,15 +2,23 @@ import { z } from "zod";
 
 const httpUrl = z.url({ protocol: /^https?$/ });
 
+// atob and TextDecoder exist in Node and in the browser; Buffer only in Node,
+// and client components parse the public env too.
+function decodeBase64Url(segment: string): string {
+  const base64 = segment.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+  return new TextDecoder().decode(
+    Uint8Array.from(binary, (char) => char.charCodeAt(0))
+  );
+}
+
 // Reads the `role` claim of a JWT without verifying it. Only used to make sure
 // a legacy key in a public variable is the low-privilege anon key.
 function jwtRole(token: string): string | null {
   const parts = token.split(".");
   if (parts.length !== 3 || !/^[\w-]+$/.test(parts[1])) return null;
   try {
-    const payload: unknown = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString("utf8")
-    );
+    const payload: unknown = JSON.parse(decodeBase64Url(parts[1]));
     if (typeof payload !== "object" || payload === null) return null;
     if (!("role" in payload)) return null;
     const role = payload.role;

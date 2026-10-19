@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { parsePublicEnv, parseServerEnv } from "./schema";
 
 // Builds a JWT-shaped string with the given payload (signature is irrelevant).
@@ -58,6 +58,34 @@ describe("parsePublicEnv (FR-1, SC-1)", () => {
   ])("rejects a publishable key that is %s", (_label, value) => {
     expect(() =>
       parsePublicEnv({ ...valid, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: value })
+    ).toThrow(/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
+  });
+});
+
+// Client components parse the public env in the browser, where Buffer does
+// not exist; production uses a legacy anon JWT.
+describe("parsePublicEnv without Buffer", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.each([
+    ["needs padding", { role: "anon", iss: "supabase" }],
+    ["uses - and _", { role: "anon", note: "??>>~~" }],
+  ])("accepts a legacy anon JWT whose payload %s", (_label, payload) => {
+    const key = fakeJwt(payload);
+    vi.stubGlobal("Buffer", undefined);
+    expect(
+      parsePublicEnv({ ...valid, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: key })
+        .NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+    ).toBe(key);
+  });
+
+  it("still rejects a service_role JWT", () => {
+    const key = fakeJwt({ role: "service_role" });
+    vi.stubGlobal("Buffer", undefined);
+    expect(() =>
+      parsePublicEnv({ ...valid, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: key })
     ).toThrow(/NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
   });
 });

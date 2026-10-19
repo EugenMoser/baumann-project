@@ -96,7 +96,9 @@ pnpm dev
 
 `.env.local` needs `NEXT_PUBLIC_SITE_URL=http://localhost:3000`, plus
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` from
-`API_URL` and `PUBLISHABLE_KEY` in `pnpm exec supabase status -o json`.
+`API_URL` and `ANON_KEY` in `pnpm exec supabase status -o json`. The anon key
+is the legacy JWT format that production and CI use; the `sb_publishable_` key
+works too but skips the JWT check.
 
 Checks: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm db:test`, `pnpm e2e`.
 All commands are listed in [CLAUDE.md](CLAUDE.md).
