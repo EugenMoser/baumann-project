@@ -81,6 +81,7 @@ export function getProductPage(
             label: v.attribute.label,
             unit: v.attribute.unit,
             value: v.value_decimal ?? v.value_text ?? "",
+            sortOrder: v.attribute.sort_order,
           })),
         packaging: [...a.article_packaging]
           .sort(bySortOrder)

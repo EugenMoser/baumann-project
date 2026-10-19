@@ -12,7 +12,8 @@ export type AttributeColumn = {
 const MAX_LISTED_VALUES = 6;
 const numberFormat = new Intl.NumberFormat("de-DE");
 
-// Attributes grouped by key in first-seen order over articles in table order.
+// Attributes grouped by key, ordered by attribute sort order (ties: first seen
+// over articles in table order).
 function groupByKey(
   articles: ArticleView[]
 ): Map<string, ArticleAttributeView[]> {
@@ -24,7 +25,9 @@ function groupByKey(
       else groups.set(attr.key, [attr]);
     }
   }
-  return groups;
+  return new Map(
+    [...groups].sort(([, a], [, b]) => a[0].sortOrder - b[0].sortOrder)
+  );
 }
 
 // D4: compact per-product summary of article attributes (list view).

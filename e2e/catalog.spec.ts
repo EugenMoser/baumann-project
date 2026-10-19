@@ -27,6 +27,10 @@ test.describe("public catalog", () => {
     await expect(page).toHaveURL(
       /\/produkte\/moebelteile\/testkeil-mit-daempfung#artikel-99010$/
     );
+    await expect(page.locator("#artikel-99010")).toHaveCSS(
+      "background-color",
+      "rgb(255, 246, 239)"
+    );
   });
 
   test("category page shows intro and published products only (SC-3)", async ({

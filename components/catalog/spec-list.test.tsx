@@ -11,7 +11,9 @@ function article(number: string, height: number): ArticleView {
     note: null,
     material: null,
     materialNote: null,
-    attributes: [{ key: "height", label: "Höhe", unit: "mm", value: height }],
+    attributes: [
+      { key: "height", label: "Höhe", unit: "mm", value: height, sortOrder: 0 },
+    ],
     packaging: [],
   };
 }

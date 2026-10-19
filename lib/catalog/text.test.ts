@@ -64,4 +64,30 @@ describe("firstSentence", () => {
         .every((w) => w === "Wort")
     ).toBe(true);
   });
+
+  it("does not end the sentence after the abbreviation z. B.", () => {
+    expect(firstSentence("Teile für z. B. Caravans. Rest")).toBe(
+      "Teile für z. B. Caravans."
+    );
+  });
+
+  it("does not end the sentence after the abbreviation Ca.", () => {
+    expect(firstSentence("Ca. 20 Teile. Mehr")).toBe("Ca. 20 Teile.");
+  });
+
+  it("keeps the whole text when it only contains the abbreviation bzw.", () => {
+    expect(firstSentence("Halter bzw. Clips für Möbel.")).toBe(
+      "Halter bzw. Clips für Möbel."
+    );
+  });
+
+  it("ends the sentence before an umlaut capital", () => {
+    expect(firstSentence("Fertig. Über alles")).toBe("Fertig.");
+  });
+
+  it("keeps the last full word when index max is a space", () => {
+    const text = `${"a".repeat(75)} wort rest und mehr.`;
+    expect(text[80]).toBe(" ");
+    expect(firstSentence(text)).toBe(`${"a".repeat(75)} wort…`);
+  });
 });

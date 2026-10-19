@@ -55,6 +55,7 @@ export type ArticleAttributeView = {
   label: string;
   unit: string | null;
   value: number | string;
+  sortOrder: number;
 };
 
 export type ArticleView = {

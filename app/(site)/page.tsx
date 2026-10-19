@@ -36,12 +36,13 @@ export default async function HomePage() {
         {example ? (
           <p className="break-words font-mono text-sm text-muted">
             Direkt zur Nummer:{" "}
-            <Link
+            {/* Plain link: full navigation keeps :target (row highlight) working. */}
+            <a
               href={`/suche?q=${encodeURIComponent(example.articleNumber)}`}
               className="text-ink underline underline-offset-2 hover:text-accent-strong"
             >
               {example.articleNumber}
-            </Link>{" "}
+            </a>{" "}
             → {example.productName}
           </p>
         ) : null}

@@ -33,7 +33,7 @@ export function SearchForm({
         defaultValue={defaultValue}
         maxLength={SEARCH_MAX}
         placeholder="Art.-Nr. oder Produkt"
-        className={`min-w-0 flex-1 rounded-sm border border-line bg-paper px-3 font-mono placeholder:text-muted ${large ? "py-3 text-base" : "py-1.5 text-sm"}`}
+        className={`min-w-0 flex-1 rounded-sm border bg-paper px-3 font-mono placeholder:text-muted ${large ? "border-[1.5px] border-ink py-3 text-base" : "border-muted py-1.5 text-sm"}`}
       />
       <button
         type="submit"
