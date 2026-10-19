@@ -127,6 +127,8 @@ export type SearchHit = {
   matchKind: MatchKind;
 };
 
+export type SearchResult = SearchHit & { thumbnail: ImageRef | null };
+
 export type CertificateLanguage = "de" | "en";
 
 export type CertificateView = {

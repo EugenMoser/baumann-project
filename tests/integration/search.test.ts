@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import { searchCatalog } from "@/lib/catalog/search";
+import { searchCatalog, withThumbnails } from "@/lib/catalog/search";
 import type { Database } from "@/lib/supabase/database.types";
 
 const unreachable = createClient<Database>(
@@ -34,5 +34,27 @@ describe("searchCatalog (FR-8, SC-8)", () => {
     const result = await searchCatalog("Keil", unreachable);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.kind).toBe("db_error");
+  });
+});
+
+describe("withThumbnails (D5)", () => {
+  it("returns the thumbnail of the hit product", async () => {
+    const hits = await searchCatalog("Testkeil");
+    expect(hits.ok).toBe(true);
+    if (!hits.ok) return;
+    const result = await withThumbnails(hits.value);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.value.length).toBeGreaterThan(0);
+    expect(result.value[0].thumbnail?.storagePath).toBe(
+      "products/testkeil-1.webp"
+    );
+  });
+
+  it("returns ok([]) for no hits without querying", async () => {
+    expect(await withThumbnails([], unreachable)).toEqual({
+      ok: true,
+      value: [],
+    });
   });
 });

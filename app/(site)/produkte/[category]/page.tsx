@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Paragraphs } from "@/components/catalog/paragraphs";
 import { ProductTile } from "@/components/catalog/product-tile";
+import { PageHeader } from "@/components/site/page-header";
 import { Breadcrumb } from "@/components/site/breadcrumb";
 import { loadCategoryPage } from "@/lib/catalog/load";
 import { categoryMetadata } from "@/lib/catalog/metadata";
@@ -29,13 +30,16 @@ export default async function CategoryPage({
       <Breadcrumb
         items={[{ label: "Produkte", href: "/produkte" }, { label: page.name }]}
       />
-      <header className="flex flex-col gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">{page.name}</h1>
+      <div className="flex flex-col gap-4">
+        <PageHeader
+          eyebrow={`Kategorie · ${page.products.length} Produktgruppen`}
+          title={page.name}
+        />
         <Paragraphs
           text={page.introText}
           className="flex max-w-prose flex-col gap-3 leading-relaxed text-muted"
         />
-      </header>
+      </div>
       {page.products.length > 0 ? (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {page.products.map((p) => (
