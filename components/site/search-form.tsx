@@ -32,12 +32,12 @@ export function SearchForm({
         name="q"
         defaultValue={defaultValue}
         maxLength={SEARCH_MAX}
-        placeholder="Produkt oder Artikelnummer"
-        className={`min-w-0 flex-1 rounded-md border border-line bg-paper px-3 ${large ? "py-3 text-base" : "py-1.5 text-sm"}`}
+        placeholder="Art.-Nr. oder Produkt"
+        className={`min-w-0 flex-1 rounded-sm border border-line bg-paper px-3 font-mono placeholder:text-muted ${large ? "py-3 text-base" : "py-1.5 text-sm"}`}
       />
       <button
         type="submit"
-        className={`rounded-md bg-accent px-4 font-medium text-paper hover:bg-accent-strong ${large ? "py-3" : "py-1.5 text-sm"}`}
+        className={`rounded-sm bg-ink px-4 font-medium text-paper hover:bg-accent-strong motion-safe:transition-colors motion-safe:duration-150 ${large ? "py-3" : "py-1.5 text-sm"}`}
       >
         Suchen
       </button>

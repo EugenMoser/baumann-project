@@ -4,20 +4,20 @@ type Crumb = { label: string; href?: string };
 
 export function Breadcrumb({ items }: { items: Crumb[] }) {
   return (
-    <nav aria-label="Brotkrumen" className="text-sm text-muted">
-      <ol className="flex flex-wrap gap-x-2">
+    <nav aria-label="Brotkrumen" className="font-mono text-xs text-muted">
+      <ol className="flex flex-wrap gap-x-2 gap-y-1">
         <li>
-          <Link href="/" className="hover:text-accent">
+          <Link href="/" className="hover:text-accent-strong">
             Start
           </Link>
         </li>
         {items.map((item, i) => {
           const last = i === items.length - 1;
           return (
-            <li key={`${item.label}-${i}`} className="flex gap-x-2">
-              <span aria-hidden="true">/</span>
+            <li key={`${item.label}-${i}`} className="flex gap-x-2 gap-y-1">
+              <span aria-hidden="true"> / </span>
               {item.href && !last ? (
-                <Link href={item.href} className="hover:text-accent">
+                <Link href={item.href} className="hover:text-accent-strong">
                   {item.label}
                 </Link>
               ) : (

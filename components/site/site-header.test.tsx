@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { placeholderBranding } from "@/config/branding";
 import { SiteHeader } from "./site-header";
+
+const pathnameMock = vi.hoisted(() => vi.fn<() => string | null>(() => "/"));
+vi.mock("next/navigation", () => ({ usePathname: pathnameMock }));
 
 describe("SiteHeader (FR-1, SC-1)", () => {
   it("renders wordmark, catalog link and a GET search form", () => {
@@ -30,5 +33,11 @@ describe("SiteHeader (FR-1, SC-1)", () => {
       "href",
       "/anfrage"
     );
+  });
+
+  it("renders the branding descriptor inside the home link (D5)", () => {
+    render(<SiteHeader branding={placeholderBranding} />);
+    const home = screen.getByRole("link", { name: /Beispiel/ });
+    expect(home).toHaveTextContent(placeholderBranding.descriptor);
   });
 });
