@@ -80,6 +80,18 @@ test.describe("public catalog", () => {
     await expect(page.locator("#artikel-99010")).toContainText("99010 - 2");
   });
 
+  test("order box follows the colour and links to the inquiry (SC-5)", async ({
+    page,
+  }) => {
+    await page.goto(PRODUCT);
+    await page.getByText("weiß", { exact: true }).first().click();
+    const box = page.getByRole("region", { name: "Bestellung" });
+    await expect(box).toContainText("99010 - 2");
+    await expect(
+      box.getByRole("link", { name: /Anfrage stellen/ })
+    ).toHaveAttribute("href", /bestellnummer=99010%20-%202/);
+  });
+
   test("product without colours shows no picker (SC-5)", async ({ page }) => {
     await page.goto("/produkte/moebelteile/testabdeckung");
     await expect(page.getByRole("group", { name: "Farbe" })).toHaveCount(0);

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   ColorPicker,
   ColorSelectionProvider,
+  InquiryLink,
   SelectedOrderNumber,
 } from "./color-selection";
 
@@ -43,5 +44,40 @@ describe("ColorPicker (FR-5, SC-5)", () => {
   it("shows the fallback outside a provider", () => {
     render(<SelectedOrderNumber numbers={{}} fallback="99300" />);
     expect(screen.getByText("99300")).toBeInTheDocument();
+  });
+
+  it("InquiryLink follows the selected colour inside a provider", () => {
+    render(
+      <ColorSelectionProvider defaultKey="color-3">
+        <ColorPicker options={options} />
+        <InquiryLink
+          numbers={{ "color-3": "99010 - 1", "color-1": "99010 - 2" }}
+          fallback="99010 - 1"
+        >
+          Anfrage stellen
+        </InquiryLink>
+      </ColorSelectionProvider>
+    );
+    const link = screen.getByRole("link", { name: "Anfrage stellen" });
+    expect(link).toHaveAttribute(
+      "href",
+      "/anfrage?bestellnummer=99010%20-%201"
+    );
+    fireEvent.click(screen.getByRole("radio", { name: /weiß/ }));
+    expect(link).toHaveAttribute(
+      "href",
+      "/anfrage?bestellnummer=99010%20-%202"
+    );
+  });
+
+  it("InquiryLink uses the fallback outside a provider", () => {
+    render(
+      <InquiryLink numbers={{}} fallback="99300">
+        Anfrage stellen
+      </InquiryLink>
+    );
+    expect(
+      screen.getByRole("link", { name: "Anfrage stellen" })
+    ).toHaveAttribute("href", "/anfrage?bestellnummer=99300");
   });
 });
