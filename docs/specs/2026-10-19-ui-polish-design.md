@@ -297,3 +297,15 @@ Geist today.
 - **Next.js 16 conventions:** read the bundled docs in
   `node_modules/next/dist/docs/` before touching fonts, layouts or client
   boundaries.
+
+## Deviations
+
+- The header descriptor is hidden below `sm` so wordmark and navigation fit one row at 360 px (D5 vs. D6).
+- `/produkte` has no breadcrumb; its lead is the former meta description.
+- Search result rows keep their single thumbnail on phones; "drop thumbnails below `sm`" (D6) applies to the category register.
+- A key with mixed numeric and text values uses the text rule; the unit is appended only when the attribute has one.
+- The article material line also shows when only the article's material note differs (D4 "nothing visible today is lost").
+- The category eyebrow uses the singular "1 Produktgruppe".
+- The article table uses separate cell borders and puts the `:target` accent bar on the sticky first cell (collapsed borders vanish under a sticky column).
+- The "Direkt zur Nummer" hint is a plain link (full navigation) so the target row is highlighted.
+- The `next dev` agent-rules block is committed in CLAUDE.md.
