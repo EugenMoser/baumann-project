@@ -9,6 +9,8 @@ const fixture: Branding = {
   officialSiteUrl: "https://example.com",
   previewLabel: "Testprojekt (Vorschau)",
   qualityPolicy: ["Ein Absatz."],
+  descriptor: "Kunststoffteile · Katalog",
+  home: { title: "Titel.", lead: "Einleitung.", facts: [] },
   developer: {
     name: "Dev Person",
     url: "https://dev.example",
