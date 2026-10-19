@@ -1,6 +1,8 @@
 // Post-deploy check: waits until the preview runs the expected commit with a
 // reachable database, then verifies the noindex header.
 // Usage: node scripts/smoke-check.mts <base-url> <commit-sha>
+// PREVIEW_BASIC_AUTH=user:password is sent while the preview sits behind
+// basic auth; unset or empty sends no credentials.
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
 
@@ -28,6 +30,31 @@ export function hasNoindexHeader(headers: Headers): boolean {
   return directives.includes("noindex") && directives.includes("nofollow");
 }
 
+const credentialsSchema = z.string().regex(/^[^:]+:.+$/);
+
+export function basicAuthHeaders(
+  credentials: string | undefined
+): Record<string, string> {
+  if (!credentials) return {};
+  if (!credentialsSchema.safeParse(credentials).success) {
+    throw new Error("PREVIEW_BASIC_AUTH must be user:password");
+  }
+  const encoded = Buffer.from(credentials).toString("base64");
+  return { Authorization: `Basic ${encoded}` };
+}
+
+// A 401 comes from the proxy's basic auth, not from a deploy in progress, so
+// waiting would only hide a wrong or missing secret.
+export function authFailure(
+  status: number,
+  sentCredentials: boolean
+): string | null {
+  if (status !== 401) return null;
+  return sentCredentials
+    ? "The preview rejected PREVIEW_BASIC_AUTH (401)."
+    : "The preview requires basic auth, but PREVIEW_BASIC_AUTH is not set (401).";
+}
+
 const TIMEOUT_MS = 10 * 60_000;
 const INTERVAL_MS = 15_000;
 
@@ -40,15 +67,23 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
+  const headers = basicAuthHeaders(process.env.PREVIEW_BASIC_AUTH);
   const deadline = Date.now() + TIMEOUT_MS;
   while (Date.now() < deadline) {
     try {
       const response = await fetch(new URL("/api/health", baseUrl), {
+        headers,
         signal: AbortSignal.timeout(10_000),
       });
+      const failure = authFailure(response.status, "Authorization" in headers);
+      if (failure) {
+        console.error(failure);
+        process.exit(1);
+      }
       const body: unknown = response.ok ? await response.json() : null;
       if (isDeployed(body, expectedCommit)) {
         const home = await fetch(baseUrl, {
+          headers,
           signal: AbortSignal.timeout(10_000),
         });
         if (!hasNoindexHeader(home.headers)) {

@@ -206,4 +206,5 @@ jobs:
         if: steps.head.outputs.current == 'true'
         env:
           PREVIEW_URL: ${{ secrets.PREVIEW_URL }}
+          PREVIEW_BASIC_AUTH: ${{ secrets.PREVIEW_BASIC_AUTH }}
         run: node scripts/smoke-check.mts "$PREVIEW_URL" "$GITHUB_SHA"
