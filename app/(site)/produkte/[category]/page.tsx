@@ -32,7 +32,7 @@ export default async function CategoryPage({
       />
       <div className="flex flex-col gap-4">
         <PageHeader
-          eyebrow={`Kategorie · ${page.products.length} Produktgruppen`}
+          eyebrow={`Kategorie · ${page.products.length} ${page.products.length === 1 ? "Produktgruppe" : "Produktgruppen"}`}
           title={page.name}
         />
         <Paragraphs

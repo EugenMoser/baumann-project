@@ -108,7 +108,8 @@ export function InquiryForm({
           [extra?.id, errors[name] ? `anfrage-${name}-fehler` : null]
             .filter(Boolean)
             .join(" ") || undefined,
-        className: "w-full rounded-md border border-line bg-paper px-3 py-2",
+        className:
+          "w-full border border-line bg-paper px-3 py-2 focus:border-ink motion-safe:transition-colors motion-safe:duration-150",
       })}
     </Field>
   );
@@ -124,7 +125,7 @@ export function InquiryForm({
       {state.formError && (
         <p
           role="alert"
-          className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900"
+          className="border border-red-300 bg-red-50 p-3 text-sm text-red-900"
         >
           {state.formError}
         </p>
@@ -188,7 +189,7 @@ export function InquiryForm({
             Ich habe die{" "}
             <a
               href={privacyUrl}
-              className="text-accent underline underline-offset-2"
+              className="text-ink underline decoration-accent underline-offset-4 hover:text-accent-strong motion-safe:transition-colors motion-safe:duration-150"
             >
               Datenschutzhinweise
             </a>{" "}
@@ -204,7 +205,7 @@ export function InquiryForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-fit rounded-md bg-accent px-4 py-2 font-medium text-paper disabled:opacity-60"
+        className="w-fit bg-accent-strong px-4 py-2 font-medium text-paper hover:bg-ink disabled:opacity-60 motion-safe:transition-colors motion-safe:duration-150"
       >
         Anfrage prüfen (wird nicht versendet)
       </button>
@@ -260,7 +261,7 @@ function PrefillHint({ prefill }: { prefill: Prefill }) {
             prefill.match.categorySlug,
             prefill.match.productSlug
           )}
-          className="text-accent underline underline-offset-2"
+          className="text-ink underline decoration-accent underline-offset-4 hover:text-accent-strong motion-safe:transition-colors motion-safe:duration-150"
         >
           {prefill.match.productName}
         </Link>

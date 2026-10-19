@@ -23,7 +23,7 @@ export function InquiryResult({
   return (
     <div
       role="status"
-      className="flex flex-col gap-3 rounded-md border border-line bg-surface p-6"
+      className="flex flex-col gap-3 border border-line bg-surface p-6"
     >
       <p ref={headingRef} tabIndex={-1} className="font-semibold outline-none">
         Ihre Anfrage ist gültig, wurde aber nicht versendet – dies ist eine
@@ -55,7 +55,7 @@ export function InquiryResult({
         Für eine echte Anfrage wenden Sie sich bitte über die{" "}
         <a
           href={officialSiteUrl}
-          className="text-accent underline underline-offset-2"
+          className="text-ink underline decoration-accent underline-offset-4 hover:text-accent-strong motion-safe:transition-colors motion-safe:duration-150"
         >
           offizielle Website
         </a>{" "}

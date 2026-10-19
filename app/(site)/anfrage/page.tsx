@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/site/page-header";
 import { InquiryDemoNotice } from "@/components/inquiry/demo-notice";
 import { InquiryForm, type Prefill } from "@/components/inquiry/inquiry-form";
 import { branding } from "@/config/branding";
@@ -42,7 +43,7 @@ export default async function InquiryPage({
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-12">
-      <h1 className="text-3xl font-semibold tracking-tight">Anfrage</h1>
+      <PageHeader eyebrow="Anfrage" title="Anfrage" />
       <InquiryDemoNotice officialSiteUrl={branding.officialSiteUrl} />
       <InquiryForm
         action={submitInquiry}

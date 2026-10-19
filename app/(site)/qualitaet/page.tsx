@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { PageHeader } from "@/components/site/page-header";
 import { CertificateCard } from "@/components/quality/certificate-card";
 import { branding } from "@/config/branding";
 import { loadCertificates } from "@/lib/catalog/load";
@@ -15,9 +16,10 @@ export default async function QualityPage() {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-12">
       <section className="flex flex-col gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Qualitäts- und Umweltpolitik
-        </h1>
+        <PageHeader
+          eyebrow="Qualitäts- und Umweltmanagement"
+          title="Qualitäts- und Umweltpolitik"
+        />
         {branding.qualityPolicy.map((paragraph) => (
           <p key={paragraph} className="max-w-prose">
             {paragraph}
@@ -26,7 +28,7 @@ export default async function QualityPage() {
       </section>
       {certificates.length > 0 && (
         <section aria-labelledby="zertifikate" className="flex flex-col gap-4">
-          <h2 id="zertifikate" className="text-xl font-semibold">
+          <h2 id="zertifikate" className="text-xl font-semibold tracking-tight">
             Zertifikate
           </h2>
           <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
