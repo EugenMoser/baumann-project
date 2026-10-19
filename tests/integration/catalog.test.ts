@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
-import { getCategoryPage, listCategories } from "@/lib/catalog/categories";
+import { getCategoryPage } from "@/lib/catalog/categories";
+import { getCatalogOverview } from "@/lib/catalog/overview";
 import { getProductPage } from "@/lib/catalog/product";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -11,20 +12,47 @@ const unreachable = createClient<Database>(
   { auth: { persistSession: false } }
 );
 
-describe("listCategories (FR-10, SC-10)", () => {
-  it("returns all categories in sort order", async () => {
-    const result = await listCategories();
+describe("getCatalogOverview (FR-10, SC-10)", () => {
+  it("returns categories with counts, sublines and thumbnails plus totals and an example", async () => {
+    const result = await getCatalogOverview();
     expect(result).toEqual({
       ok: true,
-      value: [
-        { slug: "moebelteile", name: "Möbelteile (Beispiel)", productCount: 2 },
-        { slug: "sanitaer", name: "Sanitärteile (Beispiel)", productCount: 1 },
-      ],
+      value: {
+        categories: [
+          {
+            slug: "moebelteile",
+            name: "Möbelteile (Beispiel)",
+            productCount: 2,
+            subline: "Beispieltext für die Kategorie Möbelteile.",
+            thumbnails: [
+              {
+                storagePath: "products/testkeil-1.webp",
+                width: 800,
+                height: 600,
+                altText: "Testkeil mit Dämpfung, Seitenansicht",
+              },
+            ],
+          },
+          {
+            slug: "sanitaer",
+            name: "Sanitärteile (Beispiel)",
+            productCount: 1,
+            subline: "Beispieltext für die Kategorie Sanitärteile.",
+            thumbnails: [],
+          },
+        ],
+        productCount: 3,
+        articleCount: 4,
+        example: {
+          articleNumber: "99010",
+          productName: "Testkeil mit Dämpfung",
+        },
+      },
     });
   });
 
   it("returns a db_error instead of throwing when the database is unreachable", async () => {
-    const result = await listCategories(unreachable);
+    const result = await getCatalogOverview(unreachable);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.kind).toBe("db_error");
   });

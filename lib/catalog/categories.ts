@@ -5,15 +5,17 @@ import {
 } from "@/lib/supabase/server";
 import { guard, toDbError } from "./errors";
 import { pickThumbnail } from "./media";
-import type {
-  CatalogError,
-  CategoryListItem,
-  CategoryPage,
-  ProductSummary,
-} from "./types";
+import type { CatalogError, CategoryPage, ProductSummary } from "./types";
 
 export const PRODUCT_TILE =
   "slug, name, subtitle, sort_order, product_media(role, sort_order, media(storage_path, width, height, alt_text))";
+
+export function compareProducts(
+  a: { sort_order: number; name: string },
+  b: { sort_order: number; name: string }
+): number {
+  return a.sort_order - b.sort_order || a.name.localeCompare(b.name, "de");
+}
 
 export function toProductSummaries(
   rows: readonly {
@@ -24,38 +26,12 @@ export function toProductSummaries(
     product_media: Parameters<typeof pickThumbnail>[0];
   }[]
 ): ProductSummary[] {
-  return [...rows]
-    .sort(
-      (a, b) =>
-        a.sort_order - b.sort_order || a.name.localeCompare(b.name, "de")
-    )
-    .map((p) => ({
-      slug: p.slug,
-      name: p.name,
-      subtitle: p.subtitle,
-      thumbnail: pickThumbnail(p.product_media),
-    }));
-}
-
-export function listCategories(
-  client: CatalogClient = createServerSupabase()
-): Promise<Result<CategoryListItem[], CatalogError>> {
-  return guard(async () => {
-    const { data, error } = await client
-      .from("category")
-      .select("slug, name, product(slug)")
-      .order("sort_order")
-      .order("name");
-    if (error) return err(toDbError(error));
-    // RLS limits `product` to published rows for anon.
-    return ok(
-      data.map((c) => ({
-        slug: c.slug,
-        name: c.name,
-        productCount: c.product.length,
-      }))
-    );
-  });
+  return [...rows].sort(compareProducts).map((p) => ({
+    slug: p.slug,
+    name: p.name,
+    subtitle: p.subtitle,
+    thumbnail: pickThumbnail(p.product_media),
+  }));
 }
 
 export function getCategoryPage(

@@ -20,3 +20,14 @@ export function truncate(text: string, max = 155): string {
   const base = space > max * 0.6 ? cut.slice(0, space) : cut;
   return `${base.trimEnd()}…`;
 }
+
+// First sentence of a text, shortened to `max` characters at a word boundary.
+export function firstSentence(text: string | null, max = 80): string | null {
+  const clean = text?.trim();
+  if (!clean) return null;
+  const sentence = clean.match(/^[\s\S]*?[.!?](?=\s|$)/)?.[0] ?? clean;
+  if (sentence.length <= max) return sentence;
+  const cut = sentence.slice(0, max);
+  const space = cut.lastIndexOf(" ");
+  return `${(space > 0 ? cut.slice(0, space) : cut).trimEnd()}…`;
+}

@@ -19,6 +19,23 @@ export type CategorySummary = { slug: string; name: string };
 
 export type CategoryListItem = CategorySummary & { productCount: number };
 
+export type RegisterItem = {
+  slug: string;
+  name: string;
+  productCount: number;
+  subline: string | null;
+  thumbnails: ImageRef[];
+};
+
+export type NumberExample = { articleNumber: string; productName: string };
+
+export type CatalogOverview = {
+  categories: RegisterItem[];
+  productCount: number;
+  articleCount: number;
+  example: NumberExample | null;
+};
+
 export type ProductSummary = {
   slug: string;
   name: string;
