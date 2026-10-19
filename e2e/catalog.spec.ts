@@ -13,6 +13,22 @@ test.describe("public catalog", () => {
     ).toHaveAttribute("href", "/produkte/sanitaer");
   });
 
+  test("home hero is text only and shows the counts", async ({ page }) => {
+    await page.goto("/");
+    const hero = page.locator('section[aria-labelledby="start-titel"]');
+    await expect(hero.locator("img")).toHaveCount(0);
+    await expect(hero.getByText("3 Produktgruppen · 4 Artikel")).toBeVisible();
+  });
+
+  test("home number hint leads to the article anchor", async ({ page }) => {
+    await page.goto("/");
+    const hero = page.locator('section[aria-labelledby="start-titel"]');
+    await hero.getByRole("link", { name: "99010", exact: true }).click();
+    await expect(page).toHaveURL(
+      /\/produkte\/moebelteile\/testkeil-mit-daempfung#artikel-99010$/
+    );
+  });
+
   test("category page shows intro and published products only (SC-3)", async ({
     page,
   }) => {

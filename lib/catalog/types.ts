@@ -17,8 +17,6 @@ export type ImageRef = {
 
 export type CategorySummary = { slug: string; name: string };
 
-export type CategoryListItem = CategorySummary & { productCount: number };
-
 export type RegisterItem = {
   slug: string;
   name: string;
