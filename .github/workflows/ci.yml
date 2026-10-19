@@ -108,11 +108,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:start
 
+      # Production uses the legacy anon JWT (spec D5); the sb_publishable_ key
+      # would skip the JWT check that also runs in the browser.
       - name: Point the build at the local stack
         run: |
           status="$(pnpm exec supabase status -o json)"
           echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL <<<"$status")" >> "$GITHUB_ENV"
-          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -r .PUBLISHABLE_KEY <<<"$status")" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(jq -r .ANON_KEY <<<"$status")" >> "$GITHUB_ENV"
 
       - run: pnpm build
 
