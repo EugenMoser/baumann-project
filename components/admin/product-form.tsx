@@ -65,6 +65,13 @@ export function ProductForm({
     productId !== null
       ? "Eine Änderung von Slug oder Kategorie ändert die öffentliche Adresse."
       : "Wird aus dem Namen erzeugt.";
+  const creating = productId === null;
+  const statusHint = creating
+    ? "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
+    : undefined;
+  const statusOptions = (Object.keys(STATUS_LABEL) as ProductStatus[]).filter(
+    (s) => !creating || s === "draft"
+  );
   const text = (
     id: keyof ProductValues,
     label: string,
@@ -119,7 +126,7 @@ export function ProductForm({
             ))}
           </select>
         </Field>
-        <Field id="status" label="Status" error={e.status}>
+        <Field id="status" label="Status" error={e.status} hint={statusHint}>
           <select
             id="status"
             name="status"
@@ -127,9 +134,9 @@ export function ProductForm({
             defaultValue={v.status}
             className={selectClass}
             aria-invalid={Boolean(e.status)}
-            aria-describedby={describedBy("status", e.status)}
+            aria-describedby={describedBy("status", e.status, statusHint)}
           >
-            {(Object.keys(STATUS_LABEL) as ProductStatus[]).map((s) => (
+            {statusOptions.map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
