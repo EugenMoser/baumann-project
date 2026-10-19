@@ -71,8 +71,11 @@ export function ArticleTable({
               numbers: {},
               fallback: a.articleNumber,
             };
+            // D4: shown when it adds something to the product material.
             const ownMaterial =
-              a.material?.code !== productMaterial?.code ? a.material : null;
+              a.material?.code !== productMaterial?.code || a.materialNote
+                ? a.material
+                : null;
             return (
               <tr
                 key={a.articleNumber}

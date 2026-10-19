@@ -80,7 +80,7 @@ test.describe("public catalog", () => {
     await expect(page.locator("#artikel-99010")).toContainText("99010 - 2");
   });
 
-  test("order box follows the colour and links to the inquiry (SC-5)", async ({
+  test("order box follows the colour and links to the inquiry (SC-4)", async ({
     page,
   }) => {
     await page.goto(PRODUCT);

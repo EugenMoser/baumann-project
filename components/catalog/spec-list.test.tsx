@@ -18,7 +18,7 @@ function article(number: string, height: number): ArticleView {
 
 const articles = [article("99010", 8), article("99011", 10)];
 
-describe("SpecList (D4)", () => {
+describe("SpecList (FR-4, SC-4)", () => {
   it("shows material, attribute summary and variant count", () => {
     render(
       <SpecList

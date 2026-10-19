@@ -99,6 +99,24 @@ describe("ArticleTable (FR-4, SC-4)", () => {
     );
   });
 
+  it("keeps an article material note even when the code matches the product", () => {
+    const [first, second] = page.articles;
+    renderTable([
+      {
+        ...first,
+        material: { code: "PA-6", name: "Polyamid 6" },
+        materialNote: "glasfaserverstärkt",
+      },
+      { ...second, material: { code: "PA-6", name: "Polyamid 6" } },
+    ]);
+    expect(document.getElementById("artikel-99010")).toHaveTextContent(
+      "Material: PA-6, glasfaserverstärkt"
+    );
+    expect(document.getElementById("artikel-99211-80")).not.toHaveTextContent(
+      "Material:"
+    );
+  });
+
   it("wraps the table in a labelled, focusable region", () => {
     renderTable();
     const region = screen.getByRole("region", {

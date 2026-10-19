@@ -45,8 +45,10 @@ describe("ColorPicker (FR-5, SC-5)", () => {
     render(<SelectedOrderNumber numbers={{}} fallback="99300" />);
     expect(screen.getByText("99300")).toBeInTheDocument();
   });
+});
 
-  it("InquiryLink follows the selected colour inside a provider", () => {
+describe("InquiryLink (FR-4, SC-4)", () => {
+  it("follows the selected colour inside a provider", () => {
     render(
       <ColorSelectionProvider defaultKey="color-3">
         <ColorPicker options={options} />
@@ -70,7 +72,7 @@ describe("ColorPicker (FR-5, SC-5)", () => {
     );
   });
 
-  it("InquiryLink uses the fallback outside a provider", () => {
+  it("uses the fallback outside a provider", () => {
     render(
       <InquiryLink numbers={{}} fallback="99300">
         Anfrage stellen
