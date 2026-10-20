@@ -24,6 +24,20 @@ Every run that gets as far as mapping writes a Markdown report to
 value the importer could not map and kept verbatim, plus every image whose alt
 text needs review. The report is not a failure; invalid or empty data is.
 
+```
+usage: pnpm catalog:import --snapshot <dir> [--dry-run] [--overwrite-admin-edits]
+```
+
+Production was loaded once; since then the catalog is edited in the admin
+area. Production is the source of truth and is not re-imported: a re-import
+would overwrite admin edits (section 6). The importer therefore refuses a real run against any target
+whose host is not exactly `127.0.0.1` or `localhost`, unless
+`--overwrite-admin-edits` is given (section 5). Dry runs and runs against the
+local stack are not affected. The guard checks only the hostname of
+`IMPORT_SUPABASE_URL`: it is a seatbelt against mistakes, not a security
+boundary (a tunnel from a local port to a production API, for example, passes
+it).
+
 ## 2. Snapshot export
 
 Prerequisite: the MongoDB Database Tools (`mongoexport`). On macOS:
@@ -97,13 +111,24 @@ are removed too, then `pnpm db:reset` to restore the seed.
 
 ## 5. Production run
 
-Only after the migration `20261009090000_import_functions.sql` is deployed
-(CI deploys it on every push to `main`; see `docs/deploy.md`).
+Production was loaded once from the legacy data. Do not import into it again:
+edits made in the admin since then would be overwritten. A real
+run against a non-local target stops with exit code `1` before reading the
+snapshot and writes nothing:
+
+```
+Refusing: the target is not the local stack. Production holds admin edits that a re-import would overwrite. …
+```
+
+Only if overwriting the admin edits is intended (for example, rebuilding the
+catalog from the legacy data on purpose), take a fresh backup first
+(`docs/deploy.md` section 10) and pass `--overwrite-admin-edits`:
 
 1. Set the production environment as in section 3 (secret key via `read -rs`).
 2. Dry run, then read the report:
    `pnpm catalog:import --snapshot "$SNAPSHOT" --dry-run`
-3. Real run: `pnpm catalog:import --snapshot "$SNAPSHOT"`
+3. Real run:
+   `pnpm catalog:import --snapshot "$SNAPSHOT" --overwrite-admin-edits`
 4. Check the result:
    - `curl -s https://<app host>/api/health` returns `"db":"ok"`.
    - One product is readable with the publishable key:
@@ -124,8 +149,9 @@ filled only while empty (see "Category texts"). New products are inserted as
 the snapshot are deleted; rows without a legacy id (seed data, later admin
 entries) are never touched.
 
-Once the admin area exists, a re-import overwrites admin edits of imported
-fields. Export what you need to keep, or do not re-import.
+Since the admin area is live, a re-import overwrites admin edits of imported
+fields. Production is therefore not re-imported; the guard in section 5
+enforces this.
 
 A re-import replaces the images of imported products, including admin uploads
 to them: `import_catalog` deletes their `product_media` links and every
@@ -157,6 +183,7 @@ media dimensions until the next successful run.
 | Situation                                                                                                | Report | What to do                                                                                                                            |
 | -------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Invalid environment variables                                                                            | no     | Fix the variable named in the message (values are never printed).                                                                     |
+| Real run against a non-local target without `--overwrite-admin-edits`                                    | no     | Intended: production is not re-imported (section 5). Nothing was written.                                                             |
 | Snapshot missing, empty (including zero products or articles) or malformed (message names file and path) | no     | Re-export the snapshot (section 2).                                                                                                   |
 | Invalid data during mapping (article references an unknown product, unknown category, …)                 | yes    | Read the message; fix or re-export the snapshot. Nothing was written.                                                                 |
 | One or more image downloads failed                                                                       | yes    | The report lists each URL. Check `IMPORT_IMAGE_BASE_URL` and the CDN, then re-run. Nothing was written.                               |
