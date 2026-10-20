@@ -23,19 +23,21 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Commands
 
-- Dev server: `pnpm dev`
+- Dev server: `pnpm dev` — reads the production Supabase (URL and publishable key in the maintainer's `.env.local`; the README's local setup is for outside contributors)
+- Dev server against the local stack, without editing `.env.local` (shell variables take precedence over `.env` files in Next.js): `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<ANON_KEY from pnpm exec supabase status -o json> pnpm dev`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
 - E2E: `pnpm e2e` — runs against the production build and the seeded local stack: `pnpm db:start && pnpm db:reset`, build with `NEXT_PUBLIC_SUPABASE_URL` = `API_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` = `ANON_KEY` (legacy JWT, as in CI and production) from `supabase status -o json`, then `pnpm e2e`
-- Local Supabase: `pnpm db:start` / `pnpm db:stop` (Docker required)
+- Local Supabase: `pnpm db:start` / `pnpm db:stop` (Docker required) — synthetic seed, for tests (`db:reset`, `db:test`, `e2e`, CI), local import runs and restore tests; never kept with production data longer than needed; tests never run against production
 - Reset local DB (migrations + seed): `pnpm db:reset`
 - DB tests (pgTAP + integration, stack must run): `pnpm db:test`
 - Regenerate DB types: `pnpm db:types`
-- Import legacy catalog: `pnpm catalog:import --snapshot <dir> [--dry-run]` (see `docs/import.md`)
+- Import legacy catalog: `pnpm catalog:import --snapshot <dir> [--dry-run] [--overwrite-admin-edits]` — production is not re-imported; a real run against a non-local target needs the flag (see `docs/import.md`)
 - Remove all customer data: `pnpm catalog:remove --confirm <api host>` (see `docs/revocation.md`)
 - Create or reset an admin user: `printf '%s' "$PW" | pnpm admin:create --email <address>` (see `docs/deploy.md`)
 - Remove orphan images: `pnpm media:prune [--apply]` (see `docs/deploy.md`)
+- Daily backup of database and Storage: `scripts/ops/vps-backup.sh` — runs on the VPS from cron, not locally (see `docs/deploy.md` section 10)
 - E2E on another port (e.g. when 3000 is taken): `E2E_PORT=3100 pnpm e2e`
 - Build: `pnpm build` (needs `NEXT_PUBLIC_SITE_URL`, see `.env.example`)
 - Fresh clone: run `pnpm exec next typegen` (or `build`/`dev`) once before `pnpm typecheck`
@@ -65,9 +67,19 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - Service-role key and AI calls are server-side only; AI endpoints need a rate
   limit and cost cap.
 - Never delete, move or rename anything in a `10_Business` folder — stop and ask.
+- Agents and automated tests (e.g. ui-checker, Playwright, manual form tests by
+  Claude) never submit admin forms against production. Admin feature work and UI
+  checks that write data run against the local stack (dev server command above).
 
 ## Pitfalls & open issues
 
 - Default privileges on `public` are revoked for `anon`/`authenticated`: every new
   table needs explicit grants, RLS enabled and admin write policies in its
   migration (the RLS pgTAP test fails otherwise).
+- Edits in the local admin (`pnpm dev`) change production immediately; category and
+  product pages on the preview refresh within 1 h (`revalidate = 3600`), since local
+  `revalidatePath` does not reach the production app.
+- `pnpm e2e` reuses a server already running on the E2E port (`reuseExistingServer`):
+  with `pnpm dev` (production data) on 3000 the suite would hit production. Stop the
+  dev server or set `E2E_PORT`. Likewise, `pnpm build` without the local overrides
+  from the E2E command inlines the production Supabase URL from `.env.local`.

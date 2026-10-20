@@ -320,27 +320,140 @@ container goes live.
 
 ## 10. Backups and restore
 
-- Database: Coolify scheduled backup of the Supabase database, daily, keep 7,
-  to off-site S3-compatible storage if available. Otherwise a cron `pg_dump`
-  via `docker exec` into a rotated directory plus an off-site copy.
-- Storage files are backed up as well: with the file backend (section 3) they
-  live in the service's `volumes/storage` directory under
-  `/data/coolify/services/<service-uuid>/`, not in the database.
-- On revocation, backups are deleted earlier if requested; see
-  [`docs/revocation.md`](revocation.md).
-- Restore test, quarterly, into the local stack:
+Production is the only copy of the catalog: admin edits happen there and are
+not re-imported from anywhere (`docs/import.md` section 6).
+`scripts/ops/vps-backup.sh` backs it up once a day on the VPS:
 
-  ```bash
-  pnpm db:start
-  pnpm db:reset                      # migrations + seed, clean slate
-  psql "<local-db-url>" < dump.sql   # restore the production dump
-  ```
+- `db.dump`: full database dump (`pg_dump -Fc` as `supabase_admin`), an exact
+  clone including auth users and Storage metadata.
+- `storage.tar.gz`: the Storage directory (file backend, section 3) with the
+  extended attributes in which the Storage API keeps each file's content type.
+- `SHA256SUMS`: checksums of both files.
 
-  Record the date and result below.
+Off-site copies are deliberately not automated in this demo. If the VPS is
+lost, all admin changes since the last manual copy to a developer machine (see
+"Copy to a developer machine") are lost.
 
-  | Date       | Result     |
-  | ---------- | ---------- |
-  | _(record)_ | _(record)_ |
+### Install
+
+From the repository root on a developer machine:
+
+```bash
+scp scripts/ops/vps-backup.sh root@<vps-host>:/usr/local/sbin/baumann-backup
+```
+
+On the VPS as root:
+
+```bash
+chmod 700 /usr/local/sbin/baumann-backup
+/usr/local/sbin/baumann-backup   # first run by hand, prints one summary line
+crontab -e                       # add the line below
+```
+
+```
+15 3 * * * /usr/local/sbin/baumann-backup >> /var/log/baumann-backup.log 2>&1
+```
+
+The script uses the one running container whose name starts with
+`supabase-db-` and derives the Storage directory
+`/data/coolify/services/<service-uuid>/volumes/storage` from its name. It stops
+if it finds none or several; then set `DB_CONTAINER` and `STORAGE_DIR` in the
+crontab line. Copy the script again after every change in the repository.
+
+### Location and retention
+
+Backups live in `/var/backups/baumann-demo/<YYYY-MM-DD>/` (UTC date, root
+only). A run writes to `<YYYY-MM-DD>.partial` and renames it on success; a
+failed run normally leaves no partial directory and keeps the older backups (a
+killed run or a reboot can leave a `.partial` directory, which the retention
+step removes later). A second
+run on the same day replaces that day's backup. Each run keeps the backups of
+the last 7 days, today included (`KEEP_DAYS`), and deletes older day
+directories. The backups hold customer data and password hashes and never
+enter the repository.
+
+### Check
+
+On the VPS:
+
+```bash
+tail -n 3 /var/log/baumann-backup.log
+ls -l /var/backups/baumann-demo/
+cd /var/backups/baumann-demo/<YYYY-MM-DD> && sha256sum -c SHA256SUMS
+docker exec -i <supabase-db-container> pg_restore --list < db.dump | grep -c "TABLE DATA public"
+```
+
+The last command counts the `public` tables in the dump (one per table); `0`
+or an error means the dump is unusable. Row counts for comparisons (restore test, handover):
+
+```bash
+docker exec <supabase-db-container> psql -U postgres -tAc "select (select count(*) from public.product), (select count(*) from public.article), (select count(*) from public.media), (select count(*) from storage.objects), (select count(*) from auth.users)"
+```
+
+### Copy to a developer machine
+
+A one-off copy, for example for the restore test. `<backup copy dir>` lies
+outside the repository:
+
+```bash
+scp -r root@<vps-host>:/var/backups/baumann-demo/<YYYY-MM-DD> <backup copy dir>/
+cd <backup copy dir>/<YYYY-MM-DD> && shasum -a 256 -c SHA256SUMS
+```
+
+Delete the copy when it is no longer needed (`rm -r <backup copy dir>`) and
+on revocation ([`docs/revocation.md`](revocation.md), step 5).
+
+### Restore test
+
+Quarterly, into the local stack, from the repository root with a fresh backup
+copy. **This replaces all data of the local stack with production data.**
+
+```bash
+pnpm db:start
+B=<backup copy dir>/<YYYY-MM-DD>
+docker exec -i supabase_db_baumann-demo pg_restore -h 127.0.0.1 -U supabase_admin -d postgres --clean --if-exists < "$B/db.dump"
+tar -tzf "$B/storage.tar.gz" > /dev/null && echo storage archive ok
+```
+
+`pg_restore` exits `1` and reports "errors ignored on restore" for
+Supabase-internal objects (missing roles, realtime partitions); that is
+expected. Compare the row counts (query above, with
+`supabase_db_baumann-demo` as container) with production. Afterwards
+`pnpm db:reset` returns the local stack to the seed; do not keep production
+data there. Record the date and result:
+
+| Date       | Result     |
+| ---------- | ---------- |
+| _(record)_ | _(record)_ |
+
+### Handover
+
+Production is the current state; a handover always uses a fresh backup.
+
+1. Announce an editing freeze: no admin edits until the handover is done.
+2. On the VPS run `/usr/local/sbin/baumann-backup` by hand, check the backup
+   and note the row counts (see "Check").
+3. Hand over `db.dump`, `storage.tar.gz` and `SHA256SUMS` of that day, plus
+   the repository commit that runs in production (`/api/health` reports it).
+4. Receiving side: a self-hosted Supabase as in section 3 with the same pinned
+   versions and the file backend. These steps run only on the receiving host,
+   never on the production VPS. Stop every container of the Supabase service
+   except the database (Storage included), restore the dump, then unpack the
+   Storage files:
+
+   ```bash
+   sha256sum -c SHA256SUMS
+   docker ps --format '{{.Names}}' | grep -- '-<service-uuid>$' | grep -v '^supabase-db-' | xargs docker stop
+   docker exec -i <supabase-db-container> sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" pg_restore -h 127.0.0.1 -U supabase_admin -d postgres --clean --if-exists' < db.dump
+   tar --xattrs --xattrs-include='user.*' -xzf storage.tar.gz -C /data/coolify/services/<service-uuid>/volumes/storage
+   ```
+
+   Then start the Supabase service again (restart it in Coolify), compare the row counts with step 2, deploy
+   the app from the handed-over commit (sections 6 to 8) and check that the
+   catalog, the images and the admin login work.
+
+For other targets (e.g. Supabase Cloud) follow Supabase's own migration and
+restore guide; `db.dump` and the Storage files are the input.
 
 ## 11. Updates
 
