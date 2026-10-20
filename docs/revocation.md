@@ -52,13 +52,23 @@ committed with real values.
    or URL, and that `/qualitaet` shows the placeholder policy text.
 
 5. **Local copies (by day 3).** Delete snapshot directories and import reports
-   (`rm -r <snapshot dir>`), the local certificate directory (`rm -r <certificate dir>`), `.env.import` files, and local database data
-   (run `pnpm catalog:remove --confirm 127.0.0.1:54321` first so local Storage
-   files are removed too, then `pnpm db:reset`). Check other machines that may hold a snapshot.
+   (`rm -r <snapshot dir>`), the local certificate directory (`rm -r <certificate dir>`),
+   one-off backup copies (`rm -r <backup copy dir>`), `.env.import` files, and
+   local database data (run `pnpm catalog:remove --confirm 127.0.0.1:54321`
+   first so local Storage files are removed too, then `pnpm db:reset`). Check
+   other machines that may hold a snapshot or a backup copy.
 
-6. **Backups (by day 14).** Database and storage backups age out after 7 days
-   (daily backups, keep 7; `docs/deploy.md` section 10). If the customer asks
-   for earlier deletion, delete the backups manually and record it.
+6. **Backups (by day 14).** The daily database and Storage backups on the VPS
+   live in `/var/backups/baumann-demo/<YYYY-MM-DD>/` (`docs/deploy.md`
+   section 10). Do not rely on the 7-day retention: the script deletes old
+   backups only after a successful run. On the VPS as root, list the backups
+   and delete every day directory (`.partial` ones included) up to and
+   including the removal day from step 2. Record the date:
+
+   ```bash
+   ls /var/backups/baumann-demo/
+   rm -r /var/backups/baumann-demo/<YYYY-MM-DD>   # each day up to the removal day
+   ```
 
 7. **Confirm to the customer in writing**, with the date of each step above
    and the counts recorded in step 2.

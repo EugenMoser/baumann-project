@@ -1,5 +1,5 @@
 // Imports the legacy catalog from a local snapshot directory.
-// Usage: pnpm catalog:import --snapshot <dir> [--dry-run]
+// Usage: pnpm catalog:import --snapshot <dir> [--dry-run] [--overwrite-admin-edits]
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
@@ -25,7 +25,11 @@ export type CliIo = {
   now?: () => Date;
 };
 
-const USAGE = "usage: pnpm catalog:import --snapshot <dir> [--dry-run]";
+const USAGE =
+  "usage: pnpm catalog:import --snapshot <dir> [--dry-run] [--overwrite-admin-edits]";
+
+// Only these hosts count as the local stack; anything else may be production.
+const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost"]);
 
 export async function runImportCli(
   argv: readonly string[],
@@ -33,14 +37,20 @@ export async function runImportCli(
 ): Promise<number> {
   let snapshotDir: string | undefined;
   let dryRun = false;
+  let overwriteAdminEdits = false;
   try {
     const { values } = parseArgs({
       args: argv.filter((arg) => arg !== "--"),
-      options: { snapshot: { type: "string" }, "dry-run": { type: "boolean" } },
+      options: {
+        snapshot: { type: "string" },
+        "dry-run": { type: "boolean" },
+        "overwrite-admin-edits": { type: "boolean" },
+      },
       strict: true,
     });
     snapshotDir = values.snapshot;
     dryRun = values["dry-run"] ?? false;
+    overwriteAdminEdits = values["overwrite-admin-edits"] ?? false;
   } catch (error: unknown) {
     io.error(error instanceof Error ? error.message : String(error));
   }
@@ -58,6 +68,15 @@ export async function runImportCli(
   const env = parseImportEnv(io.env);
   if (!env.ok) {
     io.error(env.error);
+    return 1;
+  }
+  const local = LOCAL_HOSTS.has(
+    new URL(env.value.IMPORT_SUPABASE_URL).hostname
+  );
+  if (!local && !dryRun && !overwriteAdminEdits) {
+    io.error(
+      "Refusing: the target is not the local stack. Production holds admin edits that a re-import would overwrite. Use --dry-run, or, if that is intended, take a fresh backup first and pass --overwrite-admin-edits (see docs/import.md section 5). Nothing was written."
+    );
     return 1;
   }
   const snapshot = await readSnapshot(snapshotDir);
