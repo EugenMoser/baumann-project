@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Daily backup of the production Supabase on the VPS: full database dump and
-# the Storage files. Runs as root from cron; see docs/deploy.md section 10.
+# Backup of the preview Supabase on the VPS: full database dump and the Storage
+# files. Run by hand as root (no cron) to create the handover snapshot; see
+# docs/deploy.md section 10.
 # Usage: vps-backup.sh
 # Env overrides: DB_CONTAINER, STORAGE_DIR, BACKUP_ROOT, KEEP_DAYS.
 set -euo pipefail
