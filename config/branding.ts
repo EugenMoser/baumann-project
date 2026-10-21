@@ -9,6 +9,16 @@ export const brandingSchema = z.object({
   previewLabel: z.string().min(1),
   // Quality and environmental policy, one string per paragraph (spec D2).
   qualityPolicy: z.array(z.string().min(1)).min(1),
+  // Short line next to the logo in the header (spec D9).
+  descriptor: z.string().min(1),
+  // Home page copy: headline, lead and up to four key facts (spec D9).
+  home: z.object({
+    title: z.string().min(1),
+    lead: z.string().min(1),
+    facts: z
+      .array(z.object({ value: z.string().min(1), label: z.string().min(1) }))
+      .max(4),
+  }),
   developer: z.object({
     name: z.string().min(1),
     url: httpUrl,
@@ -34,6 +44,20 @@ const customerBranding: Branding = brandingSchema.parse({
     "Wir arbeiten kundenorientiert, erfüllen konsequent alle gesetzlichen Vorgaben und setzen auf vorbeugende Qualitätssicherung statt Fehlerkorrektur. Gleichzeitig gehen wir verantwortungsvoll mit Energie und Rohstoffen um und verbessern unsere Abläufe kontinuierlich.",
     "So schaffen wir Vertrauen, sichern langfristige Partnerschaften und übernehmen Verantwortung für Umwelt und Zukunft.",
   ],
+  descriptor: "Spritzgussteile · Katalog",
+  home: {
+    title: "Spritzgussteile für Caravan- und Möbelbau.",
+    lead: "Alle Produkte mit Artikelnummern, Maßen, Farben und Bestellnummern. Entwickelt und gefertigt im Allgäu, Werkzeugbau im eigenen Haus.",
+    facts: [
+      { value: "1984", label: "gegründet, heute in 2. Generation" },
+      { value: "15–220 t", label: "Schließkraft, Arburg-Maschinen" },
+      {
+        value: "Werkzeugbau",
+        label: "Konstruktion und Formenbau im eigenen Haus",
+      },
+      { value: "ISO 9001", label: "und ISO 14001 zertifiziert" },
+    ],
+  },
   developer: {
     name: "Eugen Moser",
     url: "https://eugen-moser.com",
@@ -51,6 +75,12 @@ export const placeholderBranding: Branding = brandingSchema.parse({
   qualityPolicy: [
     "Platzhalter: Hier steht die Qualitäts- und Umweltpolitik des Unternehmens.",
   ],
+  descriptor: "Kunststoffteile · Katalog",
+  home: {
+    title: "Kunststoffteile aus dem Beispielkatalog.",
+    lead: "Alle Produkte mit Artikelnummern, Maßen, Farben und Bestellnummern.",
+    facts: [],
+  },
   developer: {
     name: "Eugen Moser",
     url: "https://eugen-moser.com",

@@ -25,7 +25,9 @@ export function makeProductPage(
         note: null,
         material: null,
         materialNote: null,
-        attributes: [{ key: "height", label: "Höhe", unit: "mm", value: 8 }],
+        attributes: [
+          { key: "height", label: "Höhe", unit: "mm", value: 8, sortOrder: 0 },
+        ],
         packaging: [{ quantity: 100, label: null }],
       },
       {
@@ -35,7 +37,15 @@ export function makeProductPage(
         note: "mit Bohrung",
         material: null,
         materialNote: null,
-        attributes: [{ key: "height", label: "Höhe", unit: "mm", value: 10.5 }],
+        attributes: [
+          {
+            key: "height",
+            label: "Höhe",
+            unit: "mm",
+            value: 10.5,
+            sortOrder: 0,
+          },
+        ],
         packaging: [],
       },
     ],

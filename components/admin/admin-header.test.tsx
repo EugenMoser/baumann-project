@@ -60,4 +60,15 @@ describe("AdminHeader (SC-4)", () => {
         href
       );
   });
+  it("shows the short name as wordmark next to the Admin descriptor", () => {
+    render(
+      <AdminHeader
+        email={null}
+        shortName="Muster"
+        logoutAction={async () => {}}
+      />
+    );
+    expect(screen.getByText("Muster")).toBeInTheDocument();
+    expect(screen.getByText("Admin")).toBeInTheDocument();
+  });
 });

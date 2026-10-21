@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { emptyProductValues } from "@/lib/admin/schemas";
 import { ProductForm } from "./product-form";
@@ -115,5 +121,54 @@ describe("ProductForm (SC-6, SC-12)", () => {
     expect(
       screen.getByRole("button", { name: "Produkt löschen" })
     ).toBeInTheDocument();
+  });
+  it("offers only the draft status and a hint when creating", () => {
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={emptyProductValues()}
+        options={options}
+        productId={null}
+        savedStatus={null}
+      />
+    );
+    const select = screen.getByLabelText("Status");
+    const values = within(select)
+      .getAllByRole("option")
+      .map((o) => (o as HTMLOptionElement).value);
+    expect(values).toEqual(["draft"]);
+    const hint = screen.getByText(
+      "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
+    );
+    expect(hint.id).not.toBe("");
+    expect(select.getAttribute("aria-describedby") ?? "").toContain(hint.id);
+  });
+  it("offers all three statuses when editing", () => {
+    const initial = {
+      ...emptyProductValues(),
+      name: "X",
+      slug: "x",
+      categoryId: "1",
+    };
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={initial}
+        options={options}
+        productId={7}
+        savedStatus="draft"
+      />
+    );
+    const values = within(screen.getByLabelText("Status"))
+      .getAllByRole("option")
+      .map((o) => (o as HTMLOptionElement).value);
+    expect(values).toEqual(["draft", "published", "archived"]);
+    expect(
+      screen.queryByText(
+        "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
+      )
+    ).toBeNull();
   });
 });

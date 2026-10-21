@@ -48,8 +48,11 @@ committed with real values.
    export const branding: Branding = placeholderBranding;
    ```
 
-   Check that the demo notice and the footer show no customer name
-   or URL, and that `/qualitaet` shows the placeholder policy text.
+   The switch also removes the customer content in `descriptor` (header line)
+   and `home` (title, lead and facts). Check that the demo notice and the
+   footer show no customer name or URL, that the header and home page show the
+   placeholder texts without facts, and that `/qualitaet` shows the placeholder
+   policy text.
 
 5. **Local copies (by day 3).** Delete snapshot directories and import reports
    (`rm -r <snapshot dir>`), the local certificate directory (`rm -r <certificate dir>`),
@@ -81,5 +84,5 @@ committed with real values.
 
 - The customer's own website, which is not part of this repository.
 - The Git history. No snapshots, reports, images or catalog rows were ever
-  committed. The customer name, URL and quality policy text in
+  committed. The customer name, URL, quality policy text, descriptor and home copy in
   `config/branding.ts` are replaced in step 4 but remain in older commits.

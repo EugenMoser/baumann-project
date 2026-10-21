@@ -13,6 +13,26 @@ test.describe("public catalog", () => {
     ).toHaveAttribute("href", "/produkte/sanitaer");
   });
 
+  test("home hero is text only and shows the counts", async ({ page }) => {
+    await page.goto("/");
+    const hero = page.locator('section[aria-labelledby="start-titel"]');
+    await expect(hero.locator("img")).toHaveCount(0);
+    await expect(hero.getByText("3 Produktgruppen · 4 Artikel")).toBeVisible();
+  });
+
+  test("home number hint leads to the article anchor", async ({ page }) => {
+    await page.goto("/");
+    const hero = page.locator('section[aria-labelledby="start-titel"]');
+    await hero.getByRole("link", { name: "99010", exact: true }).click();
+    await expect(page).toHaveURL(
+      /\/produkte\/moebelteile\/testkeil-mit-daempfung#artikel-99010$/
+    );
+    await expect(page.locator("#artikel-99010")).toHaveCSS(
+      "background-color",
+      "rgb(255, 246, 239)"
+    );
+  });
+
   test("category page shows intro and published products only (SC-3)", async ({
     page,
   }) => {
@@ -62,6 +82,18 @@ test.describe("public catalog", () => {
     await page.goto(PRODUCT);
     await page.getByText("weiß", { exact: true }).first().click();
     await expect(page.locator("#artikel-99010")).toContainText("99010 - 2");
+  });
+
+  test("order box follows the colour and links to the inquiry (SC-4)", async ({
+    page,
+  }) => {
+    await page.goto(PRODUCT);
+    await page.getByText("weiß", { exact: true }).first().click();
+    const box = page.getByRole("region", { name: "Bestellung" });
+    await expect(box).toContainText("99010 - 2");
+    await expect(
+      box.getByRole("link", { name: /Anfrage stellen/ })
+    ).toHaveAttribute("href", /bestellnummer=99010%20-%202/);
   });
 
   test("product without colours shows no picker (SC-5)", async ({ page }) => {

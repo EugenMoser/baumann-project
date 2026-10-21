@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { PageHeader } from "@/components/site/page-header";
 
 type ErrorPageProps = {
   error: Error & { digest?: string };
@@ -15,12 +16,12 @@ export default function ErrorPage({ error, retry }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-16">
-      <h1 className="text-3xl font-semibold">Etwas ist schiefgelaufen</h1>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-16">
+      <PageHeader eyebrow="Fehler" title="Etwas ist schiefgelaufen" />
       <button
         type="button"
         onClick={() => retry()}
-        className="w-fit text-accent underline underline-offset-2"
+        className="w-fit text-ink underline decoration-accent underline-offset-4 hover:text-accent-strong motion-safe:transition-colors motion-safe:duration-150"
       >
         Erneut versuchen
       </button>

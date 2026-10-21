@@ -11,7 +11,7 @@ export function RelatedProducts({
   if (products.length === 0) return null;
   return (
     <section aria-labelledby="verwandt" className="flex flex-col gap-4">
-      <h2 id="verwandt" className="text-lg font-semibold">
+      <h2 id="verwandt" className="text-xl font-semibold tracking-tight">
         Weitere Produkte dieser Kategorie
       </h2>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

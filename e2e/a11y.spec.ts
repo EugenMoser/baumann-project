@@ -1,19 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
-const PAGES = [
-  "/",
-  "/produkte",
-  "/produkte/moebelteile",
-  "/produkte/moebelteile/testkeil-mit-daempfung",
-  "/suche?q=Befestigung",
-  "/qualitaet",
-  "/anfrage?bestellnummer=99010%20-%201",
-];
+import { PAGES } from "./pages";
 
 test.describe("accessibility (SC-15)", () => {
   for (const path of PAGES) {
-    test(`no serious or critical axe violations on ${path}`, async ({
+    const tag = path === "/suche" ? " (SC-1)" : "";
+    test(`no serious or critical axe violations on ${path}${tag}`, async ({
       page,
     }) => {
       await page.goto(path);

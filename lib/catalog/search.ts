@@ -5,7 +5,8 @@ import {
   type CatalogClient,
 } from "@/lib/supabase/server";
 import { guard, toDbError } from "./errors";
-import type { CatalogError, SearchHit } from "./types";
+import { pickThumbnail } from "./media";
+import type { CatalogError, SearchHit, SearchResult } from "./types";
 
 const hitSchema = z.object({
   category_slug: z.string(),
@@ -46,5 +47,46 @@ export function searchCatalog(
         matchKind: h.match_kind,
       }))
     );
+  });
+}
+
+export type ThumbnailRow = {
+  slug: string;
+  category: { slug: string };
+  product_media: Parameters<typeof pickThumbnail>[0];
+};
+
+// Product slugs are unique per category only, so rows are keyed by both.
+export function mergeThumbnails(
+  hits: SearchHit[],
+  rows: ThumbnailRow[]
+): SearchResult[] {
+  const byKey = new Map(
+    rows.map((r) => [
+      `${r.category.slug}/${r.slug}`,
+      pickThumbnail(r.product_media),
+    ])
+  );
+  return hits.map((h) => ({
+    ...h,
+    thumbnail: byKey.get(`${h.categorySlug}/${h.productSlug}`) ?? null,
+  }));
+}
+
+export function withThumbnails(
+  hits: SearchHit[],
+  client: CatalogClient = createServerSupabase()
+): Promise<Result<SearchResult[], CatalogError>> {
+  return guard(async () => {
+    if (hits.length === 0) return ok([]);
+    const slugs = [...new Set(hits.map((h) => h.productSlug))];
+    const { data, error } = await client
+      .from("product")
+      .select(
+        "slug, category!inner(slug), product_media(role, sort_order, media(storage_path, width, height, alt_text))"
+      )
+      .in("slug", slugs);
+    if (error) return err(toDbError(error));
+    return ok(mergeThumbnails(hits, data));
   });
 }

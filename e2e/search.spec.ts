@@ -6,6 +6,10 @@ test.describe("search (SC-8)", () => {
     await expect(page).toHaveURL(
       /\/produkte\/moebelteile\/testkeil-mit-daempfung#artikel-99010$/
     );
+    await expect(page.locator("#artikel-99010")).toHaveCSS(
+      "background-color",
+      "rgb(255, 246, 239)"
+    );
   });
 
   test("order number with a slash redirects to its anchor", async ({
@@ -14,6 +18,18 @@ test.describe("search (SC-8)", () => {
     await page.goto(`/suche?q=${encodeURIComponent("99211/80 - 0")}`);
     await expect(page).toHaveURL(
       /\/produkte\/sanitaer\/testrohrschelle#artikel-99211-80$/
+    );
+  });
+
+  test("a hit row shows the matched number in mono type (SC-5)", async ({
+    page,
+  }) => {
+    await page.goto("/suche?q=99211");
+    const row = page.getByRole("listitem").filter({ hasText: "99211/80" });
+    await expect(row).toHaveCount(1);
+    await expect(row.getByText("99211/80").first()).toHaveCSS(
+      "font-family",
+      /Plex Mono/
     );
   });
 

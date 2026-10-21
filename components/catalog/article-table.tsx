@@ -1,5 +1,6 @@
 import { articleAnchorId } from "@/lib/catalog/anchors";
-import type { ArticleView } from "@/lib/catalog/types";
+import { attributeColumns } from "@/lib/catalog/attribute-summary";
+import type { ArticleView, Material } from "@/lib/catalog/types";
 import type { VariantMatrix } from "@/lib/catalog/variants";
 import { SelectedOrderNumber } from "./color-selection";
 
@@ -10,32 +11,58 @@ function formatValue(value: number | string, unit: string | null): string {
   return unit ? `${text} ${unit}` : text;
 }
 
+// Separate borders: collapsed borders vanish under the sticky first column.
+const HEAD =
+  "border-b border-ink px-3 py-2.5 font-mono text-xs font-medium uppercase tracking-wider whitespace-nowrap";
+const CELL = "border-b border-line px-3 py-2.5";
+// D6: the article number column stays visible while the table scrolls; the
+// :target highlight (exact search hit) also covers the sticky cell.
+const STICKY = "sticky left-0";
+
 export function ArticleTable({
   productName,
   articles,
   matrix,
+  productMaterial,
 }: {
   productName: string;
   articles: ArticleView[];
   matrix: VariantMatrix;
+  productMaterial: Material | null;
 }) {
+  const columns = attributeColumns(articles);
   return (
-    <div className="overflow-x-auto rounded-lg border border-line">
-      <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+    <div
+      role="region"
+      aria-label={`Artikel von ${productName}`}
+      tabIndex={0}
+      className="overflow-x-auto"
+    >
+      <table className="w-full min-w-[40rem] border-separate border-spacing-0 text-left text-sm">
         <caption className="sr-only">Artikel von {productName}</caption>
         <thead className="bg-surface text-muted">
           <tr>
-            {[
-              "Artikel-Nr.",
-              "Bezeichnung",
-              "Merkmale",
-              "Verpackungseinheit",
-              "Bestell-Nr.",
-            ].map((h) => (
-              <th key={h} scope="col" className="px-3 py-2 font-medium">
-                {h}
+            <th scope="col" className={`${HEAD} ${STICKY} bg-surface`}>
+              Art.-Nr.
+            </th>
+            <th scope="col" className={HEAD}>
+              Bezeichnung
+            </th>
+            {columns.map((c) => (
+              <th
+                key={c.key}
+                scope="col"
+                className={`${HEAD} ${c.numeric ? "text-right" : ""}`}
+              >
+                {c.label}
               </th>
             ))}
+            <th scope="col" className={HEAD}>
+              Verpackungseinheit
+            </th>
+            <th scope="col" className={HEAD}>
+              Bestell-Nr.
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -44,36 +71,52 @@ export function ArticleTable({
               numbers: {},
               fallback: a.articleNumber,
             };
+            // D4: shown when it adds something to the product material.
+            const ownMaterial =
+              a.material?.code !== productMaterial?.code || a.materialNote
+                ? a.material
+                : null;
             return (
               <tr
                 key={a.articleNumber}
                 id={articleAnchorId(a.articleNumber)}
-                className="scroll-mt-24 border-t border-line align-top target:bg-surface"
+                className="group scroll-mt-24 align-top target:bg-[#fff6ef]"
               >
-                <th scope="row" className="px-3 py-2 font-mono font-medium">
+                <th
+                  scope="row"
+                  className={`${CELL} ${STICKY} whitespace-nowrap bg-paper font-mono font-semibold group-target:bg-[#fff6ef] group-target:shadow-[inset_3px_0_0] group-target:shadow-accent`}
+                >
                   {a.articleNumber}
                 </th>
-                <td className="px-3 py-2">{a.name ?? productName}</td>
-                <td className="px-3 py-2">
-                  <ul className="flex flex-col gap-0.5">
-                    {a.attributes.map((attr) => (
-                      <li key={attr.key}>
-                        {attr.label}: {formatValue(attr.value, attr.unit)}
-                      </li>
-                    ))}
-                    {a.material && (
-                      <li>
-                        Material: {a.material.code}
-                        {a.materialNote ? `, ${a.materialNote}` : ""}
-                      </li>
-                    )}
-                    {a.note && <li className="text-muted">{a.note}</li>}
-                    {a.description && (
-                      <li className="text-muted">{a.description}</li>
-                    )}
-                  </ul>
+                <td className={`${CELL} min-w-48`}>
+                  <span className="block">{a.name ?? productName}</span>
+                  {ownMaterial && (
+                    <span className="block text-xs text-muted">
+                      Material: {ownMaterial.code}
+                      {a.materialNote ? `, ${a.materialNote}` : ""}
+                    </span>
+                  )}
+                  {a.note && (
+                    <span className="block text-xs text-muted">{a.note}</span>
+                  )}
+                  {a.description && (
+                    <span className="block text-xs text-muted">
+                      {a.description}
+                    </span>
+                  )}
                 </td>
-                <td className="px-3 py-2">
+                {columns.map((c) => {
+                  const attr = a.attributes.find((x) => x.key === c.key);
+                  return (
+                    <td
+                      key={c.key}
+                      className={`${CELL} whitespace-nowrap ${c.numeric ? "text-right tabular-nums" : ""}`}
+                    >
+                      {attr ? formatValue(attr.value, attr.unit) : "–"}
+                    </td>
+                  );
+                })}
+                <td className={CELL}>
                   {a.packaging.length > 0
                     ? a.packaging
                         .map(
@@ -83,11 +126,13 @@ export function ArticleTable({
                         .join(" / ")
                     : "–"}
                 </td>
-                <td className="px-3 py-2">
-                  <SelectedOrderNumber
-                    numbers={variants.numbers}
-                    fallback={variants.fallback}
-                  />
+                <td className={CELL}>
+                  <span className="inline-block whitespace-nowrap bg-surface px-2 py-0.5">
+                    <SelectedOrderNumber
+                      numbers={variants.numbers}
+                      fallback={variants.fallback}
+                    />
+                  </span>
                 </td>
               </tr>
             );

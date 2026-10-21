@@ -17,7 +17,22 @@ export type ImageRef = {
 
 export type CategorySummary = { slug: string; name: string };
 
-export type CategoryListItem = CategorySummary & { productCount: number };
+export type RegisterItem = {
+  slug: string;
+  name: string;
+  productCount: number;
+  subline: string | null;
+  thumbnails: ImageRef[];
+};
+
+export type NumberExample = { articleNumber: string; productName: string };
+
+export type CatalogOverview = {
+  categories: RegisterItem[];
+  productCount: number;
+  articleCount: number;
+  example: NumberExample | null;
+};
 
 export type ProductSummary = {
   slug: string;
@@ -40,6 +55,7 @@ export type ArticleAttributeView = {
   label: string;
   unit: string | null;
   value: number | string;
+  sortOrder: number;
 };
 
 export type ArticleView = {
@@ -111,6 +127,8 @@ export type SearchHit = {
   matchedNumbers: string[];
   matchKind: MatchKind;
 };
+
+export type SearchResult = SearchHit & { thumbnail: ImageRef | null };
 
 export type CertificateLanguage = "de" | "en";
 

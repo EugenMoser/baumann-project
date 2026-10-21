@@ -6,7 +6,7 @@ export function InquiryDemoNotice({
   return (
     <aside
       aria-label="Hinweis zum Formular"
-      className="rounded-md border border-amber-400 bg-amber-50 p-4 text-sm text-amber-950"
+      className="border border-amber-400 bg-amber-50 p-4 text-sm text-amber-950"
     >
       <p>
         <span className="font-semibold">Vorschau:</span> Anfragen über dieses

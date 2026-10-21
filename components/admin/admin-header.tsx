@@ -18,7 +18,12 @@ export function AdminHeader({ email, shortName, logoutAction }: Props) {
   return (
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-4 px-4 py-3">
-        <p className="font-semibold">Admin · {shortName}</p>
+        <p className="flex items-baseline gap-2">
+          <span className="font-semibold">{shortName}</span>
+          <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Admin
+          </span>
+        </p>
         <nav aria-label="Admin" className="flex gap-4 text-sm">
           {SECTIONS.map((s) => (
             <Link

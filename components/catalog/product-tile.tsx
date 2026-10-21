@@ -13,15 +13,16 @@ export function ProductTile({
   return (
     <Link
       href={productPath(categorySlug, product.slug)}
-      className="group flex flex-col gap-3 rounded-lg border border-line p-3 hover:border-accent"
+      className="group flex flex-col gap-3 rounded-lg border border-line p-3 hover:border-ink"
     >
       <ProductImage
         image={product.thumbnail}
         name={product.name}
         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+        variant="tile"
       />
       <span className="flex flex-col">
-        <span className="font-medium group-hover:text-accent">
+        <span className="font-medium group-hover:text-accent-strong">
           {product.name}
         </span>
         {product.subtitle && (

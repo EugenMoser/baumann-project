@@ -2,8 +2,9 @@ import "server-only";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Result } from "@/lib/result";
-import { getCategoryPage, listCategories } from "./categories";
+import { getCategoryPage } from "./categories";
 import { listCertificates } from "./certificates";
+import { getCatalogOverview } from "./overview";
 import { getProductPage } from "./product";
 import type { CatalogError } from "./types";
 
@@ -20,8 +21,8 @@ export function unwrap<T>(result: Result<T, CatalogError>, context: string): T {
 }
 
 // cache(): generateMetadata and the page share one database round trip.
-export const loadCategories = cache(async () =>
-  unwrap(await listCategories(), "category list")
+export const loadOverview = cache(async () =>
+  unwrap(await getCatalogOverview(), "catalog overview")
 );
 
 export const loadCategoryPage = cache(async (slug: string) =>

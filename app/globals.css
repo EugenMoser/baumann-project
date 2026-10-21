@@ -5,40 +5,40 @@
    under an explicit .dark class (never set), not under OS dark mode. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Light theme only (feature 4 spec, D9). Calm, technical catalogue look. */
+/* Light theme only (feature 4 spec, D9). Datasheet look (feature 4a, D1). */
 @theme {
   --color-paper: #ffffff;
-  --color-surface: #f3f4f5;
-  --color-ink: #15191d;
-  --color-muted: #59626b;
-  --color-line: #d8dce0;
-  --color-accent: #1d5c96;
-  --color-accent-strong: #154675;
+  --color-surface: #f5f4f1;
+  --color-ink: #14171a;
+  --color-muted: #5d656e;
+  --color-line: #dcddd9;
+  --color-accent: #d4500f;
+  --color-accent-strong: #b5440d;
 
   /* shadcn/ui tokens (feature 6a, D5), mapped onto the palette above.
      `muted` and `accent` keep their public meaning; generated components use
      `bg-surface` instead of `bg-muted` (see components/ui). */
   --color-background: #ffffff;
-  --color-foreground: #15191d;
+  --color-foreground: #14171a;
   --color-card: #ffffff;
-  --color-card-foreground: #15191d;
+  --color-card-foreground: #14171a;
   --color-popover: #ffffff;
-  --color-popover-foreground: #15191d;
-  --color-primary: #1d5c96;
+  --color-popover-foreground: #14171a;
+  --color-primary: #b5440d;
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f3f4f5;
-  --color-secondary-foreground: #15191d;
-  --color-muted-foreground: #59626b;
+  --color-secondary: #f5f4f1;
+  --color-secondary-foreground: #14171a;
+  --color-muted-foreground: #5d656e;
   --color-accent-foreground: #ffffff;
   --color-destructive: #b42318;
-  --color-border: #d8dce0;
-  --color-input: #d8dce0;
-  --color-ring: #1d5c96;
+  --color-border: #dcddd9;
+  --color-input: #dcddd9;
+  --color-ring: #d4500f;
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-instrument-sans);
+  --font-mono: var(--font-plex-mono);
 }
 
 body {
