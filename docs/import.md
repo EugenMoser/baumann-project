@@ -28,12 +28,14 @@ text needs review. The report is not a failure; invalid or empty data is.
 usage: pnpm catalog:import --snapshot <dir> [--dry-run] [--overwrite-admin-edits]
 ```
 
-Production was loaded once; since then the catalog is edited in the admin
-area. Production is the source of truth and is not re-imported: a re-import
-would overwrite admin edits (section 6). The importer therefore refuses a real run against any target
-whose host is not exactly `127.0.0.1` or `localhost`, unless
-`--overwrite-admin-edits` is given (section 5). Dry runs and runs against the
-local stack are not affected. The guard checks only the hostname of
+The catalog on the preview (the Supabase on the VPS, "production" in this
+runbook) was loaded once; since then it is edited in the admin area. The
+handover snapshot (`docs/deploy.md` section 10) preserves the state after that
+import. The preview is not re-imported, because a re-import would overwrite
+the admin edits there (section 6). The importer therefore refuses a real run
+against any target whose host is not exactly `127.0.0.1` or `localhost`,
+unless `--overwrite-admin-edits` is given (section 5). Dry runs and runs
+against the local stack are not affected. The guard checks only the hostname of
 `IMPORT_SUPABASE_URL`: it is a seatbelt against mistakes, not a security
 boundary (a tunnel from a local port to a production API, for example, passes
 it).

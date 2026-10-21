@@ -56,21 +56,25 @@ committed with real values.
 
 5. **Local copies (by day 3).** Delete snapshot directories and import reports
    (`rm -r <snapshot dir>`), the local certificate directory (`rm -r <certificate dir>`),
-   one-off backup copies (`rm -r <backup copy dir>`), `.env.import` files, and
-   local database data (run `pnpm catalog:remove --confirm 127.0.0.1:54321`
-   first so local Storage files are removed too, then `pnpm db:reset`). Check
-   other machines that may hold a snapshot or a backup copy.
+   the copy of the handover snapshot on the developer machine
+   (`rm -r <handover copy dir>`, `docs/deploy.md` section 10), `.env.import`
+   files, and local database data (run
+   `pnpm catalog:remove --confirm 127.0.0.1:54321` first so local Storage
+   files are removed too, then `pnpm db:reset`). Check other machines that may
+   hold a snapshot or a copy of the handover snapshot.
 
-6. **Backups (by day 14).** The daily database and Storage backups on the VPS
-   live in `/var/backups/baumann-demo/<YYYY-MM-DD>/` (`docs/deploy.md`
-   section 10). Do not rely on the 7-day retention: the script deletes old
-   backups only after a successful run. On the VPS as root, list the backups
-   and delete every day directory (`.partial` ones included) up to and
-   including the removal day from step 2. Record the date:
+6. **Handover snapshot and backups on the VPS (by day 14).** There are no daily
+   backups. The handover snapshot lives in
+   `/var/backups/baumann-demo/handover-<YYYY-MM-DD>/` (`docs/deploy.md`
+   section 10); manual runs of the backup script can leave further
+   directories (`<YYYY-MM-DD>`, `<YYYY-MM-DD>.partial`). On the VPS as root,
+   list the directory and delete the handover snapshot and every other backup
+   directory. Record the date:
 
    ```bash
    ls /var/backups/baumann-demo/
-   rm -r /var/backups/baumann-demo/<YYYY-MM-DD>   # each day up to the removal day
+   rm -r /var/backups/baumann-demo/handover-<YYYY-MM-DD>
+   rm -r /var/backups/baumann-demo/<YYYY-MM-DD>   # each other directory, .partial ones included
    ```
 
 7. **Confirm to the customer in writing**, with the date of each step above

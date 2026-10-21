@@ -318,11 +318,19 @@ container goes live.
 - Every new table needs explicit grants, RLS and admin write policies in its
   migration (see `docs/data-model.md`).
 
-## 10. Backups and restore
+## 10. Handover snapshot and restore
 
-Production is the only copy of the catalog: admin edits happen there and are
-not re-imported from anywhere (`docs/import.md` section 6).
-`scripts/ops/vps-backup.sh` backs it up once a day on the VPS:
+The preview database (the Supabase on the VPS, called production elsewhere in
+this runbook) is a demo database with real customer data, not the customer's
+production system. The catalog was imported into it once and is not
+re-imported (`docs/import.md` section 5). Its state after that import is saved
+once as the **handover snapshot**: if the customer later wants the app,
+exactly this snapshot is restored on the customer's host. Afterwards the
+preview database may change freely (admin edits, tests, deletions); its later
+state does not matter for the handover.
+
+`scripts/ops/vps-backup.sh` creates the snapshot. It runs by hand on the VPS;
+there is no scheduled backup. A run writes:
 
 - `db.dump`: full database dump (`pg_dump -Fc` as `supabase_admin`), an exact
   clone including auth users and Storage metadata.
@@ -330,11 +338,11 @@ not re-imported from anywhere (`docs/import.md` section 6).
   extended attributes in which the Storage API keeps each file's content type.
 - `SHA256SUMS`: checksums of both files.
 
-Off-site copies are deliberately not automated in this demo. If the VPS is
-lost, all admin changes since the last manual copy to a developer machine (see
-"Copy to a developer machine") are lost.
+The snapshot exists twice: on the VPS and as one copy on a developer machine
+(see "Copy to a developer machine"). There is no other off-site copy; if both
+are lost, the snapshot is gone.
 
-### Install
+### Create the snapshot
 
 From the repository root on a developer machine:
 
@@ -342,102 +350,108 @@ From the repository root on a developer machine:
 scp scripts/ops/vps-backup.sh root@<vps-host>:/usr/local/sbin/baumann-backup
 ```
 
-On the VPS as root:
+On the VPS as root (`<YYYY-MM-DD>` is the UTC date of the run, shown in the
+summary line):
 
 ```bash
 chmod 700 /usr/local/sbin/baumann-backup
-/usr/local/sbin/baumann-backup   # first run by hand, prints one summary line
-crontab -e                       # add the line below
+/usr/local/sbin/baumann-backup   # run by hand, prints one summary line
+mv /var/backups/baumann-demo/<YYYY-MM-DD> /var/backups/baumann-demo/handover-<YYYY-MM-DD>
 ```
 
-```
-15 3 * * * /usr/local/sbin/baumann-backup >> /var/log/baumann-backup.log 2>&1
-```
+The rename keeps the snapshot out of the script's retention (see "Location and
+retention"). Then run "Check" and record the row counts.
 
 The script uses the one running container whose name starts with
 `supabase-db-` and derives the Storage directory
 `/data/coolify/services/<service-uuid>/volumes/storage` from its name. It stops
-if it finds none or several; then set `DB_CONTAINER` and `STORAGE_DIR` in the
-crontab line. Copy the script again after every change in the repository.
+if it finds none or several; then set `DB_CONTAINER` and `STORAGE_DIR` on the
+command line. Copy the script again after every change in the repository.
 
 ### Location and retention
 
-Backups live in `/var/backups/baumann-demo/<YYYY-MM-DD>/` (UTC date, root
-only). A run writes to `<YYYY-MM-DD>.partial` and renames it on success; a
-failed run normally leaves no partial directory and keeps the older backups (a
-killed run or a reboot can leave a `.partial` directory, which the retention
-step removes later). A second
-run on the same day replaces that day's backup. Each run keeps the backups of
-the last 7 days, today included (`KEEP_DAYS`), and deletes older day
-directories. The backups hold customer data and password hashes and never
-enter the repository.
+A run writes to `/var/backups/baumann-demo/<YYYY-MM-DD>.partial` (UTC date,
+root only) and renames it to `<YYYY-MM-DD>` on success; a failed run normally
+leaves no partial directory (a killed run or a reboot can leave a `.partial`
+directory, which the retention step of a later run removes). A second run on
+the same day replaces that day's directory. Each run deletes date directories
+older than `KEEP_DAYS` (default 7, today included) but never `handover-*`
+directories: it only removes names of the form `<YYYY-MM-DD>`. Delete the
+handover snapshot only on revocation ([`docs/revocation.md`](revocation.md),
+step 6). The snapshot and any date directories hold customer data and password
+hashes and never enter the repository.
 
 ### Check
 
 On the VPS:
 
 ```bash
-tail -n 3 /var/log/baumann-backup.log
 ls -l /var/backups/baumann-demo/
-cd /var/backups/baumann-demo/<YYYY-MM-DD> && sha256sum -c SHA256SUMS
+cd /var/backups/baumann-demo/handover-<YYYY-MM-DD> && sha256sum -c SHA256SUMS
 docker exec -i <supabase-db-container> pg_restore --list < db.dump | grep -c "TABLE DATA public"
 ```
 
 The last command counts the `public` tables in the dump (one per table); `0`
-or an error means the dump is unusable. Row counts for comparisons (restore test, handover):
+or an error means the dump is unusable. Row counts:
 
 ```bash
 docker exec <supabase-db-container> psql -U postgres -tAc "select (select count(*) from public.product), (select count(*) from public.article), (select count(*) from public.media), (select count(*) from storage.objects), (select count(*) from auth.users)"
 ```
 
+Run the query right after creating the snapshot, while the preview database
+still holds the same state, and record the counts in the table under "Restore
+test". They are the reference for every restore test and the handover.
+
 ### Copy to a developer machine
 
-A one-off copy, for example for the restore test. `<backup copy dir>` lies
-outside the repository:
+The second copy of the handover snapshot. `<handover copy dir>` lies outside
+the repository:
 
 ```bash
-scp -r root@<vps-host>:/var/backups/baumann-demo/<YYYY-MM-DD> <backup copy dir>/
-cd <backup copy dir>/<YYYY-MM-DD> && shasum -a 256 -c SHA256SUMS
+scp -r root@<vps-host>:/var/backups/baumann-demo/handover-<YYYY-MM-DD> <handover copy dir>/
+cd <handover copy dir>/handover-<YYYY-MM-DD> && shasum -a 256 -c SHA256SUMS
 ```
 
-Delete the copy when it is no longer needed (`rm -r <backup copy dir>`) and
-on revocation ([`docs/revocation.md`](revocation.md), step 5).
+Keep the copy until the handover or a revocation, then delete it
+(`rm -r <handover copy dir>`; on revocation
+[`docs/revocation.md`](revocation.md), step 5).
 
 ### Restore test
 
-Quarterly, into the local stack, from the repository root with a fresh backup
-copy. **This replaces all data of the local stack with production data.**
+Once after creating the snapshot and again before a handover, into the local
+stack, from the repository root with the copy on the developer machine. **This
+replaces all data of the local stack with customer data.**
 
 ```bash
 pnpm db:start
-B=<backup copy dir>/<YYYY-MM-DD>
+B=<handover copy dir>/handover-<YYYY-MM-DD>
 docker exec -i supabase_db_baumann-demo pg_restore -h 127.0.0.1 -U supabase_admin -d postgres --clean --if-exists < "$B/db.dump"
 tar -tzf "$B/storage.tar.gz" > /dev/null && echo storage archive ok
 ```
 
 `pg_restore` exits `1` and reports "errors ignored on restore" for
 Supabase-internal objects (missing roles, realtime partitions); that is
-expected. Compare the row counts (query above, with
-`supabase_db_baumann-demo` as container) with production. Afterwards
-`pnpm db:reset` returns the local stack to the seed; do not keep production
-data there. Record the date and result:
+expected. Compare the row counts (query under "Check", with
+`supabase_db_baumann-demo` as container) with the counts recorded at creation.
+Afterwards `pnpm db:reset` returns the local stack to the seed; do not keep
+customer data there. Record the date, the snapshot, the counts at creation (in
+query order) and the result:
 
-| Date       | Result     |
-| ---------- | ---------- |
-| _(record)_ | _(record)_ |
+| Date       | Snapshot   | Row counts at creation | Result     |
+| ---------- | ---------- | ---------------------- | ---------- |
+| _(record)_ | _(record)_ | _(record)_             | _(record)_ |
 
 ### Handover
 
-Production is the current state; a handover always uses a fresh backup.
+The customer receives the state of the handover snapshot, not the current
+preview database.
 
-1. Announce an editing freeze: no admin edits until the handover is done.
-2. On the VPS run `/usr/local/sbin/baumann-backup` by hand, check the backup
-   and note the row counts (see "Check").
-3. Hand over `db.dump`, `storage.tar.gz` and `SHA256SUMS` of that day, plus
-   the repository commit that runs in production (`/api/health` reports it).
-4. Receiving side: a self-hosted Supabase as in section 3 with the same pinned
+1. Run the restore test again (see above).
+2. Hand over `db.dump`, `storage.tar.gz` and `SHA256SUMS` of
+   `handover-<YYYY-MM-DD>`, plus the repository commit to deploy.
+3. Receiving side: a self-hosted Supabase as in section 3 with the same pinned
    versions and the file backend. These steps run only on the receiving host,
-   never on the production VPS. Stop every container of the Supabase service
+   never on the preview VPS. Stop every container of the Supabase service
    except the database (Storage included), restore the dump, then unpack the
    Storage files:
 
@@ -448,9 +462,17 @@ Production is the current state; a handover always uses a fresh backup.
    tar --xattrs --xattrs-include='user.*' -xzf storage.tar.gz -C /data/coolify/services/<service-uuid>/volumes/storage
    ```
 
-   Then start the Supabase service again (restart it in Coolify), compare the row counts with step 2, deploy
-   the app from the handed-over commit (sections 6 to 8) and check that the
-   catalog, the images and the admin login work.
+4. Start the Supabase service again (restart it in Coolify) and apply the
+   migrations that are newer than the snapshot. The dump contains the
+   migration history (`supabase_migrations.schema_migrations`), so
+   `supabase db push` from a checkout of the handed-over commit applies only
+   the newer ones (connection as in sections 4, 5 and 7; dry run first).
+5. Compare the row counts (see "Check") with the counts recorded at creation.
+6. Deploy the app from the handed-over commit (sections 6 to 8) and check that
+   the catalog, the images and the admin login work.
+7. The snapshot contains the developer's admin account. Create the customer's
+   admin with `pnpm admin:create` (section 3, step 4), then delete the
+   developer's account (Studio, Authentication) or reset its password.
 
 For other targets (e.g. Supabase Cloud) follow Supabase's own migration and
 restore guide; `db.dump` and the Storage files are the input.
