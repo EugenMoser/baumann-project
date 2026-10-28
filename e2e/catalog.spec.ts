@@ -1,8 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const PRODUCT = "/produkte/moebelteile/testkeil-mit-daempfung";
 const PIPE = "/produkte/sanitaer/testrohrschelle";
 const ORDER_NUMBERS = ["99010 - 1", "99010 - 2", "99011 - 1", "99011 - 2"];
+
+// Text of the page markup without inline scripts (JSON-LD, RSC payload), so
+// a number only counts if it is rendered into the page itself.
+const pageText = (page: Page) =>
+  page.locator("body").evaluate((body) => {
+    const clone = body.cloneNode(true) as HTMLElement;
+    clone
+      .querySelectorAll("script, style, template")
+      .forEach((el) => el.remove());
+    return clone.textContent ?? "";
+  });
 
 test.describe("public catalog", () => {
   test("home lists the categories (SC-2)", async ({ page }) => {
@@ -78,7 +89,7 @@ test.describe("public catalog", () => {
     for (const n of ["99010 - 1", "99011 - 1"]) {
       await expect(page.getByText(n, { exact: false }).first()).toBeVisible();
     }
-    const text = (await page.locator("body").textContent()) ?? "";
+    const text = await pageText(page);
     for (const n of ORDER_NUMBERS) expect(text).toContain(n);
   });
 
@@ -187,7 +198,7 @@ test.describe("public catalog", () => {
       .locator('script[type="application/ld+json"]')
       .textContent();
     const data = JSON.parse(json ?? "{}") as { hasVariant?: { sku: string }[] };
-    const body = (await page.locator("body").textContent()) ?? "";
+    const body = await pageText(page);
     expect(data.hasVariant?.length).toBe(4);
     for (const v of data.hasVariant ?? []) expect(body).toContain(v.sku);
   });
