@@ -13,6 +13,7 @@ import {
   type MediaValues,
   type UploadValues,
 } from "@/lib/admin/media-schema";
+import { placementNote } from "@/lib/admin/media-placement";
 import { publicMediaUrl } from "@/lib/catalog/media";
 import { describedBy, Field } from "./field";
 import { RemoveImageButton } from "./remove-image-button";
@@ -79,8 +80,10 @@ export function ImageSection({
         Bilder
       </h2>
       <p className="text-sm text-muted-foreground">
-        Das Vorschaubild erscheint in Kacheln und als erstes Bild auf der
-        Produktseite.
+        Das Listenbild erscheint klein in der Suche und in der
+        Kategorieübersicht. Alle anderen Bilder bilden in dieser Reihenfolge die
+        Galerie der Produktseite; das erste davon zeigt auch die Produktkachel.
+        Ohne Galeriebild nutzen Produktseite und Kachel das Listenbild.
       </p>
       {rows.length === 0 ? (
         <p>Noch keine Bilder.</p>
@@ -143,7 +146,7 @@ export function ImageSection({
                     onChange={() => setThumbnailId(row.mediaId)}
                   />
                   <label htmlFor={tid} className="text-sm">
-                    Vorschaubild
+                    Listenbild
                   </label>
                   <Button
                     type="button"
@@ -172,6 +175,12 @@ export function ImageSection({
                     label={label}
                   />
                 </div>
+                <p
+                  data-testid="placement-note"
+                  className="col-span-3 text-sm text-muted-foreground"
+                >
+                  {placementNote(rows, thumbnailId, i)}
+                </p>
               </fieldset>
             );
           })}
