@@ -40,6 +40,14 @@ describe("Gallery (4b SC-3)", () => {
       screen.getByRole("region", { name: "Produktbilder" })
     ).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    const list = screen
+      .getByRole("region", { name: "Produktbilder" })
+      .querySelector("ul");
+    expect(list).not.toBeNull();
+    expect(list).not.toHaveAttribute("role");
+    for (const item of screen.getAllByRole("listitem")) {
+      expect(item.parentElement).toBe(list);
+    }
     for (const n of [1, 2, 3]) {
       expect(screen.getByText(`Abb. ${n} · Ansicht ${n}`)).toBeInTheDocument();
     }

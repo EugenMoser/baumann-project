@@ -12,7 +12,7 @@ export function GallerySlider({
   total: number;
   children: ReactNode;
 }) {
-  const track = useRef<HTMLUListElement>(null);
+  const track = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [index, setIndex] = useState(0);
 
@@ -41,16 +41,18 @@ export function GallerySlider({
 
   return (
     <div className="flex flex-col gap-2">
-      <ul
+      <div
         ref={track}
         role="region"
         aria-label="Produktbilder"
         tabIndex={0}
         onScroll={onScroll}
-        className="flex snap-x snap-mandatory overflow-x-auto [&>li]:w-full [&>li]:shrink-0 [&>li]:snap-start"
+        className="snap-x snap-mandatory overflow-x-auto"
       >
-        {children}
-      </ul>
+        <ul className="flex [&>li]:w-full [&>li]:shrink-0 [&>li]:snap-start">
+          {children}
+        </ul>
+      </div>
       {/* Row height is reserved in the server HTML so mounting causes no shift. */}
       <div className="flex h-9 items-center justify-between">
         {mounted && (
