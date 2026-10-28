@@ -50,27 +50,6 @@ export function buildVariantMatrix(
   return { options, defaultKey, byArticle };
 }
 
-// D4: order numbers for the product order box; per colour the number of the
-// first article (table order) that has one.
-export function orderBoxNumbers(
-  matrix: VariantMatrix,
-  articles: ArticleView[]
-): { numbers: Record<string, string>; fallback: string } | null {
-  if (articles.length === 0) return null;
-  const numbers: Record<string, string> = {};
-  for (const article of articles) {
-    const entry = matrix.byArticle[article.articleNumber];
-    if (!entry) continue;
-    for (const [key, orderNumber] of Object.entries(entry.numbers)) {
-      numbers[key] ??= orderNumber;
-    }
-  }
-  const first = articles[0];
-  const fallback =
-    matrix.byArticle[first.articleNumber]?.fallback ?? first.articleNumber;
-  return { numbers, fallback };
-}
-
 export type ArticleOption = { articleNumber: string; label: string };
 
 // D4: option labels for the article select. The label names the first two

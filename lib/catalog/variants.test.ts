@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeProductPage } from "./fixtures";
 import type { ArticleAttributeView, ArticleView } from "./types";
-import {
-  articleOptions,
-  buildVariantMatrix,
-  orderBoxNumbers,
-  orderNumberFor,
-} from "./variants";
+import { articleOptions, buildVariantMatrix, orderNumberFor } from "./variants";
 
 describe("buildVariantMatrix (FR-5, SC-5)", () => {
   it("maps every article to its order number per colour", () => {
@@ -49,35 +44,6 @@ describe("buildVariantMatrix (FR-5, SC-5)", () => {
     const page = makeProductPage();
     const colors = page.colors.map((c) => ({ ...c, isDefault: false }));
     expect(buildVariantMatrix({ ...page, colors }).defaultKey).toBe("color-3");
-  });
-});
-
-describe("orderBoxNumbers (D4)", () => {
-  it("returns null without articles", () => {
-    const page = makeProductPage();
-    expect(orderBoxNumbers(buildVariantMatrix(page), [])).toBeNull();
-  });
-
-  it("takes each colour number from the first article that has one", () => {
-    const page = makeProductPage();
-    const matrix = buildVariantMatrix(page);
-    const [first, second] = page.articles;
-    matrix.byArticle[first.articleNumber] = {
-      numbers: { "color-3": "99010 - 1" },
-      fallback: "99010 - 1",
-    };
-    const box = orderBoxNumbers(matrix, [first, second]);
-    expect(box?.numbers).toEqual({
-      "color-3": "99010 - 1",
-      "color-1": "99211/80 - 2",
-    });
-    expect(box?.fallback).toBe("99010 - 1");
-  });
-
-  it("returns empty numbers and the first article number without colours", () => {
-    const page = makeProductPage({ colors: [], variants: [] });
-    const box = orderBoxNumbers(buildVariantMatrix(page), page.articles);
-    expect(box).toEqual({ numbers: {}, fallback: "99010" });
   });
 });
 
