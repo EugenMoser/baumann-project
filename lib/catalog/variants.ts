@@ -1,3 +1,4 @@
+import { attributeColumns, formatAttributeValue } from "./attribute-summary";
 import type { ArticleView, ProductPage } from "./types";
 
 export type ColorOption = {
@@ -68,4 +69,43 @@ export function orderBoxNumbers(
   const fallback =
     matrix.byArticle[first.articleNumber]?.fallback ?? first.articleNumber;
   return { numbers, fallback };
+}
+
+export type ArticleOption = { articleNumber: string; label: string };
+
+// D4: option labels for the article select. The label names the first two
+// attributes that tell the articles apart; without any, the article name.
+export function articleOptions(articles: ArticleView[]): ArticleOption[] {
+  const differing = attributeColumns(articles)
+    .map((c) => c.key)
+    .filter((key) => {
+      const values = articles.map(
+        (a) => a.attributes.find((x) => x.key === key)?.value
+      );
+      return values.some((v) => v === undefined || v !== values[0]);
+    });
+  return articles.map((a) => {
+    const parts = differing
+      .flatMap((key) => a.attributes.find((x) => x.key === key) ?? [])
+      .slice(0, 2)
+      .map((x) => formatAttributeValue(x.value, x.unit));
+    if (parts.length === 0 && a.name) parts.push(a.name);
+    return {
+      articleNumber: a.articleNumber,
+      label: [a.articleNumber, ...parts].join(" · "),
+    };
+  });
+}
+
+// D4: order number of the chosen article in the chosen colour; `null` while
+// no (known) article is chosen.
+export function orderNumberFor(
+  byArticle: VariantMatrix["byArticle"],
+  articleNumber: string | null,
+  colorKey: string | null
+): string | null {
+  if (articleNumber === null) return null;
+  const entry = byArticle[articleNumber];
+  if (!entry) return null;
+  return (colorKey && entry.numbers[colorKey]) || entry.fallback;
 }
