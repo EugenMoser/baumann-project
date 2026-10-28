@@ -13,8 +13,8 @@ type Props = {
 };
 
 const BOX: Record<Variant, string> = {
-  tile: "w-full aspect-[4/3] p-3",
-  detail: "w-full aspect-[3/2] p-6",
+  tile: "w-full aspect-[2/1] p-3",
+  detail: "w-full aspect-[2/1] p-6",
   thumb: "size-14 border border-line p-1",
 };
 
@@ -26,7 +26,7 @@ export function ProductImage({
   preload = false,
   variant = "tile",
 }: Props) {
-  const box = `bg-surface ${BOX[variant]}`;
+  const box = `flex items-center justify-center bg-surface ${BOX[variant]}`;
   if (!image) {
     if (variant === "thumb") {
       return <div aria-hidden="true" className={box} />;
@@ -49,7 +49,7 @@ export function ProductImage({
         height={image.height}
         sizes={sizes}
         preload={preload}
-        className="h-full w-full object-contain mix-blend-multiply"
+        className="max-h-full max-w-full object-contain mix-blend-multiply"
       />
     </div>
   );

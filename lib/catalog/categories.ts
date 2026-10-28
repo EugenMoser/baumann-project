@@ -4,11 +4,11 @@ import {
   type CatalogClient,
 } from "@/lib/supabase/server";
 import { guard, toDbError } from "./errors";
-import { pickThumbnail } from "./media";
+import { pickThumbnail, pickTileImage, TILE_MEDIA } from "./media";
 import type { CatalogError, CategoryPage, ProductSummary } from "./types";
 
 export const PRODUCT_TILE =
-  "slug, name, subtitle, sort_order, product_media(role, sort_order, media(storage_path, width, height, alt_text))";
+  `slug, name, subtitle, sort_order, ${TILE_MEDIA}` as const;
 
 export function compareProducts(
   a: { sort_order: number; name: string },
@@ -31,6 +31,7 @@ export function toProductSummaries(
     name: p.name,
     subtitle: p.subtitle,
     thumbnail: pickThumbnail(p.product_media),
+    tileImage: pickTileImage(p.product_media),
   }));
 }
 

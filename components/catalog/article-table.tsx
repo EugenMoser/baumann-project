@@ -80,11 +80,11 @@ export function ArticleTable({
               <tr
                 key={a.articleNumber}
                 id={articleAnchorId(a.articleNumber)}
-                className="group scroll-mt-24 align-top target:bg-[#fff6ef]"
+                className="group scroll-mt-24 align-top target:bg-accent-soft"
               >
                 <th
                   scope="row"
-                  className={`${CELL} ${STICKY} whitespace-nowrap bg-paper font-mono font-semibold group-target:bg-[#fff6ef] group-target:shadow-[inset_3px_0_0] group-target:shadow-accent`}
+                  className={`${CELL} ${STICKY} whitespace-nowrap bg-paper font-mono font-semibold group-target:bg-accent-soft group-target:shadow-[inset_3px_0_0] group-target:shadow-accent`}
                 >
                   {a.articleNumber}
                 </th>

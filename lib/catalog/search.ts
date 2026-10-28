@@ -5,7 +5,7 @@ import {
   type CatalogClient,
 } from "@/lib/supabase/server";
 import { guard, toDbError } from "./errors";
-import { pickThumbnail } from "./media";
+import { pickThumbnail, TILE_MEDIA } from "./media";
 import type { CatalogError, SearchHit, SearchResult } from "./types";
 
 const hitSchema = z.object({
@@ -82,9 +82,7 @@ export function withThumbnails(
     const slugs = [...new Set(hits.map((h) => h.productSlug))];
     const { data, error } = await client
       .from("product")
-      .select(
-        "slug, category!inner(slug), product_media(role, sort_order, media(storage_path, width, height, alt_text))"
-      )
+      .select(`slug, category!inner(slug), ${TILE_MEDIA}` as const)
       .in("slug", slugs);
     if (error) return err(toDbError(error));
     return ok(mergeThumbnails(hits, data));

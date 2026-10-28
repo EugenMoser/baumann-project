@@ -9,6 +9,7 @@ export function makeProductPage(
     name: "Testkeil",
     subtitle: "für Beispielschlösser",
     thumbnail: null,
+    tileImage: null,
     description: "Erster Absatz.\n\nZweiter Absatz.",
     descriptionOrigin: "human",
     seoTitle: null,
