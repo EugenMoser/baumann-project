@@ -1,0 +1,104 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { MediaView } from "@/lib/catalog/types";
+import { Gallery } from "./gallery";
+
+function media(n: number, width: number, height: number): MediaView {
+  return {
+    storagePath: `products/g${n}.webp`,
+    width,
+    height,
+    altText: `Ansicht ${n}`,
+    altOrigin: "human",
+    role: "gallery",
+  };
+}
+
+describe("Gallery (4b SC-3)", () => {
+  beforeEach(() => {
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true });
+  });
+
+  it("(4b SC-3) renders a single image without slider markup", () => {
+    const { container } = render(
+      <Gallery media={[media(1, 800, 600)]} name="Testkeil" />
+    );
+    expect(container.querySelectorAll("img")).toHaveLength(1);
+    expect(screen.getByText("Abb. 1 · Ansicht 1")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Nächstes Bild" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Produktbilder" })).toBeNull();
+  });
+
+  it("(4b SC-3) renders three images with their own sizes in one slider", () => {
+    const { container } = render(
+      <Gallery
+        media={[media(1, 465, 200), media(2, 800, 600), media(3, 465, 200)]}
+        name="Testkeil"
+      />
+    );
+    expect(
+      screen.getByRole("region", { name: "Produktbilder" })
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+    for (const n of [1, 2, 3]) {
+      expect(screen.getByText(`Abb. ${n} · Ansicht ${n}`)).toBeInTheDocument();
+    }
+    const imgs = Array.from(container.querySelectorAll("img"));
+    expect(imgs.map((i) => i.getAttribute("width"))).toEqual([
+      "465",
+      "800",
+      "465",
+    ]);
+    expect(imgs.map((i) => i.getAttribute("height"))).toEqual([
+      "200",
+      "600",
+      "200",
+    ]);
+    for (const img of imgs) {
+      expect(img.parentElement).toHaveClass("aspect-[2/1]");
+    }
+  });
+
+  it("(4b SC-3) buttons scroll the track and the indicator follows it", () => {
+    render(
+      <Gallery
+        media={[media(1, 465, 200), media(2, 800, 600), media(3, 465, 200)]}
+        name="Testkeil"
+      />
+    );
+    const track = screen.getByRole("region", { name: "Produktbilder" });
+    const scrollTo = vi.fn();
+    Object.defineProperty(track, "clientWidth", {
+      value: 300,
+      configurable: true,
+    });
+    Object.defineProperty(track, "scrollLeft", {
+      value: 0,
+      writable: true,
+      configurable: true,
+    });
+    track.scrollTo = scrollTo;
+
+    expect(
+      screen.getByRole("button", { name: "Vorheriges Bild" })
+    ).toBeDisabled();
+    const next = screen.getByRole("button", { name: "Nächstes Bild" });
+    expect(next).toBeEnabled();
+    expect(screen.getByText("1 / 3")).toBeInTheDocument();
+
+    fireEvent.click(next);
+    expect(scrollTo).toHaveBeenCalledWith({ left: 300, behavior: "smooth" });
+
+    track.scrollLeft = 600;
+    fireEvent.scroll(track);
+    expect(screen.getByText("3 / 3")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nächstes Bild" })
+    ).toBeDisabled();
+  });
+
+  it("(4b SC-3) shows the fallback box without images", () => {
+    render(<Gallery media={[]} name="Testkeil" />);
+    expect(screen.getByText("Kein Bild")).toBeInTheDocument();
+  });
+});
