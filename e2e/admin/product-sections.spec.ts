@@ -34,7 +34,7 @@ test("upload an image (SC-2)", async ({ page }) => {
   await expect(
     page.getByText("Bild hochgeladen.", { exact: true })
   ).toBeVisible();
-  await expect(page.getByRole("radio", { name: "Vorschaubild" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Listenbild" })).toBeChecked();
   expect(await publicHtml(page)).toContain(`alt="Erstes Bild ${run}"`);
 });
 
@@ -50,7 +50,7 @@ test("reject a file that is not an image (SC-1)", async ({ page }) => {
   await expect(page.getByText("Nur JPEG, PNG oder WebP.")).toBeVisible();
 });
 
-test("edit alt text and order (SC-5)", async ({ page }) => {
+test("edit alt text and order (SC-5, 4b SC-6)", async ({ page }) => {
   await page.goto(editUrl);
   await page.getByLabel("Bilddatei").setInputFiles({
     name: "zwei.png",
@@ -67,7 +67,7 @@ test("edit alt text and order (SC-5)", async ({ page }) => {
   ).toBeVisible();
 
   await page.getByRole("button", { name: "Bild 2 nach oben" }).click();
-  await page.getByRole("radio", { name: "Vorschaubild" }).first().check();
+  await page.getByRole("radio", { name: "Listenbild" }).first().check();
   await page
     .getByLabel("Alt-Text", { exact: true })
     .first()
@@ -77,11 +77,13 @@ test("edit alt text and order (SC-5)", async ({ page }) => {
     page.getByText("Bilder gespeichert.", { exact: true })
   ).toBeVisible();
 
+  // The list image is no gallery slide, so the product page shows the other one.
   const html = await publicHtml(page);
-  expect(html).toContain(`alt="Zweites Bild neu ${run}"`);
-  expect(html.indexOf(`Zweites Bild neu ${run}`)).toBeLessThan(
-    html.indexOf(`Erstes Bild ${run}`)
-  );
+  expect(html).toContain(`alt="Erstes Bild ${run}"`);
+  expect(html).not.toContain(`Zweites Bild neu ${run}`);
+  // Search results show the list image.
+  const search = await page.request.get(`/suche?q=${encodeURIComponent(NAME)}`);
+  expect(await search.text()).toContain(`alt="Zweites Bild neu ${run}"`);
 });
 
 test("remove images until none is left, then upload again (SC-6, Review Focus 4)", async ({
@@ -114,7 +116,7 @@ test("remove images until none is left, then upload again (SC-6, Review Focus 4)
     .last()
     .fill(`Drittes Bild ${run}`);
   await page.getByRole("button", { name: "Bild hochladen" }).click();
-  await expect(page.getByRole("radio", { name: "Vorschaubild" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "Listenbild" })).toBeChecked();
   expect(await publicHtml(page)).toContain(`alt="Drittes Bild ${run}"`);
 });
 
