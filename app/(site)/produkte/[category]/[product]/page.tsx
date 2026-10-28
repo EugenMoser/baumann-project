@@ -111,10 +111,10 @@ export default async function ProductPage({ params }: Props) {
             matrix={matrix}
             productMaterial={page.material}
           />
+          <OrderNumberList page={page} />
         </section>
       </SelectionProvider>
 
-      <OrderNumberList page={page} />
       <AccessoryList accessories={page.accessories} />
       <RelatedProducts
         categorySlug={page.category.slug}

@@ -1,34 +1,50 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { makeProductPage } from "@/lib/catalog/fixtures";
+import { inquiryPath } from "@/lib/inquiry/path";
 import { OrderNumberList } from "./order-number-list";
 
-describe("OrderNumberList (FR-5, D6)", () => {
-  it("lists every order number with its colour as visible text", () => {
-    render(<OrderNumberList page={makeProductPage()} />);
+describe("OrderNumberList (4b SC-5)", () => {
+  it("renders a closed details with the count in the summary (4b SC-5)", () => {
+    const { container } = render(<OrderNumberList page={makeProductPage()} />);
+    const details = container.querySelector("details");
+    expect(details).not.toBeNull();
+    expect(details).not.toHaveAttribute("open");
+    expect(container.querySelector("summary")).toHaveTextContent(
+      "Alle Bestellnummern (4)"
+    );
+  });
+
+  it("keeps every order number in the text content (4b SC-5)", () => {
+    const { container } = render(<OrderNumberList page={makeProductPage()} />);
+    const text = container.querySelector("details")?.textContent ?? "";
     for (const n of [
       "99010 - 1",
       "99010 - 2",
       "99211/80 - 1",
       "99211/80 - 2",
     ]) {
-      expect(screen.getByText(n, { exact: false })).toBeVisible();
+      expect(text).toContain(n);
     }
-    expect(
-      screen.getByRole("heading", { name: "Alle Bestellnummern" })
-    ).toBeInTheDocument();
   });
 
-  it("links every order number to the inquiry form (FR-13, SC-13)", () => {
+  it("links every order number to the inquiry form (4b SC-5)", () => {
     const page = makeProductPage();
     render(<OrderNumberList page={page} />);
     for (const v of page.variants) {
       expect(
-        screen.getByRole("link", { name: new RegExp(v.orderNumber) })
-      ).toHaveAttribute(
-        "href",
-        `/anfrage?bestellnummer=${encodeURIComponent(v.orderNumber)}`
-      );
+        screen.getByRole("link", {
+          name: new RegExp(v.orderNumber),
+          hidden: true,
+        })
+      ).toHaveAttribute("href", inquiryPath(v.orderNumber));
     }
+  });
+
+  it("has no heading named Alle Bestellnummern (4b SC-5)", () => {
+    render(<OrderNumberList page={makeProductPage()} />);
+    expect(
+      screen.queryByRole("heading", { name: /Alle Bestellnummern/ })
+    ).toBeNull();
   });
 });
