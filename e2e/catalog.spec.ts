@@ -192,6 +192,18 @@ test.describe("public catalog", () => {
     expect(box?.width).toBeLessThanOrEqual(80);
   });
 
+  test("category register keeps the list image of a product (4b SC-2)", async ({
+    page,
+  }) => {
+    await page.goto("/produkte");
+    const row = page
+      .getByRole("listitem")
+      .filter({ hasText: "Möbelteile (Beispiel)" });
+    await expect(row.locator('img[src*="testkeil-1.webp"]')).toHaveCount(1);
+    await expect(row.locator('img[src*="testkeil-2.webp"]')).toHaveCount(0);
+    await expect(row.locator('img[src*="testkeil-3.webp"]')).toHaveCount(0);
+  });
+
   test("every JSON-LD sku is visible on the page (SC-7)", async ({ page }) => {
     await page.goto(PRODUCT);
     const json = await page
