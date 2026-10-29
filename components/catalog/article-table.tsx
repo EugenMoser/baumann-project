@@ -1,15 +1,13 @@
 import { articleAnchorId } from "@/lib/catalog/anchors";
-import { attributeColumns } from "@/lib/catalog/attribute-summary";
+import {
+  attributeColumns,
+  formatAttributeValue,
+} from "@/lib/catalog/attribute-summary";
 import type { ArticleView, Material } from "@/lib/catalog/types";
 import type { VariantMatrix } from "@/lib/catalog/variants";
 import { SelectedOrderNumber } from "./color-selection";
 
 const number = new Intl.NumberFormat("de-DE");
-
-function formatValue(value: number | string, unit: string | null): string {
-  const text = typeof value === "number" ? number.format(value) : value;
-  return unit ? `${text} ${unit}` : text;
-}
 
 // Separate borders: collapsed borders vanish under the sticky first column.
 const HEAD =
@@ -80,11 +78,11 @@ export function ArticleTable({
               <tr
                 key={a.articleNumber}
                 id={articleAnchorId(a.articleNumber)}
-                className="group scroll-mt-24 align-top target:bg-[#fff6ef]"
+                className="group scroll-mt-24 align-top target:bg-accent-soft"
               >
                 <th
                   scope="row"
-                  className={`${CELL} ${STICKY} whitespace-nowrap bg-paper font-mono font-semibold group-target:bg-[#fff6ef] group-target:shadow-[inset_3px_0_0] group-target:shadow-accent`}
+                  className={`${CELL} ${STICKY} whitespace-nowrap bg-paper font-mono font-semibold group-target:bg-accent-soft group-target:shadow-[inset_3px_0_0] group-target:shadow-accent`}
                 >
                   {a.articleNumber}
                 </th>
@@ -112,7 +110,7 @@ export function ArticleTable({
                       key={c.key}
                       className={`${CELL} whitespace-nowrap ${c.numeric ? "text-right tabular-nums" : ""}`}
                     >
-                      {attr ? formatValue(attr.value, attr.unit) : "–"}
+                      {attr ? formatAttributeValue(attr.value, attr.unit) : "–"}
                     </td>
                   );
                 })}

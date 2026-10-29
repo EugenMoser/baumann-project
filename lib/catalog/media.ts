@@ -27,11 +27,35 @@ export function pickThumbnail(rows: readonly MediaRow[]): ImageRef | null {
   const pick =
     byOrder.find((r) => r.role === "thumbnail") ??
     byOrder.find((r) => r.role === "gallery");
-  if (!pick) return null;
+  return pick ? toImageRef(pick) : null;
+}
+
+// Select for product tiles and search thumbnails; both pick from these rows.
+export const TILE_MEDIA =
+  "product_media(role, sort_order, media(storage_path, width, height, alt_text))" as const;
+
+function toImageRef(row: MediaRow): ImageRef {
   return {
-    storagePath: pick.media.storage_path,
-    width: pick.media.width,
-    height: pick.media.height,
-    altText: pick.media.alt_text,
+    storagePath: row.media.storage_path,
+    width: row.media.width,
+    height: row.media.height,
+    altText: row.media.alt_text,
   };
+}
+
+// Images shown for a product: all gallery rows by sort order; without any,
+// the first thumbnail alone (4b D1).
+export function galleryRows<T extends { role: MediaRole; sort_order: number }>(
+  rows: readonly T[]
+): T[] {
+  const byOrder = [...rows].sort((a, b) => a.sort_order - b.sort_order);
+  const gallery = byOrder.filter((r) => r.role === "gallery");
+  if (gallery.length > 0) return gallery;
+  const thumb = byOrder.find((r) => r.role === "thumbnail");
+  return thumb ? [thumb] : [];
+}
+
+export function pickTileImage(rows: readonly MediaRow[]): ImageRef | null {
+  const first = galleryRows(rows)[0];
+  return first ? toImageRef(first) : null;
 }

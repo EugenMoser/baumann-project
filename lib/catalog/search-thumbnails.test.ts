@@ -86,3 +86,18 @@ describe("mergeThumbnails (D5)", () => {
     expect(mergeThumbnails([], [row("a", "keil", "a.webp")])).toEqual([]);
   });
 });
+
+describe("mergeThumbnails images (4b SC-2)", () => {
+  it("keeps the thumbnail when the product also has a gallery image", () => {
+    const both: ThumbnailRow = {
+      ...row("a", "keil", "t.webp"),
+      product_media: [
+        ...row("a", "keil", "g.webp", "gallery").product_media,
+        ...row("a", "keil", "t.webp", "thumbnail").product_media,
+      ],
+    };
+    expect(
+      mergeThumbnails([hit("a", "keil")], [both])[0].thumbnail?.storagePath
+    ).toBe("t.webp");
+  });
+});

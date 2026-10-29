@@ -38,7 +38,14 @@ describe("getCatalogOverview (FR-10, SC-10)", () => {
             name: "Sanitärteile (Beispiel)",
             productCount: 1,
             subline: "Beispieltext für die Kategorie Sanitärteile.",
-            thumbnails: [],
+            thumbnails: [
+              {
+                storagePath: "products/testrohrschelle-1.webp",
+                width: 80,
+                height: 80,
+                altText: "Testrohrschelle",
+              },
+            ],
           },
         ],
         productCount: 3,
@@ -80,12 +87,19 @@ describe("getCategoryPage (FR-10, SC-10)", () => {
               height: 600,
               altText: "Testkeil mit Dämpfung, Seitenansicht",
             },
+            tileImage: {
+              storagePath: "products/testkeil-2.webp",
+              width: 465,
+              height: 200,
+              altText: "Testkeil mit Dämpfung, Draufsicht",
+            },
           },
           {
             slug: "testabdeckung",
             name: "Testabdeckung",
             subtitle: null,
             thumbnail: null,
+            tileImage: null,
           },
         ],
       },
@@ -150,14 +164,23 @@ describe("getProductPage (FR-10, SC-10)", () => {
       "99011 - 1",
       "99011 - 2",
     ]);
+    // The product page shows gallery images only; the thumbnail stays on the tiles.
     expect(page.media).toEqual([
       {
-        storagePath: "products/testkeil-1.webp",
-        width: 800,
-        height: 600,
-        altText: "Testkeil mit Dämpfung, Seitenansicht",
+        storagePath: "products/testkeil-2.webp",
+        width: 465,
+        height: 200,
+        altText: "Testkeil mit Dämpfung, Draufsicht",
         altOrigin: "human",
-        role: "thumbnail",
+        role: "gallery",
+      },
+      {
+        storagePath: "products/testkeil-3.webp",
+        width: 465,
+        height: 200,
+        altText: "Testkeil mit Dämpfung, Einbaubeispiel",
+        altOrigin: "human",
+        role: "gallery",
       },
     ]);
     // The only accessory's home product is a draft (Review Focus 3).

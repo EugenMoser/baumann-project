@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { pickThumbnail, publicMediaUrl } from "./media";
+import {
+  galleryRows,
+  pickThumbnail,
+  pickTileImage,
+  publicMediaUrl,
+} from "./media";
 
 const row = (
   role: "thumbnail" | "gallery",
@@ -44,5 +49,48 @@ describe("pickThumbnail", () => {
         ?.storagePath
     ).toBe("g0");
     expect(pickThumbnail([])).toBeNull();
+  });
+});
+
+describe("galleryRows / pickTileImage (4b SC-1)", () => {
+  const mixed = [
+    row("thumbnail", 0, "a.webp"),
+    row("gallery", 2, "c.webp"),
+    row("gallery", 1, "b.webp"),
+  ];
+
+  it("returns all gallery rows by sort order", () => {
+    expect(galleryRows(mixed).map((r) => r.media.storage_path)).toEqual([
+      "b.webp",
+      "c.webp",
+    ]);
+  });
+
+  it("falls back to the first thumbnail alone", () => {
+    expect(
+      galleryRows([row("thumbnail", 1, "y"), row("thumbnail", 0, "x")]).map(
+        (r) => r.media.storage_path
+      )
+    ).toEqual(["x"]);
+  });
+
+  it("returns an empty list without rows", () => {
+    expect(galleryRows([])).toEqual([]);
+    expect(pickTileImage([])).toBeNull();
+  });
+
+  it("picks the first gallery image for the tile", () => {
+    expect(pickTileImage(mixed)).toEqual({
+      storagePath: "b.webp",
+      width: 800,
+      height: 600,
+      altText: "b.webp",
+    });
+  });
+
+  it("uses the thumbnail when there is no gallery image", () => {
+    expect(pickTileImage([row("thumbnail", 0, "t.webp")])?.storagePath).toBe(
+      "t.webp"
+    );
   });
 });

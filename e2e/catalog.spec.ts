@@ -1,6 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const PRODUCT = "/produkte/moebelteile/testkeil-mit-daempfung";
+const PIPE = "/produkte/sanitaer/testrohrschelle";
+const ORDER_NUMBERS = ["99010 - 1", "99010 - 2", "99011 - 1", "99011 - 2"];
+
+// Text of the page markup without inline scripts (JSON-LD, RSC payload), so
+// a number only counts if it is rendered into the page itself.
+const pageText = (page: Page) =>
+  page.locator("body").evaluate((body) => {
+    const clone = body.cloneNode(true) as HTMLElement;
+    clone
+      .querySelectorAll("script, style, template")
+      .forEach((el) => el.remove());
+    return clone.textContent ?? "";
+  });
 
 test.describe("public catalog", () => {
   test("home lists the categories (SC-2)", async ({ page }) => {
@@ -64,7 +77,7 @@ test.describe("public catalog", () => {
     ).toBe(404);
   });
 
-  test("product page shows every article and order number (SC-4, SC-5)", async ({
+  test("product page shows every article, the default-colour numbers and all four in the text (SC-4, SC-5)", async ({
     page,
   }) => {
     await page.goto(PRODUCT);
@@ -73,9 +86,11 @@ test.describe("public catalog", () => {
     );
     await expect(page.locator("#artikel-99010")).toContainText("99010 - 1");
     await expect(page.locator("#artikel-99011")).toBeVisible();
-    for (const n of ["99010 - 1", "99010 - 2", "99011 - 1", "99011 - 2"]) {
+    for (const n of ["99010 - 1", "99011 - 1"]) {
       await expect(page.getByText(n, { exact: false }).first()).toBeVisible();
     }
+    const text = await pageText(page);
+    for (const n of ORDER_NUMBERS) expect(text).toContain(n);
   });
 
   test("colour picker switches the order numbers (SC-5)", async ({ page }) => {
@@ -84,16 +99,28 @@ test.describe("public catalog", () => {
     await expect(page.locator("#artikel-99010")).toContainText("99010 - 2");
   });
 
-  test("order box follows the colour and links to the inquiry (SC-4)", async ({
+  test("selection block follows article and colour and starts the inquiry (4b SC-4)", async ({
     page,
   }) => {
     await page.goto(PRODUCT);
+    await page.getByRole("combobox", { name: "Artikel" }).selectOption({
+      label: "99011 · 10 mm",
+    });
     await page.getByText("weiß", { exact: true }).first().click();
     const box = page.getByRole("region", { name: "Bestellung" });
-    await expect(box).toContainText("99010 - 2");
-    await expect(
-      box.getByRole("link", { name: /Anfrage stellen/ })
-    ).toHaveAttribute("href", /bestellnummer=99010%20-%202/);
+    await expect(box).toContainText("99011 - 2");
+    await box.getByRole("link", { name: /Anfrage stellen/ }).click();
+    await expect(page).toHaveURL(/\/anfrage\?bestellnummer=99011%20-%202$/);
+    await expect(page.getByLabel("Bestellnummer", { exact: true })).toHaveValue(
+      "99011 - 2"
+    );
+  });
+
+  test("article anchor preselects the article (4b SC-4)", async ({ page }) => {
+    await page.goto(`${PRODUCT}#artikel-99011`);
+    await expect(page.getByRole("combobox", { name: "Artikel" })).toHaveValue(
+      "99011"
+    );
   });
 
   test("product without colours shows no picker (SC-5)", async ({ page }) => {
@@ -111,13 +138,70 @@ test.describe("public catalog", () => {
     );
   });
 
-  test("seeded image renders with intrinsic size (SC-10)", async ({ page }) => {
+  test("gallery images keep their size and never grow; the list image is not repeated (4b SC-1)", async ({
+    page,
+  }) => {
     await page.goto(PRODUCT);
     const img = page.getByRole("img", {
-      name: "Testkeil mit Dämpfung, Seitenansicht",
+      name: "Testkeil mit Dämpfung, Draufsicht",
     });
-    await expect(img).toHaveAttribute("width", "800");
-    await expect(img).toHaveAttribute("height", "600");
+    await expect(img).toHaveAttribute("width", "465");
+    await expect(img).toHaveAttribute("height", "200");
+    const box = await img.boundingBox();
+    expect(box?.width).toBeLessThanOrEqual(465);
+    await expect(
+      page.getByRole("img", { name: "Testkeil mit Dämpfung, Seitenansicht" })
+    ).toHaveCount(0);
+
+    await page.goto(PIPE);
+    const pipe = page.getByRole("img", { name: "Testrohrschelle" });
+    const pipeBox = await pipe.boundingBox();
+    expect(pipeBox?.width).toBeLessThanOrEqual(80);
+  });
+
+  test("gallery slider steps to the second image (4b SC-3)", async ({
+    page,
+  }) => {
+    await page.goto(PRODUCT);
+    const next = page.getByRole("button", { name: "Nächstes Bild" });
+    await expect(page.getByText("1 / 2")).toBeVisible();
+    await next.click();
+    await expect(page.getByText("2 / 2")).toBeVisible();
+    await expect(next).toBeDisabled();
+    const region = page.getByRole("region", { name: "Produktbilder" });
+    const slide = region.getByRole("listitem").nth(1);
+    await expect(async () => {
+      const r = await region.boundingBox();
+      const s = await slide.boundingBox();
+      expect(s && r && s.x >= r.x - 1 && s.x < r.x + r.width).toBe(true);
+    }).toPass();
+  });
+
+  test("tiles show the first gallery image or the list image, fitted to its size (4b SC-2)", async ({
+    page,
+  }) => {
+    await page.goto("/produkte/moebelteile");
+    const tile = page.getByRole("link", { name: /Testkeil mit Dämpfung/ });
+    await expect(
+      tile.getByRole("img", { name: "Testkeil mit Dämpfung, Draufsicht" })
+    ).toHaveCount(1);
+
+    await page.goto("/produkte/sanitaer");
+    const pipeTile = page.getByRole("link", { name: /Testrohrschelle/ });
+    const box = await pipeTile.getByRole("img").first().boundingBox();
+    expect(box?.width).toBeLessThanOrEqual(80);
+  });
+
+  test("category register keeps the list image of a product (4b SC-2)", async ({
+    page,
+  }) => {
+    await page.goto("/produkte");
+    const row = page
+      .getByRole("listitem")
+      .filter({ hasText: "Möbelteile (Beispiel)" });
+    await expect(row.locator('img[src*="testkeil-1.webp"]')).toHaveCount(1);
+    await expect(row.locator('img[src*="testkeil-2.webp"]')).toHaveCount(0);
+    await expect(row.locator('img[src*="testkeil-3.webp"]')).toHaveCount(0);
   });
 
   test("every JSON-LD sku is visible on the page (SC-7)", async ({ page }) => {
@@ -126,7 +210,7 @@ test.describe("public catalog", () => {
       .locator('script[type="application/ld+json"]')
       .textContent();
     const data = JSON.parse(json ?? "{}") as { hasVariant?: { sku: string }[] };
-    const body = await page.locator("body").innerText();
+    const body = await pageText(page);
     expect(data.hasVariant?.length).toBe(4);
     for (const v of data.hasVariant ?? []) expect(body).toContain(v.sku);
   });
@@ -166,10 +250,33 @@ test.describe("public catalog", () => {
 test.describe("without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("all order numbers are in the HTML (SC-5)", async ({ page }) => {
+  test("all order numbers are in the HTML, the list opens by click (4b SC-5)", async ({
+    page,
+  }) => {
     await page.goto(PRODUCT);
-    const body = await page.locator("body").innerText();
-    for (const n of ["99010 - 1", "99010 - 2", "99011 - 1", "99011 - 2"])
-      expect(body).toContain(n);
+    await expect(
+      page.getByRole("heading", { name: "Alle Bestellnummern" })
+    ).toHaveCount(0);
+    const details = page.locator("details");
+    const text = (await details.textContent()) ?? "";
+    for (const n of ORDER_NUMBERS) expect(text).toContain(n);
+    await details.locator("summary").click();
+    for (const n of ORDER_NUMBERS)
+      await expect(
+        details.getByText(n, { exact: false }).first()
+      ).toBeVisible();
+  });
+
+  test("gallery slides are in the DOM and scroll sideways (4b SC-3)", async ({
+    page,
+  }) => {
+    await page.goto(PRODUCT);
+    const region = page.getByRole("region", { name: "Produktbilder" });
+    await expect(region.getByRole("listitem")).toHaveCount(2);
+    const { scrollWidth, clientWidth } = await region.evaluate((el) => ({
+      scrollWidth: el.scrollWidth,
+      clientWidth: el.clientWidth,
+    }));
+    expect(scrollWidth).toBeGreaterThan(clientWidth);
   });
 });
