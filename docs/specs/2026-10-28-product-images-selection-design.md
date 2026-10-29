@@ -1,6 +1,6 @@
 # Feature 4b — Product page: images & selection
 
-- **Status:** for approval (2026-10-28)
+- **Status:** approved (2026-10-28), implemented (2026-10-29)
 - **Roadmap:** feature 4b ([roadmap](../roadmap.md))
 - **Estimate:** 9 h
 - **Builds on:** feature 4 (catalog pages, variant matrix, JSON-LD), feature
@@ -204,8 +204,7 @@ Labels describe where an image appears; role values in the database stay
 
 ### D7 — Follow-ups from feature 4a
 
-Taken in because the files change anyway
-(`.claude/notes/2026-10-19_nacharbeiten.md`, private):
+Taken in from the feature 4a follow-up list because the files change anyway:
 
 - Square tile corners and the shared media select constant (D2).
 - The highlight colour `#fff6ef` in `components/catalog/article-table.tsx`
@@ -319,4 +318,8 @@ None.
 
 ## Deviations
 
-None yet.
+- The slider track is a `div` region with a plain `ul` inside, so the slides keep list semantics (D3 names only "a focusable region").
+- When a button press reaches an end, focus moves to the opposite button, because the pressed one becomes disabled (WCAG 2.4.3).
+- The colour picker's own live-region sentence was removed; the order number's `aria-live` region announces every change once (D4).
+- The selection provider is keyed by product, so client-side navigation between products starts with the default selection.
+- Tile grids use one explicit column below `sm`; otherwise a 465 px tile image widened the single grid column beyond 360 px (D6 of feature 4a).
