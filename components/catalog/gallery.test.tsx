@@ -105,6 +105,83 @@ describe("Gallery (4b SC-3)", () => {
     ).toBeDisabled();
   });
 
+  function stubTrack() {
+    const track = screen.getByRole("region", { name: "Produktbilder" });
+    Object.defineProperty(track, "clientWidth", {
+      value: 300,
+      configurable: true,
+    });
+    Object.defineProperty(track, "scrollLeft", {
+      value: 0,
+      writable: true,
+      configurable: true,
+    });
+    track.scrollTo = vi.fn();
+    return track;
+  }
+
+  function renderThree() {
+    render(
+      <Gallery
+        media={[media(1, 465, 200), media(2, 800, 600), media(3, 465, 200)]}
+        name="Testkeil"
+      />
+    );
+    return stubTrack();
+  }
+
+  it("(4b SC-3) moves focus to the other button when the next button reaches the last slide", () => {
+    const track = renderThree();
+    const prev = screen.getByRole("button", { name: "Vorheriges Bild" });
+    const next = screen.getByRole("button", { name: "Nächstes Bild" });
+    next.focus();
+    expect(next).toHaveFocus();
+
+    fireEvent.click(next);
+    track.scrollLeft = 300;
+    fireEvent.scroll(track);
+    expect(next).toBeEnabled();
+    expect(next).toHaveFocus();
+
+    fireEvent.click(next);
+    track.scrollLeft = 600;
+    fireEvent.scroll(track);
+    expect(next).toBeDisabled();
+    expect(prev).toBeEnabled();
+    expect(prev).toHaveFocus();
+  });
+
+  it("(4b SC-3) moves focus to the other button when the previous button reaches the first slide", () => {
+    const track = renderThree();
+    const prev = screen.getByRole("button", { name: "Vorheriges Bild" });
+    const next = screen.getByRole("button", { name: "Nächstes Bild" });
+    track.scrollLeft = 300;
+    fireEvent.scroll(track);
+    prev.focus();
+    expect(prev).toHaveFocus();
+
+    fireEvent.click(prev);
+    track.scrollLeft = 0;
+    fireEvent.scroll(track);
+    expect(prev).toBeDisabled();
+    expect(next).toBeEnabled();
+    expect(next).toHaveFocus();
+  });
+
+  it("(4b SC-3) keeps focus on the track when scrolling it reaches an end", () => {
+    const track = renderThree();
+    track.focus();
+    expect(track).toHaveFocus();
+
+    track.scrollLeft = 600;
+    fireEvent.scroll(track);
+    expect(screen.getByText("3 / 3")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Nächstes Bild" })
+    ).toBeDisabled();
+    expect(track).toHaveFocus();
+  });
+
   it("(4b SC-3) shows the fallback box without images", () => {
     render(<Gallery media={[]} name="Testkeil" />);
     expect(screen.getByText("Kein Bild")).toBeInTheDocument();
