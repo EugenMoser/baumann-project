@@ -61,7 +61,9 @@ committed with real values.
    files, and local database data (run
    `pnpm catalog:remove --confirm 127.0.0.1:54321` first so local Storage
    files are removed too, then `pnpm db:reset`). Check other machines that may
-   hold a snapshot or a copy of the handover snapshot.
+   hold a snapshot or a copy of the handover snapshot. If a copy lies in a
+   cloud-synced folder, also empty the provider's trash or recently deleted
+   items so the copy is gone there too.
 
 6. **Handover snapshot and backups on the VPS (by day 14).** There are no daily
    backups. The handover snapshot lives in

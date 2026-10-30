@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 6 of 10 features done (6 = admin, in two parts). Next: feature 4a (UI polish), then 4b (product images), then 7 (AI text assistant).
+Active. MVP: 8 of 12 features done (6a/6b count as one). Next: feature 4b (product page: images & selection), then 6c (admin editor usability), then 7 (AI text assistant).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack

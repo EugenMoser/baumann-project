@@ -339,8 +339,9 @@ there is no scheduled backup. A run writes:
 - `SHA256SUMS`: checksums of both files.
 
 The snapshot exists twice: on the VPS and as one copy on a developer machine
-(see "Copy to a developer machine"). There is no other off-site copy; if both
-are lost, the snapshot is gone.
+(see "Copy to a developer machine"). If that copy lies in a cloud-synced
+folder, the cloud provider holds it as well; otherwise there is no other
+off-site copy, and if both are lost, the snapshot is gone.
 
 ### Create the snapshot
 
@@ -349,6 +350,19 @@ From the repository root on a developer machine:
 ```bash
 scp scripts/ops/vps-backup.sh root@<vps-host>:/usr/local/sbin/baumann-backup
 ```
+
+Without SSH access from the developer machine (e.g. in the hosting provider's
+browser terminal), fetch the script as root on the VPS from the public
+repository. `<commit>` is a pushed commit with the current script (e.g.
+`git rev-parse origin/main`), `<sha256>` the checksum of the script in a
+checkout of that commit (`shasum -a 256 scripts/ops/vps-backup.sh`):
+
+```bash
+curl -fsSL -o /tmp/baumann-backup https://raw.githubusercontent.com/<owner>/<repo>/<commit>/scripts/ops/vps-backup.sh
+echo "<sha256>  /tmp/baumann-backup" | sha256sum -c && install -m 700 /tmp/baumann-backup /usr/local/sbin/baumann-backup && rm /tmp/baumann-backup
+```
+
+Stop if `sha256sum` does not print `OK`; the script is then not installed.
 
 On the VPS as root (`<YYYY-MM-DD>` is the UTC date of the run, shown in the
 summary line):
@@ -405,15 +419,15 @@ test". They are the reference for every restore test and the handover.
 ### Copy to a developer machine
 
 The second copy of the handover snapshot. `<handover copy dir>` lies outside
-the repository:
+the repository; inside the quotes write `$HOME` instead of `~`:
 
 ```bash
-scp -r root@<vps-host>:/var/backups/baumann-demo/handover-<YYYY-MM-DD> <handover copy dir>/
-cd <handover copy dir>/handover-<YYYY-MM-DD> && shasum -a 256 -c SHA256SUMS
+scp -r root@<vps-host>:/var/backups/baumann-demo/handover-<YYYY-MM-DD> "<handover copy dir>/"
+cd "<handover copy dir>/handover-<YYYY-MM-DD>" && shasum -a 256 -c SHA256SUMS
 ```
 
 Keep the copy until the handover or a revocation, then delete it
-(`rm -r <handover copy dir>`; on revocation
+(`rm -r "<handover copy dir>"`; on revocation
 [`docs/revocation.md`](revocation.md), step 5).
 
 ### Restore test
@@ -424,22 +438,41 @@ replaces all data of the local stack with customer data.**
 
 ```bash
 pnpm db:start
-B=<handover copy dir>/handover-<YYYY-MM-DD>
-docker exec -i supabase_db_baumann-demo pg_restore -h 127.0.0.1 -U supabase_admin -d postgres --clean --if-exists < "$B/db.dump"
-tar -tzf "$B/storage.tar.gz" > /dev/null && echo storage archive ok
+pnpm db:reset
+B="<handover copy dir>/handover-<YYYY-MM-DD>"
+docker exec -i supabase_db_baumann-demo pg_restore -h 127.0.0.1 -U supabase_admin -d postgres --clean --if-exists < "$B/db.dump" 2> "$B/restore.err"
+grep "^pg_restore: error" "$B/restore.err" | grep -vE "already exists|cannot drop|multiple primary keys"
+grep '^Command was:.* public\.' "$B/restore.err"
+tar -tvzf "$B/storage.tar.gz" | grep -c '^-'
+gzip -dc "$B/storage.tar.gz" | grep -ac 'SCHILY.xattr.user.supabase.content-type='
 ```
 
-`pg_restore` exits `1` and reports "errors ignored on restore" for
-Supabase-internal objects (missing roles, realtime partitions); that is
-expected. Compare the row counts (query under "Check", with
-`supabase_db_baumann-demo` as container) with the counts recorded at creation.
-Afterwards `pnpm db:reset` returns the local stack to the seed; do not keep
-customer data there. Record the date, the snapshot, the counts at creation (in
-query order) and the result:
+The `pnpm db:reset` before the restore matters: the restore cannot drop
+`auth.users`, so users left over from earlier local test runs would stay and
+the `auth.users` count would not match.
 
-| Date       | Snapshot   | Row counts at creation | Result     |
-| ---------- | ---------- | ---------------------- | ---------- |
-| _(record)_ | _(record)_ | _(record)_             | _(record)_ |
+`pg_restore` exits `1` and writes "errors ignored on restore" to
+`restore.err`. Expected are only errors on objects that the local Supabase
+manages itself and that already exist: "already exists", "cannot drop" and
+"multiple primary keys" for the schemas `auth`, `storage`, `realtime`,
+`_realtime` and `supabase_migrations` and their tables and types (28 errors on
+2026-10-22). The two `grep` lines after `pg_restore` must print nothing: the
+first shows every other error (an error such as "COPY failed" means data is
+missing), the second every failed command on a `public` object (then the
+catalog was not replaced).
+
+The last two commands count the files in the Storage archive and the content
+types stored with them; both must equal the `storage.objects` count. Compare
+the row counts (query under "Check", with `supabase_db_baumann-demo` as
+container) with the counts recorded at creation; they must match exactly.
+Afterwards `pnpm db:reset` returns the local stack to the seed and
+`rm "$B/restore.err"` removes the log, which can contain customer data; do not
+keep customer data in the local stack. Record the date, the snapshot, the
+counts at creation (in query order) and the result:
+
+| Date       | Snapshot            | Row counts at creation | Result                                                                                    |
+| ---------- | ------------------- | ---------------------- | ----------------------------------------------------------------------------------------- |
+| 2026-10-22 | handover-2026-10-22 | 126, 282, 270, 276, 1  | ok: counts match, 28 expected restore errors only, 276 files with content type in archive |
 
 ### Handover
 
