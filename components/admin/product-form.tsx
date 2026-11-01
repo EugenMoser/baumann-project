@@ -9,7 +9,7 @@ import { idleState, type FormState } from "@/lib/admin/form";
 import { STATUS_LABEL, type ProductStatus } from "@/lib/admin/labels";
 import type { EditorOptions } from "@/lib/admin/products";
 import type { ProductValues } from "@/lib/admin/schemas";
-import { slugify } from "@/lib/catalog/slug";
+import { AddressLine } from "./address-line";
 import { DeleteProductButton } from "./delete-product-button";
 import { describedBy, Field, selectClass } from "./field";
 
@@ -26,6 +26,8 @@ type Props = {
   options: EditorOptions;
   productId: number | null;
   savedStatus: ProductStatus | null;
+  /** Public path of a saved product; null on create. */
+  address: string | null;
 };
 
 export function ProductForm({
@@ -35,22 +37,20 @@ export function ProductForm({
   options,
   productId,
   savedStatus,
+  address,
 }: Props) {
   const [state, formAction, pending] = useActionState(
     action,
     idleState(initial)
   );
   const [name, setName] = useState(state.values.name);
-  const [slug, setSlug] = useState(state.values.slug);
-  const slugTouched = useRef(productId !== null);
   const seen = useRef(state);
 
-  // Re-sync controlled fields with each action response (e.g. a derived slug).
+  // Re-sync the controlled name with each action response.
   const [syncedState, setSyncedState] = useState(state);
   if (syncedState !== state) {
     setSyncedState(state);
     setName(state.values.name);
-    setSlug(state.values.slug);
   }
 
   useEffect(() => {
@@ -61,10 +61,6 @@ export function ProductForm({
 
   const v = state.values;
   const e = state.fieldErrors;
-  const slugHint =
-    productId !== null
-      ? "Eine Änderung von Slug oder Kategorie ändert die öffentliche Adresse."
-      : "Wird aus dem Namen erzeugt.";
   const creating = productId === null;
   const statusHint = creating
     ? "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
@@ -150,25 +146,13 @@ export function ProductForm({
             value={name}
             aria-invalid={Boolean(e.name)}
             aria-describedby={describedBy("name", e.name)}
-            onChange={(ev) => {
-              setName(ev.target.value);
-              if (!slugTouched.current) setSlug(slugify(ev.target.value));
-            }}
+            onChange={(ev) => setName(ev.target.value)}
           />
         </Field>
-        <Field id="slug" label="Slug" error={e.slug} hint={slugHint}>
-          <Input
-            id="slug"
-            name="slug"
-            value={slug}
-            aria-invalid={Boolean(e.slug)}
-            aria-describedby={describedBy("slug", e.slug, slugHint)}
-            onChange={(ev) => {
-              slugTouched.current = true;
-              setSlug(ev.target.value);
-            }}
-          />
-        </Field>
+        <AddressLine
+          address={address}
+          hint="Eine Änderung der Kategorie ändert die Adresse."
+        />
         {text("subtitle", "Untertitel")}
         {text("sortOrder", "Reihenfolge")}
         <div className="md:col-span-2">

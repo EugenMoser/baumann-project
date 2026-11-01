@@ -62,7 +62,6 @@ export const MATERIAL_IN_USE = "Das Material wird noch verwendet.";
 export const UPLOAD_FAILED = "Das Bild konnte nicht hochgeladen werden.";
 
 export const CONFLICT_MESSAGES: Record<string, string> = {
-  slug: "Dieser Slug ist in der Kategorie schon vergeben.",
   articleNumber: "Diese Artikelnummer gibt es schon.",
 };
 

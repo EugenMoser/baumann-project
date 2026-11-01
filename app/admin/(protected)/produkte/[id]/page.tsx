@@ -94,6 +94,7 @@ export default async function EditProductPage({
         options={options}
         productId={product.id}
         savedStatus={product.status}
+        address={productPath(product.categorySlug, product.slug)}
       />
       <ArticleSection
         productId={product.id}

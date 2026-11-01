@@ -1,3 +1,4 @@
+import { firstFreeSlug, slugBase } from "@/lib/catalog/slug";
 import type { ContentOrigin } from "@/lib/catalog/types";
 import { err, ok, type Result } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
@@ -13,6 +14,7 @@ import {
   type PublishStats,
 } from "./product-rules";
 import type { ProductInput, ProductValues } from "./schemas";
+import { takenProductSlugs, withSlugRetry } from "./slugs";
 
 export type ProductListItem = {
   id: number;
@@ -275,7 +277,6 @@ export function toProductValues(
   return {
     categoryId: String(product.categoryId),
     name: product.name,
-    slug: product.slug,
     subtitle: product.subtitle ?? "",
     description: product.description ?? "",
     materialId: product.materialId === null ? "" : String(product.materialId),
@@ -318,7 +319,6 @@ export async function saveProduct(
   const fields = {
     category_id: input.categoryId,
     name: input.name,
-    slug: input.slug,
     subtitle: input.subtitle,
     description: input.description,
     material_id: input.materialId,
@@ -337,19 +337,33 @@ export async function saveProduct(
   if (id === null) {
     if (input.status === "published")
       return err({ kind: "invalid", message: PUBLISH_NEEDS_ARTICLE });
-    const { data, error } = await client
-      .from("product")
-      .insert({ ...fields, ...productOrigins(null, next) })
-      .select("id")
-      .single();
-    if (error) return err(fromPg(error, PRODUCT_CONFLICTS, STALE_SELECTION));
-    return ok({ id: data.id });
+    const base = slugBase(input.name);
+    return withSlugRetry(async () => {
+      const taken = await takenProductSlugs(
+        client,
+        input.categoryId,
+        base,
+        null
+      );
+      if (!taken.ok) return taken;
+      const { data, error } = await client
+        .from("product")
+        .insert({
+          ...fields,
+          slug: firstFreeSlug(base, taken.value),
+          ...productOrigins(null, next),
+        })
+        .select("id")
+        .single();
+      if (error) return err(fromPg(error, PRODUCT_CONFLICTS, STALE_SELECTION));
+      return ok({ id: data.id });
+    });
   }
 
   const { data: prev, error: prevError } = await client
     .from("product")
     .select(
-      "description, seo_title, seo_description, description_origin, seo_origin"
+      "category_id, slug, description, seo_title, seo_description, description_origin, seo_origin"
     )
     .eq("id", id)
     .maybeSingle();
@@ -371,14 +385,39 @@ export async function saveProduct(
     },
     next
   );
-  const { data, error } = await client
-    .from("product")
-    .update({ ...fields, ...origins })
-    .eq("id", id)
-    .select("id");
-  if (error) return err(fromPg(error, PRODUCT_CONFLICTS, STALE_SELECTION));
-  if (data.length === 0) return err({ kind: "not_found" });
-  return ok({ id });
+  // The slug is never rewritten, except to keep it unique when the product
+  // moves to another category (6c D1).
+  const update = async (
+    slug: string | null
+  ): Promise<Result<{ id: number }, AdminError>> => {
+    const { data, error } = await client
+      .from("product")
+      .update({
+        ...fields,
+        ...(slug === null ? {} : { slug }),
+        ...origins,
+      })
+      .eq("id", id)
+      .select("id");
+    if (error) return err(fromPg(error, PRODUCT_CONFLICTS, STALE_SELECTION));
+    if (data.length === 0) return err({ kind: "not_found" });
+    return ok({ id });
+  };
+  if (prev.category_id === input.categoryId) return update(null);
+  return withSlugRetry(async () => {
+    const taken = await takenProductSlugs(
+      client,
+      input.categoryId,
+      prev.slug,
+      id
+    );
+    if (!taken.ok) return taken;
+    return update(
+      taken.value.includes(prev.slug)
+        ? firstFreeSlug(prev.slug, taken.value)
+        : prev.slug
+    );
+  });
 }
 
 export async function deleteProduct(

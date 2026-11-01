@@ -1,5 +1,6 @@
 import { err, ok, type Result } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
+import { firstFreeSlug, slugBase } from "@/lib/catalog/slug";
 import type { CategoryInput, CategoryValues } from "./category-schema";
 import {
   CATEGORY_IN_USE,
@@ -7,6 +8,7 @@ import {
   STALE_SELECTION,
   type AdminError,
 } from "./errors";
+import { takenCategorySlugs, withSlugRetry } from "./slugs";
 
 export type CategoryListItem = {
   id: number;
@@ -52,7 +54,12 @@ export async function getCategory(
   id: number
 ): Promise<
   Result<
-    { id: number; productCount: number; values: CategoryValues },
+    {
+      id: number;
+      productCount: number;
+      slug: string;
+      values: CategoryValues;
+    },
     AdminError
   >
 > {
@@ -68,9 +75,9 @@ export async function getCategory(
   return ok({
     id: data.id,
     productCount: countOf(data.product),
+    slug: data.slug,
     values: {
       name: data.name,
-      slug: data.slug,
       introText: data.intro_text,
       seoTitle: data.seo_title ?? "",
       seoDescription: data.seo_description ?? "",
@@ -90,24 +97,44 @@ export async function saveCategory(
   id: number | null,
   input: CategoryInput
 ): Promise<Result<{ id: number }, AdminError>> {
-  const { data, error } = await client.rpc("admin_save_category", {
-    payload: {
-      ...(id === null ? {} : { id }),
-      name: input.name,
-      slug: input.slug,
-      intro_text: input.introText,
-      seo_title: input.seoTitle,
-      seo_description: input.seoDescription,
-      sort_order: input.sortOrder,
-      attributes: input.attributes.map((a) => ({
-        attribute_id: a.attributeId,
-        sort_order: a.sortOrder,
-      })),
-    },
+  const write = async (slug: string) => {
+    const { data, error } = await client.rpc("admin_save_category", {
+      payload: {
+        ...(id === null ? {} : { id }),
+        name: input.name,
+        slug,
+        intro_text: input.introText,
+        seo_title: input.seoTitle,
+        seo_description: input.seoDescription,
+        sort_order: input.sortOrder,
+        attributes: input.attributes.map((a) => ({
+          attribute_id: a.attributeId,
+          sort_order: a.sortOrder,
+        })),
+      },
+    });
+    if (error)
+      return err(fromPg(error, { category_slug_key: "slug" }, STALE_SELECTION));
+    return ok({ id: data });
+  };
+
+  if (id !== null) {
+    // The RPC writes the slug on every update; pass the stored one (6c D1).
+    const { data: prev, error } = await client
+      .from("category")
+      .select("slug")
+      .eq("id", id)
+      .maybeSingle();
+    if (error) return err(fromPg(error));
+    if (prev === null) return err({ kind: "not_found" });
+    return write(prev.slug);
+  }
+  const base = slugBase(input.name);
+  return withSlugRetry(async () => {
+    const taken = await takenCategorySlugs(client, base);
+    if (!taken.ok) return taken;
+    return write(firstFreeSlug(base, taken.value));
   });
-  if (error)
-    return err(fromPg(error, { category_slug_key: "slug" }, STALE_SELECTION));
-  return ok({ id: data });
 }
 
 export async function deleteCategory(

@@ -20,7 +20,7 @@ const options = {
 const noop = async <S,>(s: S) => s;
 
 describe("ProductForm (SC-6, SC-12)", () => {
-  it("fills the slug from the name on create until the slug is edited", () => {
+  it("renders no slug input and shows the create hint (6c SC-2)", () => {
     render(
       <ProductForm
         action={noop}
@@ -29,25 +29,47 @@ describe("ProductForm (SC-6, SC-12)", () => {
         options={options}
         productId={null}
         savedStatus={null}
+        address={null}
       />
     );
-    fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "Schließkeil 8 mm" },
-    });
-    expect(screen.getByLabelText("Slug")).toHaveValue("schliesskeil-8-mm");
-    fireEvent.change(screen.getByLabelText("Slug"), {
-      target: { value: "eigener-slug" },
-    });
-    fireEvent.change(screen.getByLabelText("Name"), {
-      target: { value: "Anders" },
-    });
-    expect(screen.getByLabelText("Slug")).toHaveValue("eigener-slug");
+    expect(document.querySelector('input[name="slug"]')).toBeNull();
+    expect(
+      screen.getByText("Die Adresse entsteht beim Anlegen aus dem Namen.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Adresse:/)).toBeNull();
   });
-  it("shows the URL hint and no delete button for a published product", () => {
+  it("shows the address line and the category hint on edit (6c SC-2)", () => {
+    const initial = {
+      ...emptyProductValues(),
+      name: "Testkeil mit Dämpfung",
+      categoryId: "1",
+    };
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={initial}
+        options={options}
+        productId={7}
+        savedStatus="draft"
+        address="/produkte/moebelteile/testkeil-mit-daempfung"
+      />
+    );
+    expect(document.querySelector('input[name="slug"]')).toBeNull();
+    expect(
+      screen.getByText("Adresse: /produkte/moebelteile/testkeil-mit-daempfung")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Eine Änderung der Kategorie ändert die Adresse.")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Die Adresse entsteht beim Anlegen aus dem Namen.")
+    ).toBeNull();
+  });
+  it("shows no delete button for a published product", () => {
     const initial = {
       ...emptyProductValues(),
       name: "X",
-      slug: "x",
       categoryId: "1",
       status: "published",
     };
@@ -59,11 +81,9 @@ describe("ProductForm (SC-6, SC-12)", () => {
         options={options}
         productId={7}
         savedStatus="published"
+        address="/produkte/moebelteile/x"
       />
     );
-    expect(
-      screen.getByText(/ändert die öffentliche Adresse/)
-    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Produkt löschen" })
     ).toBeNull();
@@ -72,7 +92,6 @@ describe("ProductForm (SC-6, SC-12)", () => {
     const initial = {
       ...emptyProductValues(),
       name: "X",
-      slug: "x",
       categoryId: "1",
     };
     const action = vi.fn(async () => ({
@@ -89,6 +108,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         options={options}
         productId={7}
         savedStatus="draft"
+        address="/produkte/moebelteile/x"
       />
     );
     fireEvent.change(screen.getByLabelText("Status"), {
@@ -105,7 +125,6 @@ describe("ProductForm (SC-6, SC-12)", () => {
     const initial = {
       ...emptyProductValues(),
       name: "X",
-      slug: "x",
       categoryId: "1",
     };
     render(
@@ -116,6 +135,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         options={options}
         productId={7}
         savedStatus="draft"
+        address="/produkte/moebelteile/x"
       />
     );
     expect(
@@ -131,6 +151,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         options={options}
         productId={null}
         savedStatus={null}
+        address={null}
       />
     );
     const select = screen.getByLabelText("Status");
@@ -148,7 +169,6 @@ describe("ProductForm (SC-6, SC-12)", () => {
     const initial = {
       ...emptyProductValues(),
       name: "X",
-      slug: "x",
       categoryId: "1",
     };
     render(
@@ -159,6 +179,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         options={options}
         productId={7}
         savedStatus="draft"
+        address="/produkte/moebelteile/x"
       />
     );
     const values = within(screen.getByLabelText("Status"))

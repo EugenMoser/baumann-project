@@ -1,10 +1,14 @@
 import { z } from "zod";
-import { SLUG_PATTERN, slugify } from "@/lib/catalog/slug";
-import { integer, optionalText, requiredText } from "./schemas";
+import {
+  integer,
+  NAME_NEEDS_CHARACTER,
+  nameHasSlug,
+  optionalText,
+  requiredText,
+} from "./schemas";
 
 export const CATEGORY_FIELDS = [
   "name",
-  "slug",
   "introText",
   "seoTitle",
   "seoDescription",
@@ -15,13 +19,8 @@ export type CategoryValues = Record<CategoryField, string> & {
   attributes: { attributeId: string; sortOrder: string }[];
 };
 
-export const CATEGORY_CONFLICTS: Record<string, string> = {
-  slug: "Dieser Slug ist schon vergeben.",
-};
-
 export const emptyCategoryValues = (): CategoryValues => ({
   name: "",
-  slug: "",
   introText: "",
   seoTitle: "",
   seoDescription: "",
@@ -45,12 +44,10 @@ export function readCategoryForm(formData: FormData): CategoryValues {
 }
 
 export const categorySchema = z.object({
-  name: requiredText(120, "Bitte einen Namen eingeben."),
-  slug: z
-    .string()
-    .trim()
-    .max(120, "Höchstens 120 Zeichen.")
-    .regex(SLUG_PATTERN, "Nur Kleinbuchstaben, Ziffern und Bindestriche."),
+  name: requiredText(120, "Bitte einen Namen eingeben.").refine(
+    nameHasSlug,
+    NAME_NEEDS_CHARACTER
+  ),
   introText: z.string().trim().max(10_000, "Höchstens 10000 Zeichen."),
   seoTitle: optionalText(70),
   seoDescription: optionalText(160),
@@ -71,11 +68,3 @@ export const categorySchema = z.object({
     ),
 });
 export type CategoryInput = z.output<typeof categorySchema>;
-
-export function withDefaultCategorySlug(
-  values: CategoryValues
-): CategoryValues {
-  return values.slug.trim() === ""
-    ? { ...values, slug: slugify(values.name) }
-    : values;
-}

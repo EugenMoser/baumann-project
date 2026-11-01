@@ -1,16 +1,15 @@
 // lib/admin/category-schema.test.ts
 import { describe, expect, it } from "vitest";
 import {
+  CATEGORY_FIELDS,
   categorySchema,
   emptyCategoryValues,
   readCategoryForm,
-  withDefaultCategorySlug,
 } from "./category-schema";
 
 const valid = {
   ...emptyCategoryValues(),
   name: "Neue Kategorie",
-  slug: "neue-kategorie",
 };
 
 describe("categorySchema (SC-10)", () => {
@@ -21,18 +20,16 @@ describe("categorySchema (SC-10)", () => {
     });
     expect(parsed).toMatchObject({
       name: "Neue Kategorie",
-      slug: "neue-kategorie",
       introText: "",
       seoTitle: null,
       sortOrder: 0,
       attributes: [{ attributeId: 2, sortOrder: 1 }],
     });
   });
-  it("rejects empty name, invalid slug and long SEO title with German messages", () => {
+  it("rejects empty name and long SEO title with German messages", () => {
     const result = categorySchema.safeParse({
       ...valid,
       name: " ",
-      slug: "Groß",
       seoTitle: "x".repeat(71),
     });
     expect(result.success).toBe(false);
@@ -42,20 +39,28 @@ describe("categorySchema (SC-10)", () => {
     expect(messages).toEqual(
       expect.arrayContaining([
         "Bitte einen Namen eingeben.",
-        "Nur Kleinbuchstaben, Ziffern und Bindestriche.",
         "Höchstens 70 Zeichen.",
       ])
     );
   });
-  it("fills the slug from the name", () => {
-    expect(
-      withDefaultCategorySlug({ ...valid, slug: "", name: "Möbel & Türen" })
-        .slug
-    ).toBe("moebel-tueren");
+  it("rejects a name without letters or digits (6c SC-1)", () => {
+    const result = categorySchema.safeParse({ ...valid, name: "!!!" });
+    expect(result.success).toBe(false);
+    if (!result.success)
+      expect(result.error.issues[0]?.message).toBe(
+        "Der Name braucht mindestens einen Buchstaben oder eine Ziffer."
+      );
   });
 });
 
 describe("readCategoryForm", () => {
+  it("ignores a slug entry (6c SC-1)", () => {
+    const fd = new FormData();
+    fd.set("name", "X");
+    fd.set("slug", "eigener-slug");
+    expect(readCategoryForm(fd)).not.toHaveProperty("slug");
+    expect(CATEGORY_FIELDS).not.toContain("slug");
+  });
   it("reads checked attributes with their sort order", () => {
     const fd = new FormData();
     fd.set("name", "X");

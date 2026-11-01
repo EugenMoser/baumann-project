@@ -3,10 +3,8 @@
 import { redirect } from "next/navigation";
 import { deleteCategory, saveCategory } from "@/lib/admin/categories";
 import {
-  CATEGORY_CONFLICTS,
   categorySchema,
   readCategoryForm,
-  withDefaultCategorySlug,
   type CategoryValues,
 } from "@/lib/admin/category-schema";
 import { zodFieldErrors, type FormState } from "@/lib/admin/form";
@@ -16,7 +14,7 @@ export async function saveCategoryAction(
   _prev: FormState<CategoryValues>,
   formData: FormData
 ): Promise<FormState<CategoryValues>> {
-  const values = withDefaultCategorySlug(readCategoryForm(formData));
+  const values = readCategoryForm(formData);
   const parsed = categorySchema.safeParse(values);
   if (!parsed.success)
     return {
@@ -33,11 +31,8 @@ export async function saveCategoryAction(
       fieldErrors: {},
       formError: "Ungültige Anfrage.",
     };
-  const done = await runWrite(
-    values,
-    "[admin] save category",
-    (client) => saveCategory(client, id, parsed.data),
-    CATEGORY_CONFLICTS
+  const done = await runWrite(values, "[admin] save category", (client) =>
+    saveCategory(client, id, parsed.data)
   );
   if ("state" in done) return done.state;
   if (id === null) redirect(`/admin/kategorien/${done.value.id}`);

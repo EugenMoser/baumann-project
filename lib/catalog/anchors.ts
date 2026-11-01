@@ -4,6 +4,10 @@ export function articleAnchorId(articleNumber: string): string {
   return `artikel-${articleNumber.trim().replace(/[\s/]+/g, "-")}`;
 }
 
+export function categoryPath(categorySlug: string): string {
+  return `/produkte/${encodeURIComponent(categorySlug)}`;
+}
+
 export function productPath(categorySlug: string, productSlug: string): string {
   return `/produkte/${encodeURIComponent(categorySlug)}/${encodeURIComponent(productSlug)}`;
 }

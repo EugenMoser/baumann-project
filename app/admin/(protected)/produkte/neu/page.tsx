@@ -24,6 +24,7 @@ export default async function NewProductPage() {
         options={options}
         productId={null}
         savedStatus={null}
+        address={null}
       />
     </>
   );

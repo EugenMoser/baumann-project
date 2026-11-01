@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { CategoryValues } from "@/lib/admin/category-schema";
 import { idleState, type FormState } from "@/lib/admin/form";
 import type { AttributeOption } from "@/lib/admin/products";
-import { slugify } from "@/lib/catalog/slug";
+import { AddressLine } from "./address-line";
 import { describedBy, Field } from "./field";
 
 type SaveAction = (
@@ -21,6 +21,8 @@ type Props = {
   initial: CategoryValues;
   attributes: AttributeOption[];
   categoryId: number | null;
+  /** Public path of a saved category; null on create. */
+  address: string | null;
 };
 
 export function CategoryForm({
@@ -28,6 +30,7 @@ export function CategoryForm({
   initial,
   attributes,
   categoryId,
+  address,
 }: Props) {
   const run: SaveAction = async (prev, formData) => {
     const next = await action(prev, formData);
@@ -37,8 +40,6 @@ export function CategoryForm({
   const [state, formAction, pending] = useActionState(run, idleState(initial));
   const v = state.values;
   const e = state.fieldErrors;
-  const [slug, setSlug] = useState(v.slug);
-  const [slugTouched, setSlugTouched] = useState(categoryId !== null);
   const assigned = new Map(
     v.attributes.map((a) => [a.attributeId, a.sortOrder])
   );
@@ -69,37 +70,9 @@ export function CategoryForm({
           defaultValue={v.name}
           aria-invalid={Boolean(e.name)}
           aria-describedby={describedBy("name", e.name)}
-          onChange={(ev) => {
-            if (!slugTouched) setSlug(slugify(ev.target.value));
-          }}
         />
       </Field>
-      <Field
-        id="slug"
-        label="Slug"
-        error={e.slug}
-        hint={
-          categoryId !== null
-            ? "Eine Änderung ändert die URLs der Kategorie und aller ihrer Produkte."
-            : undefined
-        }
-      >
-        <Input
-          id="slug"
-          name="slug"
-          value={slug}
-          aria-invalid={Boolean(e.slug)}
-          aria-describedby={describedBy(
-            "slug",
-            e.slug,
-            categoryId !== null ? "hint" : undefined
-          )}
-          onChange={(ev) => {
-            setSlugTouched(true);
-            setSlug(ev.target.value);
-          }}
-        />
-      </Field>
+      <AddressLine address={address} />
       <Field id="introText" label="Intro-Text (Markdown)" error={e.introText}>
         <Textarea
           id="introText"

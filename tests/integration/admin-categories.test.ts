@@ -37,7 +37,6 @@ describe("categories (SC-10)", () => {
     const input = categorySchema.parse({
       ...emptyCategoryValues(),
       name: "Int Kategorie",
-      slug: "int-kategorie",
       attributes: [{ attributeId: "1", sortOrder: "0" }],
     });
     const saved = await saveCategory(admin, null, input);
@@ -54,7 +53,6 @@ describe("categories (SC-10)", () => {
     const input = categorySchema.parse({
       ...emptyCategoryValues(),
       name: "Int Verwaist",
-      slug: "int-verwaist",
       attributes: [{ attributeId: "999999", sortOrder: "0" }],
     });
     expect(await saveCategory(admin, null, input)).toEqual({
@@ -66,16 +64,32 @@ describe("categories (SC-10)", () => {
     });
   });
 
-  it("maps a taken slug and a used category", async () => {
-    const input = categorySchema.parse({
-      ...emptyCategoryValues(),
-      name: "X",
-      slug: "sanitaer",
-    });
-    expect(await saveCategory(admin, null, input)).toEqual({
-      ok: false,
-      error: { kind: "conflict", field: "slug" },
-    });
+  it("numbers a second category with the same name and keeps the slug on rename (6c SC-1)", async () => {
+    const parse = (name: string) =>
+      categorySchema.parse({ ...emptyCategoryValues(), name });
+    const first = await saveCategory(admin, null, parse("Int Kategorie"));
+    const second = await saveCategory(admin, null, parse("Int Kategorie"));
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    const slugOf = async (id: number) => {
+      const read = await getCategory(admin, id);
+      return read.ok ? read.value.slug : undefined;
+    };
+    expect(await slugOf(first.value.id)).toBe("int-kategorie");
+    expect(await slugOf(second.value.id)).toBe("int-kategorie-2");
+    const renamed = await saveCategory(
+      admin,
+      second.value.id,
+      parse("Int Umbenannt")
+    );
+    expect(renamed.ok).toBe(true);
+    expect(await slugOf(second.value.id)).toBe("int-kategorie-2");
+    expect((await getCategory(admin, second.value.id)).ok).toBe(true);
+    expect((await deleteCategory(admin, first.value.id)).ok).toBe(true);
+    expect((await deleteCategory(admin, second.value.id)).ok).toBe(true);
+  });
+
+  it("maps a used category", async () => {
     expect(await deleteCategory(admin, 1)).toEqual({
       ok: false,
       error: {

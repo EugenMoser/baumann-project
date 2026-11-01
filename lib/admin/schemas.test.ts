@@ -1,17 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   emptyProductValues,
+  PRODUCT_FIELDS,
   productSchema,
-  withDefaultSlug,
   type ProductValues,
 } from "./schemas";
-import { zodFieldErrors } from "./form";
+import { readFields, zodFieldErrors } from "./form";
 
 const valid: ProductValues = {
   ...emptyProductValues(),
   categoryId: "1",
   name: "Testkeil",
-  slug: "testkeil",
   status: "draft",
   sortOrder: "0",
 };
@@ -29,11 +28,6 @@ describe("product schema (SC-6)", () => {
   });
   it.each([
     [{ name: "  " }, "name", "Bitte einen Namen eingeben."],
-    [
-      { slug: "Bad Slug" },
-      "slug",
-      "Nur Kleinbuchstaben, Ziffern und Bindestriche.",
-    ],
     [{ categoryId: "" }, "categoryId", "Bitte eine Kategorie wählen."],
     [
       { categoryId: "12345678901" },
@@ -41,7 +35,11 @@ describe("product schema (SC-6)", () => {
       "Bitte eine Kategorie wählen.",
     ],
     [{ materialId: "12345678901" }, "materialId", "Ungültige Auswahl."],
-    [{ slug: "a".repeat(121) }, "slug", "Höchstens 120 Zeichen."],
+    [
+      { name: "!!!" },
+      "name",
+      "Der Name braucht mindestens einen Buchstaben oder eine Ziffer.",
+    ],
     [{ seoTitle: "x".repeat(71) }, "seoTitle", "Höchstens 70 Zeichen."],
     [
       { seoDescription: "x".repeat(161) },
@@ -56,12 +54,13 @@ describe("product schema (SC-6)", () => {
     if (!result.success)
       expect(zodFieldErrors(result.error)[field]).toBe(message);
   });
-  it("fills an empty slug from the name", () => {
-    expect(
-      withDefaultSlug({ ...valid, slug: " ", name: "Schließkeil 8 mm" }).slug
-    ).toBe("schliesskeil-8-mm");
-    expect(withDefaultSlug({ ...valid, slug: "eigener-slug" }).slug).toBe(
-      "eigener-slug"
-    );
+  it("has no slug field and ignores a slug from the form data (6c SC-1)", () => {
+    expect(PRODUCT_FIELDS).not.toContain("slug");
+    const fd = new FormData();
+    fd.set("name", "Testkeil");
+    fd.set("slug", "eigener-slug");
+    expect(readFields(fd, PRODUCT_FIELDS)).not.toHaveProperty("slug");
+    const parsed = productSchema.parse({ ...valid, slug: "eigener-slug" });
+    expect(parsed).not.toHaveProperty("slug");
   });
 });

@@ -7,6 +7,7 @@ import { DeleteRecordButton } from "@/components/admin/delete-record-button";
 import { getCategory } from "@/lib/admin/categories";
 import { loadEditorOptions } from "@/lib/admin/products";
 import { unwrapAdmin } from "@/lib/admin/server";
+import { categoryPath } from "@/lib/catalog/anchors";
 import { createSessionSupabase } from "@/lib/supabase/session";
 import { deleteCategoryAction, saveCategoryAction } from "../actions";
 
@@ -54,6 +55,7 @@ export default async function EditCategoryPage({
         initial={category.values}
         attributes={options.attributes}
         categoryId={category.id}
+        address={categoryPath(category.slug)}
       />
       <div className="mt-8">
         {category.productCount === 0 ? (
