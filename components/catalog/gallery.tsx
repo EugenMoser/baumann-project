@@ -1,37 +1,50 @@
 import type { MediaView } from "@/lib/catalog/types";
+import { GallerySlider } from "./gallery-slider";
 import { ProductImage } from "./product-image";
 
-export function Gallery({ media, name }: { media: MediaView[]; name: string }) {
-  const [first, ...rest] = media;
+const SIZES = "(min-width: 1024px) 50vw, 100vw";
+
+function Slide({
+  image,
+  name,
+  index,
+}: {
+  image: MediaView;
+  name: string;
+  index: number;
+}) {
   return (
-    <div className="flex flex-col gap-3">
-      <figure className="flex flex-col gap-2">
-        <ProductImage
-          image={first ?? null}
-          name={name}
-          sizes="(min-width: 1024px) 50vw, 100vw"
-          preload
-          variant="detail"
-        />
-        {first && (
-          <figcaption className="break-words font-mono text-xs text-muted">
-            Abb. 1 · {first.altText}
-          </figcaption>
-        )}
-      </figure>
-      {rest.length > 0 && (
-        <ul className="grid grid-cols-3 gap-3">
-          {rest.map((m) => (
-            <li key={m.storagePath}>
-              <ProductImage
-                image={m}
-                name={name}
-                sizes="(min-width: 1024px) 16vw, 33vw"
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <figure className="flex flex-col gap-2">
+      <ProductImage
+        image={image}
+        name={name}
+        sizes={SIZES}
+        preload={index === 0}
+        variant="detail"
+      />
+      <figcaption className="break-words font-mono text-xs text-muted">
+        Abb. {index + 1} · {image.altText}
+      </figcaption>
+    </figure>
+  );
+}
+
+export function Gallery({ media, name }: { media: MediaView[]; name: string }) {
+  if (media.length === 0) {
+    return (
+      <ProductImage image={null} name={name} sizes={SIZES} variant="detail" />
+    );
+  }
+  if (media.length === 1) {
+    return <Slide image={media[0]} name={name} index={0} />;
+  }
+  return (
+    <GallerySlider total={media.length}>
+      {media.map((m, i) => (
+        <li key={m.storagePath}>
+          <Slide image={m} name={name} index={i} />
+        </li>
+      ))}
+    </GallerySlider>
   );
 }

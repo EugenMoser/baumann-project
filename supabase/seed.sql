@@ -56,11 +56,17 @@ insert into public.product_color (product_id, color_id, suffix, is_default, sort
 
 insert into public.media (id, storage_path, width, height, alt_text) overriding system value values
   (1, 'products/testkeil-1.webp', 800, 600, 'Testkeil mit Dämpfung, Seitenansicht'),
-  (2, 'products/entwurfsteil-1.webp', 800, 600, 'Entwurfsteil');
+  (2, 'products/entwurfsteil-1.webp', 800, 600, 'Entwurfsteil'),
+  (3, 'products/testkeil-2.webp', 465, 200, 'Testkeil mit Dämpfung, Draufsicht'),
+  (4, 'products/testkeil-3.webp', 465, 200, 'Testkeil mit Dämpfung, Einbaubeispiel'),
+  (5, 'products/testrohrschelle-1.webp', 80, 80, 'Testrohrschelle');
 
 insert into public.product_media (product_id, media_id, role, sort_order) values
   (1, 1, 'thumbnail', 0),
-  (4, 2, 'thumbnail', 0);
+  (4, 2, 'thumbnail', 0),
+  (1, 3, 'gallery', 1),
+  (1, 4, 'gallery', 2),
+  (2, 5, 'thumbnail', 0);
 
 -- (3, 2): visible accessory. (1, 5): accessory whose home product is a draft.
 insert into public.product_accessory (product_id, article_id, sort_order) values

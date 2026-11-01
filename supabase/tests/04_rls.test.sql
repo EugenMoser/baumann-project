@@ -52,7 +52,8 @@ select is((select count(*) from public.article where product_id in (4, 5)), 0::b
 select is((select count(*) from public.variant where product_id in (4, 5)), 0::bigint, 'anon sees no variants of unpublished products');
 select is((select count(*) from public.product_color where product_id = 4), 0::bigint, 'anon sees no colours of unpublished products');
 select results_eq($$select storage_path from public.media order by id$$,
-  $$values ('products/testkeil-1.webp')$$, 'anon sees media of published products only');
+  $$values ('products/testkeil-1.webp'), ('products/testkeil-2.webp'), ('products/testkeil-3.webp'), ('products/testrohrschelle-1.webp')$$,
+  'anon sees media of published products only');
 select is((select count(*) from public.product_media where product_id = 4), 0::bigint, 'anon sees no media links of unpublished products');
 select is((select count(*) from public.article_attribute where article_id = 5), 0::bigint, 'anon sees no attributes of unpublished articles');
 select is((select count(*) from public.article_packaging where article_id = 5), 0::bigint, 'anon sees no pack sizes of unpublished articles');

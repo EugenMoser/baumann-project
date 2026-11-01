@@ -12,6 +12,15 @@ export type AttributeColumn = {
 const MAX_LISTED_VALUES = 6;
 const numberFormat = new Intl.NumberFormat("de-DE");
 
+// Value as shown in tables and option labels: de-DE number, unit appended.
+export function formatAttributeValue(
+  value: number | string,
+  unit: string | null
+): string {
+  const text = typeof value === "number" ? numberFormat.format(value) : value;
+  return unit ? `${text} ${unit}` : text;
+}
+
 // Attributes grouped by key, ordered by attribute sort order (ties: first seen
 // over articles in table order).
 function groupByKey(

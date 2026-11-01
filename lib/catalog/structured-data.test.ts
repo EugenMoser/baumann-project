@@ -102,3 +102,25 @@ describe("serializeJsonLd (Review Focus 4)", () => {
     });
   });
 });
+
+describe("buildProductGroup images (4b SC-1)", () => {
+  it("lists exactly the gallery image URLs in order", () => {
+    const m = (path: string) => ({
+      storagePath: path,
+      width: 465,
+      height: 200,
+      altText: path,
+      altOrigin: "human" as const,
+      role: "gallery" as const,
+    });
+    const data = buildProductGroup(
+      makeProductPage({ media: [m("g1.webp"), m("g2.webp")] }),
+      url,
+      img
+    );
+    expect(data.image).toEqual([
+      "https://cdn.example.com/g1.webp",
+      "https://cdn.example.com/g2.webp",
+    ]);
+  });
+});

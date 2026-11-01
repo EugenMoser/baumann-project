@@ -14,7 +14,7 @@ export function RelatedProducts({
       <h2 id="verwandt" className="text-xl font-semibold tracking-tight">
         Weitere Produkte dieser Kategorie
       </h2>
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {products.map((p) => (
           <li key={p.slug}>
             <ProductTile categorySlug={categorySlug} product={p} />

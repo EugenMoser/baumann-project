@@ -49,7 +49,7 @@ describe("ImageSection (SC-5)", () => {
 
   it("marks exactly one thumbnail", () => {
     renderSection([item(1, "Eins", true), item(2, "Zwei", false)]);
-    const radios = screen.getAllByRole("radio", { name: "Vorschaubild" });
+    const radios = screen.getAllByRole("radio", { name: "Listenbild" });
     fireEvent.click(radios[1]!);
     expect(radios.filter((r) => (r as HTMLInputElement).checked)).toHaveLength(
       1
@@ -63,6 +63,41 @@ describe("ImageSection (SC-5)", () => {
     expect(
       screen.queryByRole("button", { name: "Bilder speichern" })
     ).toBeNull();
+  });
+});
+
+describe("ImageSection placement labels (4b SC-6)", () => {
+  it("shows the D6 intro text and the Listenbild radios", () => {
+    renderSection([item(1, "Eins", true), item(2, "Zwei", false)]);
+    expect(
+      screen.getByText(
+        "Das Listenbild erscheint klein in der Suche und in der Kategorieübersicht. Alle anderen Bilder bilden in dieser Reihenfolge die Galerie der Produktseite; das erste davon zeigt auch die Produktkachel. Ohne Galeriebild nutzen Produktseite und Kachel das Listenbild."
+      )
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("radio", { name: "Listenbild" })).toHaveLength(
+      2
+    );
+  });
+
+  const notes = () =>
+    screen.getAllByTestId("placement-note").map((el) => el.textContent);
+
+  it("updates the notes after reordering and after changing the radio", () => {
+    renderSection([item(1, "Eins", true), item(2, "Zwei", false)]);
+    expect(notes()).toEqual([
+      "Suche, Kategorieübersicht",
+      "Produktseite (Bild 1), Kachel",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: "Bild 2 nach oben" }));
+    expect(notes()).toEqual([
+      "Produktseite (Bild 1), Kachel",
+      "Suche, Kategorieübersicht",
+    ]);
+    fireEvent.click(screen.getAllByRole("radio", { name: "Listenbild" })[0]!);
+    expect(notes()).toEqual([
+      "Suche, Kategorieübersicht",
+      "Produktseite (Bild 1), Kachel",
+    ]);
   });
 });
 

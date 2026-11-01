@@ -77,3 +77,33 @@ describe("ProductImage (FR-10, SC-10)", () => {
     expect(img).toHaveAttribute("height", "480");
   });
 });
+
+describe("ProductImage size cap (4b SC-1)", () => {
+  it.each(["tile", "detail", "thumb"] as const)(
+    "caps the %s image at its intrinsic size",
+    (variant) => {
+      render(
+        <ProductImage
+          image={{
+            storagePath: "products/a.webp",
+            width: 80,
+            height: 80,
+            altText: "Klein",
+          }}
+          name="Testkeil"
+          sizes="80px"
+          variant={variant}
+        />
+      );
+      const img = screen.getByRole("img", { name: "Klein" });
+      expect(img).toHaveAttribute("width", "80");
+      expect(img).toHaveAttribute("height", "80");
+      const classes = img.className.split(/\s+/);
+      expect(classes).toEqual(
+        expect.arrayContaining(["max-w-full", "max-h-full", "object-contain"])
+      );
+      expect(classes).not.toContain("w-full");
+      expect(classes).not.toContain("h-full");
+    }
+  );
+});

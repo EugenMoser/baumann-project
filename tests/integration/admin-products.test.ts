@@ -117,8 +117,10 @@ describe("listProducts (SC-5)", () => {
       q: null,
       altReview: true,
     });
+    // The seeded alt text of Testrohrschelle equals its product name (import rule).
     expect(result.ok && result.value.map((p) => p.slug)).toEqual([
       "entwurfsteil",
+      "testrohrschelle",
     ]);
   });
 });

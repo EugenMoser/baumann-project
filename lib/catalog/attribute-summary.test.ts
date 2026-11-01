@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { attributeColumns, summarizeAttributes } from "./attribute-summary";
+import {
+  attributeColumns,
+  formatAttributeValue,
+  summarizeAttributes,
+} from "./attribute-summary";
 import type { ArticleAttributeView, ArticleView } from "./types";
 
 function article(
@@ -177,5 +181,13 @@ describe("summarizeAttributes order (D4)", () => {
       article("2", [attr("height", 0), attr("surface", 2)]),
     ]);
     expect(result.map((r) => r.key)).toEqual(["height", "surface"]);
+  });
+});
+
+describe("formatAttributeValue (4b SC-4)", () => {
+  it("formats numbers with de-DE separators and appends the unit", () => {
+    expect(formatAttributeValue(8, "mm")).toBe("8 mm");
+    expect(formatAttributeValue(9.5, "mm")).toBe("9,5 mm");
+    expect(formatAttributeValue("glatt", null)).toBe("glatt");
   });
 });

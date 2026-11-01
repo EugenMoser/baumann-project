@@ -33,6 +33,13 @@ test.describe("search (SC-8)", () => {
     );
   });
 
+  test("a hit row shows the list image (4b SC-2)", async ({ page }) => {
+    await page.goto("/suche?q=Testkeil");
+    await expect(
+      page.getByRole("img", { name: "Testkeil mit Dämpfung, Seitenansicht" })
+    ).toHaveCount(1);
+  });
+
   test("a word shows a result list", async ({ page }) => {
     await page.goto("/suche?q=Befestigung");
     await expect(

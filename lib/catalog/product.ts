@@ -5,7 +5,7 @@ import {
 } from "@/lib/supabase/server";
 import { PRODUCT_TILE, toProductSummaries } from "./categories";
 import { guard, toDbError } from "./errors";
-import { pickThumbnail } from "./media";
+import { galleryRows, pickThumbnail, pickTileImage } from "./media";
 import { selectRelated } from "./related";
 import type {
   ArticleView,
@@ -102,6 +102,7 @@ export function getProductPage(
       materialNote: row.material_note,
       articles,
       thumbnail: pickThumbnail(row.product_media),
+      tileImage: pickTileImage(row.product_media),
       colors: [...row.product_color].sort(bySortOrder).map((c) => ({
         id: c.color.id,
         name: c.color.name,
@@ -124,22 +125,14 @@ export function getProductPage(
               },
             ]
       ),
-      media: [...row.product_media]
-        .sort((a, b) =>
-          a.role === b.role
-            ? a.sort_order - b.sort_order
-            : a.role === "thumbnail"
-              ? -1
-              : 1
-        )
-        .map((m): MediaView => ({
-          storagePath: m.media.storage_path,
-          width: m.media.width,
-          height: m.media.height,
-          altText: m.media.alt_text,
-          altOrigin: m.media.alt_origin,
-          role: m.role,
-        })),
+      media: galleryRows(row.product_media).map((m): MediaView => ({
+        storagePath: m.media.storage_path,
+        width: m.media.width,
+        height: m.media.height,
+        altText: m.media.alt_text,
+        altOrigin: m.media.alt_origin,
+        role: m.role,
+      })),
       accessories: [...row.product_accessory].sort(bySortOrder).map((acc) => ({
         articleNumber: acc.article.article_number,
         name: acc.article.name,

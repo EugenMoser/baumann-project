@@ -39,6 +39,7 @@ export type ProductSummary = {
   name: string;
   subtitle: string | null;
   thumbnail: ImageRef | null;
+  tileImage: ImageRef | null;
 };
 
 export type CategoryPage = CategorySummary & {

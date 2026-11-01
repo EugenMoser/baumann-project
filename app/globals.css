@@ -14,6 +14,7 @@
   --color-line: #dcddd9;
   --color-accent: #d4500f;
   --color-accent-strong: #b5440d;
+  --color-accent-soft: #fff6ef;
 
   /* shadcn/ui tokens (feature 6a, D5), mapped onto the palette above.
      `muted` and `accent` keep their public meaning; generated components use

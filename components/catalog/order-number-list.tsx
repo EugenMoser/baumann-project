@@ -10,11 +10,17 @@ export function OrderNumberList({
 }) {
   const colorName = new Map(page.colors.map((c) => [c.id, c.name]));
   return (
-    <section aria-labelledby="bestellnummern" className="flex flex-col gap-4">
-      <h2 id="bestellnummern" className="text-xl font-semibold tracking-tight">
-        Alle Bestellnummern
-      </h2>
-      <ul className="grid border-t border-line text-sm sm:grid-cols-2 sm:gap-x-8">
+    <details className="group">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded-sm font-mono text-sm text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent motion-safe:transition-colors motion-safe:duration-150 [&::-webkit-details-marker]:hidden">
+        <span
+          aria-hidden="true"
+          className="inline-block group-open:rotate-90 motion-safe:transition-transform motion-safe:duration-150"
+        >
+          ›
+        </span>
+        Alle Bestellnummern ({page.variants.length})
+      </summary>
+      <ul className="mt-3 grid border-t border-line text-sm sm:grid-cols-2 sm:gap-x-8">
         {page.variants.map((v) => (
           <li
             key={`${v.articleNumber}|${v.colorId ?? "none"}`}
@@ -33,6 +39,6 @@ export function OrderNumberList({
           </li>
         ))}
       </ul>
-    </section>
+    </details>
   );
 }
