@@ -8,6 +8,7 @@ import { colorValuesFrom, type ColorValues } from "@/lib/admin/color-schema";
 import { idleState, type FormState } from "@/lib/admin/form";
 import type { ColorAssignment, EditorOptions } from "@/lib/admin/products";
 import { describedBy, Field, selectClass } from "./field";
+import { HelpPopover } from "./help-popover";
 import { SortableList } from "./sortable-list";
 
 type SaveAction = (
@@ -142,6 +143,11 @@ export function ColorSection({ action, productId, initial, colors }: Props) {
                   <label htmlFor={did} className="text-sm">
                     Standard
                   </label>
+                  <HelpPopover label="Was bedeutet Standard?">
+                    Die Standardfarbe ist auf der Produktseite vorausgewählt.
+                    Ihre Bestellnummer steht im Auswahlblock, bis jemand eine
+                    andere Farbe wählt.
+                  </HelpPopover>
                 </div>
                 <Button
                   type="button"
