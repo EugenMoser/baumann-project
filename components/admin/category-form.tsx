@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import type { CategoryValues } from "@/lib/admin/category-schema";
 import { idleState, type FormState } from "@/lib/admin/form";
 import type { AttributeOption } from "@/lib/admin/products";
+import { autoCategoryMeta } from "@/lib/catalog/metadata";
 import { AddressLine } from "./address-line";
 import { describedBy, Field } from "./field";
+import { SeoSection } from "./seo-section";
 
 type SaveAction = (
   prev: FormState<CategoryValues>,
@@ -38,6 +40,17 @@ export function CategoryForm({
     return next;
   };
   const [state, formAction, pending] = useActionState(run, idleState(initial));
+  const [name, setName] = useState(state.values.name);
+  const [introText, setIntroText] = useState(state.values.introText);
+
+  // Re-sync the controlled fields with each action response.
+  const [syncedState, setSyncedState] = useState(state);
+  if (syncedState !== state) {
+    setSyncedState(state);
+    setName(state.values.name);
+    setIntroText(state.values.introText);
+  }
+
   const v = state.values;
   const e = state.fieldErrors;
   const assigned = new Map(
@@ -67,7 +80,8 @@ export function CategoryForm({
         <Input
           id="name"
           name="name"
-          defaultValue={v.name}
+          value={name}
+          onChange={(ev) => setName(ev.target.value)}
           aria-invalid={Boolean(e.name)}
           aria-describedby={describedBy("name", e.name)}
         />
@@ -78,13 +92,17 @@ export function CategoryForm({
           id="introText"
           name="introText"
           rows={6}
-          defaultValue={v.introText}
+          value={introText}
+          onChange={(ev) => setIntroText(ev.target.value)}
           aria-invalid={Boolean(e.introText)}
           aria-describedby={describedBy("introText", e.introText)}
         />
       </Field>
-      {text("seoTitle", "SEO-Titel", 70)}
-      {text("seoDescription", "SEO-Beschreibung", 160)}
+      <SeoSection
+        values={v}
+        errors={e}
+        auto={autoCategoryMeta({ name, introText })}
+      />
       {text("sortOrder", "Reihenfolge")}
       <fieldset className="grid gap-2 rounded-md border p-4">
         <legend className="px-1 text-sm font-medium">

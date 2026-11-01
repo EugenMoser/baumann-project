@@ -30,6 +30,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={null}
         savedStatus={null}
         address={null}
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     expect(document.querySelector('input[name="slug"]')).toBeNull();
@@ -53,6 +54,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={7}
         savedStatus="draft"
         address="/produkte/moebelteile/testkeil-mit-daempfung"
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     expect(document.querySelector('input[name="slug"]')).toBeNull();
@@ -82,6 +84,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={7}
         savedStatus="published"
         address="/produkte/moebelteile/x"
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     expect(
@@ -109,6 +112,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={7}
         savedStatus="draft"
         address="/produkte/moebelteile/x"
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     fireEvent.change(screen.getByLabelText("Status"), {
@@ -136,6 +140,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={7}
         savedStatus="draft"
         address="/produkte/moebelteile/x"
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     expect(
@@ -152,6 +157,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={null}
         savedStatus={null}
         address={null}
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     const select = screen.getByLabelText("Status");
@@ -180,6 +186,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
         productId={7}
         savedStatus="draft"
         address="/produkte/moebelteile/x"
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     );
     const values = within(screen.getByLabelText("Status"))
@@ -191,5 +198,30 @@ describe("ProductForm (SC-6, SC-12)", () => {
         "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
       )
     ).toBeNull();
+  });
+  it("shows the automatic SEO preview and follows name and subtitle (6c SC-3)", () => {
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={emptyProductValues()}
+        options={options}
+        productId={null}
+        savedStatus={null}
+        address={null}
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
+      />
+    );
+    const title = screen.getByLabelText("Titel für Suchmaschinen");
+    const description = screen.getByLabelText("Beschreibung für Suchmaschinen");
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Neuer Name" },
+    });
+    expect(title).toHaveAttribute("placeholder", "Neuer Name");
+    expect(description).toHaveAttribute("placeholder", "Neuer Name.");
+    fireEvent.change(screen.getByLabelText("Untertitel"), {
+      target: { value: "Klein" },
+    });
+    expect(description).toHaveAttribute("placeholder", "Neuer Name – Klein.");
   });
 });

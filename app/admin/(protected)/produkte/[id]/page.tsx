@@ -95,6 +95,10 @@ export default async function EditProductPage({
         productId={product.id}
         savedStatus={product.status}
         address={productPath(product.categorySlug, product.slug)}
+        seoContext={{
+          articleNumbers: editor.articles.map((a) => a.articleNumber),
+          colorCount: editor.colors.length,
+        }}
       />
       <ArticleSection
         productId={product.id}

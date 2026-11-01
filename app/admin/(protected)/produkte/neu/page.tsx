@@ -25,6 +25,7 @@ export default async function NewProductPage() {
         productId={null}
         savedStatus={null}
         address={null}
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
       />
     </>
   );

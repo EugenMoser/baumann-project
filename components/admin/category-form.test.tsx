@@ -157,4 +157,31 @@ describe("CategoryForm errors (SC-10)", () => {
     expect(fd?.get("attrSort-3")).toBe("4");
     expect(fd?.get("name")).toBe("X");
   });
+  it("follows the typed intro text in the SEO preview (6c SC-3)", () => {
+    render(
+      <CategoryForm
+        action={noop}
+        initial={emptyCategoryValues()}
+        attributes={attributes}
+        categoryId={null}
+        address={null}
+      />
+    );
+    const description = screen.getByLabelText("Beschreibung für Suchmaschinen");
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Möbel" },
+    });
+    expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveAttribute(
+      "placeholder",
+      "Möbel"
+    );
+    expect(description).toHaveAttribute(
+      "placeholder",
+      "Möbel: alle Produkte im Überblick."
+    );
+    fireEvent.change(screen.getByLabelText("Intro-Text (Markdown)"), {
+      target: { value: "Teile für Möbel." },
+    });
+    expect(description).toHaveAttribute("placeholder", "Teile für Möbel.");
+  });
 });

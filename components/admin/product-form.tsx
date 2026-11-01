@@ -9,9 +9,11 @@ import { idleState, type FormState } from "@/lib/admin/form";
 import { STATUS_LABEL, type ProductStatus } from "@/lib/admin/labels";
 import type { EditorOptions } from "@/lib/admin/products";
 import type { ProductValues } from "@/lib/admin/schemas";
+import { autoProductMeta } from "@/lib/catalog/metadata";
 import { AddressLine } from "./address-line";
 import { DeleteProductButton } from "./delete-product-button";
 import { describedBy, Field, selectClass } from "./field";
+import { SeoSection } from "./seo-section";
 
 type Props = {
   action: (
@@ -28,6 +30,8 @@ type Props = {
   savedStatus: ProductStatus | null;
   /** Public path of a saved product; null on create. */
   address: string | null;
+  /** Saved article numbers and colour count, for the automatic SEO preview. */
+  seoContext: { articleNumbers: string[]; colorCount: number };
 };
 
 export function ProductForm({
@@ -38,12 +42,14 @@ export function ProductForm({
   productId,
   savedStatus,
   address,
+  seoContext,
 }: Props) {
   const [state, formAction, pending] = useActionState(
     action,
     idleState(initial)
   );
   const [name, setName] = useState(state.values.name);
+  const [subtitle, setSubtitle] = useState(state.values.subtitle);
   const seen = useRef(state);
 
   // Re-sync the controlled name with each action response.
@@ -51,6 +57,7 @@ export function ProductForm({
   if (syncedState !== state) {
     setSyncedState(state);
     setName(state.values.name);
+    setSubtitle(state.values.subtitle);
   }
 
   useEffect(() => {
@@ -153,7 +160,16 @@ export function ProductForm({
           address={address}
           hint="Eine Änderung der Kategorie ändert die Adresse."
         />
-        {text("subtitle", "Untertitel")}
+        <Field id="subtitle" label="Untertitel" error={e.subtitle}>
+          <Input
+            id="subtitle"
+            name="subtitle"
+            value={subtitle}
+            aria-invalid={Boolean(e.subtitle)}
+            aria-describedby={describedBy("subtitle", e.subtitle)}
+            onChange={(ev) => setSubtitle(ev.target.value)}
+          />
+        </Field>
         {text("sortOrder", "Reihenfolge")}
         <div className="md:col-span-2">
           {text("description", "Beschreibung (Markdown)", undefined, true)}
@@ -177,16 +193,15 @@ export function ProductForm({
           </select>
         </Field>
         {text("materialNote", "Materialhinweis")}
-        {text(
-          "seoTitle",
-          "SEO-Titel",
-          "Höchstens 70 Zeichen; leer = automatisch."
-        )}
-        {text(
-          "seoDescription",
-          "SEO-Beschreibung",
-          "Höchstens 160 Zeichen; leer = automatisch."
-        )}
+        <SeoSection
+          values={v}
+          errors={e}
+          auto={autoProductMeta({
+            name,
+            subtitle: subtitle.trim() || null,
+            ...seoContext,
+          })}
+        />
         <div className="md:col-span-2">
           <Button type="submit" disabled={pending}>
             {pending
