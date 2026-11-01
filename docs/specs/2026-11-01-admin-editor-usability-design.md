@@ -1,6 +1,6 @@
 # Feature 6c — Admin: editor usability
 
-- **Status:** draft (2026-11-01)
+- **Status:** approved (2026-11-01)
 - **Roadmap:** feature 6c ([roadmap](../roadmap.md))
 - **Estimate:** 7 h (roadmap 5 h, plus the image list in D4 and the two
   follow-ups in D7 and D8)

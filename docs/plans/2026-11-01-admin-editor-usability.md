@@ -8,11 +8,11 @@
 
 **Tech Stack:** Next.js 16.3 App Router, React 19.2, TypeScript strict, Tailwind 4, shadcn/ui (`radix-ui`), `@dnd-kit/core` + `@dnd-kit/sortable` + `@dnd-kit/utilities`, Supabase (local stack for tests), Vitest + Testing Library, Playwright, pnpm 10.
 
-**Spec:** `docs/specs/2026-11-01-admin-editor-usability-design.md` (absolute: `/Users/eugen/Projects/baumann-demo/.claude/worktrees/feat+admin-editor-usability/docs/specs/2026-11-01-admin-editor-usability-design.md`). Read D1–D8 before your task.
+**Spec:** `docs/specs/2026-11-01-admin-editor-usability-design.md`. Read D1–D8 before your task.
 
 ## Global Constraints
 
-- Work only in the worktree `/Users/eugen/Projects/baumann-demo/.claude/worktrees/feat+admin-editor-usability` on branch `feat/admin-editor-usability`. pnpm only, never npm.
+- Work only in the feature worktree on branch `feat/admin-editor-usability`. pnpm only, never npm.
 - New dependencies, exact versions only: `@dnd-kit/core@6.3.1`, `@dnd-kit/sortable@10.0.0`, `@dnd-kit/utilities@3.2.2` (Task 4); `components/ui/popover.tsx` from shadcn (Task 5). Nothing else.
 - Read the relevant guide in `node_modules/next/dist/docs/` before touching forms, Server Actions or client components (Next.js 16 differs from older versions).
 - Tests carry the spec IDs as `(6c SC-n)` in the `describe`/`test` title.
