@@ -39,20 +39,51 @@ describe("CategoryForm (SC-10)", () => {
         initial={{
           ...emptyCategoryValues(),
           name: "X",
-          slug: "x",
           attributes: [{ attributeId: "3", sortOrder: "0" }],
         }}
         attributes={attributes}
         categoryId={5}
+        address="/produkte/x"
       />
     );
     expect(
       screen.getByRole("checkbox", { name: "Höhe (mm)" })
     ).not.toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Oberfläche" })).toBeChecked();
+  });
+  it("renders no slug input and shows the address on edit (6c SC-2)", () => {
+    render(
+      <CategoryForm
+        action={noop}
+        initial={{ ...emptyCategoryValues(), name: "Möbelteile" }}
+        attributes={attributes}
+        categoryId={5}
+        address="/produkte/moebelteile"
+      />
+    );
+    expect(document.querySelector('input[name="slug"]')).toBeNull();
     expect(
-      screen.getByText(/ändert die URLs der Kategorie und aller ihrer Produkte/)
+      screen.getByText("Adresse: /produkte/moebelteile")
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Die Adresse entsteht beim Anlegen aus dem Namen.")
+    ).toBeNull();
+  });
+  it("shows the create hint and no address on create (6c SC-2)", () => {
+    render(
+      <CategoryForm
+        action={noop}
+        initial={emptyCategoryValues()}
+        attributes={attributes}
+        categoryId={null}
+        address={null}
+      />
+    );
+    expect(document.querySelector('input[name="slug"]')).toBeNull();
+    expect(
+      screen.getByText("Die Adresse entsteht beim Anlegen aus dem Namen.")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/^Adresse:/)).toBeNull();
   });
 });
 
@@ -75,23 +106,12 @@ describe("CategoryForm errors (SC-10)", () => {
     render(
       <CategoryForm
         action={action}
-        initial={{ ...emptyCategoryValues(), name: "X", slug: "x" }}
+        initial={{ ...emptyCategoryValues(), name: "X" }}
         attributes={attributes}
         categoryId={null}
+        address={null}
       />
     );
-
-  it("shows the slug conflict on the slug field", async () => {
-    renderForm(errorAction({ slug: "Dieser Slug ist schon vergeben." }, null));
-    fireEvent.click(screen.getByRole("button", { name: "Kategorie anlegen" }));
-    const slug = screen.getByLabelText("Slug");
-    await waitFor(() => expect(slug).toHaveAttribute("aria-invalid", "true"));
-    expect(slug).toHaveAttribute("aria-describedby", "slug-error");
-    expect(screen.getByText("Dieser Slug ist schon vergeben.")).toHaveAttribute(
-      "id",
-      "slug-error"
-    );
-  });
 
   it("shows a field error on the name field", async () => {
     renderForm(errorAction({ name: "Bitte einen Namen eingeben." }, null));
@@ -136,5 +156,32 @@ describe("CategoryForm errors (SC-10)", () => {
     expect(fd?.getAll("attributeId")).toEqual(["3"]);
     expect(fd?.get("attrSort-3")).toBe("4");
     expect(fd?.get("name")).toBe("X");
+  });
+  it("follows the typed intro text in the SEO preview (6c SC-3)", () => {
+    render(
+      <CategoryForm
+        action={noop}
+        initial={emptyCategoryValues()}
+        attributes={attributes}
+        categoryId={null}
+        address={null}
+      />
+    );
+    const description = screen.getByLabelText("Beschreibung für Suchmaschinen");
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Möbel" },
+    });
+    expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveAttribute(
+      "placeholder",
+      "Möbel"
+    );
+    expect(description).toHaveAttribute(
+      "placeholder",
+      "Möbel: alle Produkte im Überblick."
+    );
+    fireEvent.change(screen.getByLabelText("Intro-Text (Markdown)"), {
+      target: { value: "Teile für Möbel." },
+    });
+    expect(description).toHaveAttribute("placeholder", "Teile für Möbel.");
   });
 });

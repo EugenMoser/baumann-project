@@ -32,23 +32,23 @@ describe("runWrite", () => {
   });
   it("maps a conflict with the default messages", async () => {
     const done = await runWrite({ a: "1" }, "[admin] test", async () =>
-      err({ kind: "conflict", field: "slug" })
+      err({ kind: "conflict", field: "articleNumber" })
     );
     expect("state" in done && done.state.fieldErrors).toEqual({
-      slug: "Dieser Slug ist in der Kategorie schon vergeben.",
+      articleNumber: "Diese Artikelnummer gibt es schon.",
     });
   });
   it("maps a conflict with caller-supplied messages", async () => {
     const done = await runWrite(
       { a: "1" },
       "[admin] test",
-      async () => err({ kind: "conflict", field: "slug" }),
-      { slug: "Dieser Slug ist schon vergeben." }
+      async () => err({ kind: "conflict", field: "articleNumber" }),
+      { articleNumber: "Andere Meldung." }
     );
     expect("state" in done && done.state).toMatchObject({
       status: "error",
       values: { a: "1" },
-      fieldErrors: { slug: "Dieser Slug ist schon vergeben." },
+      fieldErrors: { articleNumber: "Andere Meldung." },
     });
   });
   it("redirects an anonymous caller to the login without writing", async () => {

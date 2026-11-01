@@ -1,5 +1,6 @@
 import { execFileSync, execSync } from "node:child_process";
 import path from "node:path";
+import type { Locator, Page } from "@playwright/test";
 import { createClient } from "@supabase/supabase-js";
 
 // Signs in once in admin.setup.ts; its session backs every spec that uses
@@ -72,6 +73,101 @@ export async function createPublishedProduct(
     .insert({ product_id: data.id, article_number: articleNumber });
   if (articleError) throw articleError;
   return data.id;
+}
+
+// Published e2e product with one article and two colours (seed colours 1 and
+// 2, suffixes "1" and "2", sort order 0 and 1, the first one the default).
+export async function createProductWithTwoColors(
+  slug: string,
+  name: string,
+  articleNumber: string
+): Promise<number> {
+  const id = await createPublishedProduct(slug, name, articleNumber);
+  const { error } = await serviceClient()
+    .from("product_color")
+    .insert([
+      {
+        product_id: id,
+        color_id: 1,
+        suffix: "1",
+        sort_order: 0,
+        is_default: true,
+      },
+      {
+        product_id: id,
+        color_id: 2,
+        suffix: "2",
+        sort_order: 1,
+        is_default: false,
+      },
+    ]);
+  if (error) throw error;
+  return id;
+}
+
+async function centreOf(locator: Locator): Promise<{ x: number; y: number }> {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("Element has no bounding box.");
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+// Where to drop: the pointer ends a bit above or below the target's centre,
+// so the dragged row's centre is closest to the target row.
+function dropPoint(
+  target: { x: number; y: number },
+  edge: "above" | "below"
+): { x: number; y: number } {
+  return { x: target.x, y: target.y + (edge === "below" ? 10 : -10) };
+}
+
+// Mouse drag of a sortable row by its handle (needs >= 5 px of movement).
+export async function dragHandleWithMouse(
+  page: Page,
+  handle: Locator,
+  target: Locator,
+  edge: "above" | "below"
+): Promise<void> {
+  await handle.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const from = await centreOf(handle);
+  const to = dropPoint(await centreOf(target), edge);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(to.x, to.y, { steps: 15 });
+  await page.mouse.up();
+}
+
+// Touch drag via CDP: press and hold (the sensor starts after 200 ms), then
+// move in steps. The page needs a context with hasTouch.
+export async function dragHandleWithTouch(
+  page: Page,
+  handle: Locator,
+  target: Locator,
+  edge: "above" | "below"
+): Promise<void> {
+  await handle.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const from = await centreOf(handle);
+  const to = dropPoint(await centreOf(target), edge);
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (
+    type: "touchStart" | "touchMove" | "touchEnd",
+    point?: { x: number; y: number }
+  ) =>
+    cdp.send("Input.dispatchTouchEvent", {
+      type,
+      touchPoints: point ? [point] : [],
+    });
+  await touch("touchStart", from);
+  await page.waitForTimeout(350);
+  const steps = 15;
+  for (let i = 1; i <= steps; i++) {
+    await touch("touchMove", {
+      x: from.x + ((to.x - from.x) * i) / steps,
+      y: from.y + ((to.y - from.y) * i) / steps,
+    });
+    await page.waitForTimeout(16);
+  }
+  await touch("touchEnd");
+  await cdp.detach();
 }
 
 // Removes e2e products with their media rows and files, then e2e master data.

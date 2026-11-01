@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import type { CategoryValues } from "@/lib/admin/category-schema";
 import { idleState, type FormState } from "@/lib/admin/form";
 import type { AttributeOption } from "@/lib/admin/products";
-import { slugify } from "@/lib/catalog/slug";
+import { autoCategoryMeta } from "@/lib/catalog/metadata";
+import { AddressLine } from "./address-line";
 import { describedBy, Field } from "./field";
+import { SeoSection } from "./seo-section";
 
 type SaveAction = (
   prev: FormState<CategoryValues>,
@@ -21,6 +23,8 @@ type Props = {
   initial: CategoryValues;
   attributes: AttributeOption[];
   categoryId: number | null;
+  /** Public path of a saved category; null on create. */
+  address: string | null;
 };
 
 export function CategoryForm({
@@ -28,6 +32,7 @@ export function CategoryForm({
   initial,
   attributes,
   categoryId,
+  address,
 }: Props) {
   const run: SaveAction = async (prev, formData) => {
     const next = await action(prev, formData);
@@ -35,10 +40,19 @@ export function CategoryForm({
     return next;
   };
   const [state, formAction, pending] = useActionState(run, idleState(initial));
+  const [name, setName] = useState(state.values.name);
+  const [introText, setIntroText] = useState(state.values.introText);
+
+  // Re-sync the controlled fields with each action response.
+  const [syncedState, setSyncedState] = useState(state);
+  if (syncedState !== state) {
+    setSyncedState(state);
+    setName(state.values.name);
+    setIntroText(state.values.introText);
+  }
+
   const v = state.values;
   const e = state.fieldErrors;
-  const [slug, setSlug] = useState(v.slug);
-  const [slugTouched, setSlugTouched] = useState(categoryId !== null);
   const assigned = new Map(
     v.attributes.map((a) => [a.attributeId, a.sortOrder])
   );
@@ -66,52 +80,29 @@ export function CategoryForm({
         <Input
           id="name"
           name="name"
-          defaultValue={v.name}
+          value={name}
+          onChange={(ev) => setName(ev.target.value)}
           aria-invalid={Boolean(e.name)}
           aria-describedby={describedBy("name", e.name)}
-          onChange={(ev) => {
-            if (!slugTouched) setSlug(slugify(ev.target.value));
-          }}
         />
       </Field>
-      <Field
-        id="slug"
-        label="Slug"
-        error={e.slug}
-        hint={
-          categoryId !== null
-            ? "Eine Änderung ändert die URLs der Kategorie und aller ihrer Produkte."
-            : undefined
-        }
-      >
-        <Input
-          id="slug"
-          name="slug"
-          value={slug}
-          aria-invalid={Boolean(e.slug)}
-          aria-describedby={describedBy(
-            "slug",
-            e.slug,
-            categoryId !== null ? "hint" : undefined
-          )}
-          onChange={(ev) => {
-            setSlugTouched(true);
-            setSlug(ev.target.value);
-          }}
-        />
-      </Field>
+      <AddressLine address={address} />
       <Field id="introText" label="Intro-Text (Markdown)" error={e.introText}>
         <Textarea
           id="introText"
           name="introText"
           rows={6}
-          defaultValue={v.introText}
+          value={introText}
+          onChange={(ev) => setIntroText(ev.target.value)}
           aria-invalid={Boolean(e.introText)}
           aria-describedby={describedBy("introText", e.introText)}
         />
       </Field>
-      {text("seoTitle", "SEO-Titel", 70)}
-      {text("seoDescription", "SEO-Beschreibung", 160)}
+      <SeoSection
+        values={v}
+        errors={e}
+        auto={autoCategoryMeta({ name, introText })}
+      />
       {text("sortOrder", "Reihenfolge")}
       <fieldset className="grid gap-2 rounded-md border p-4">
         <legend className="px-1 text-sm font-medium">

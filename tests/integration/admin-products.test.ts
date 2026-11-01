@@ -22,7 +22,6 @@ const input = (patch: Record<string, string>) =>
     ...emptyProductValues(),
     categoryId: "1",
     name: "Int Teil",
-    slug: "int-teil",
     ...patch,
   });
 
@@ -125,16 +124,71 @@ describe("listProducts (SC-5)", () => {
   });
 });
 
+const slugOf = async (id: number): Promise<string | undefined> => {
+  const editor = await getProductEditor(admin, id);
+  return editor.ok ? editor.value.product.slug : undefined;
+};
+
+describe("product slugs on the server (6c SC-1)", () => {
+  it("numbers a clash in the category, keeps the slug on rename, handles category moves", async () => {
+    const first = await saveProduct(
+      admin,
+      null,
+      input({ name: "Int Doppelt" })
+    );
+    const second = await saveProduct(
+      admin,
+      null,
+      input({ name: "Int Doppelt" })
+    );
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(await slugOf(first.value.id)).toBe("int-doppelt");
+    expect(await slugOf(second.value.id)).toBe("int-doppelt-2");
+
+    // A rename in the same category keeps the slug.
+    const renamed = await saveProduct(
+      admin,
+      second.value.id,
+      input({ name: "Int Umbenannt" })
+    );
+    expect(renamed.ok).toBe(true);
+    expect(await slugOf(second.value.id)).toBe("int-doppelt-2");
+
+    // Rename plus move to a category where the slug is free keeps the slug.
+    const moved = await saveProduct(
+      admin,
+      first.value.id,
+      input({ name: "Int Neu", categoryId: "2" })
+    );
+    expect(moved.ok).toBe(true);
+    expect(await slugOf(first.value.id)).toBe("int-doppelt");
+
+    // A new "Int Doppelt" in category 1 gets the free slug again; moving it to
+    // category 2, which now holds "int-doppelt", numbers it.
+    const third = await saveProduct(
+      admin,
+      null,
+      input({ name: "Int Doppelt" })
+    );
+    expect(third.ok).toBe(true);
+    if (!third.ok) return;
+    expect(await slugOf(third.value.id)).toBe("int-doppelt");
+    const clash = await saveProduct(
+      admin,
+      third.value.id,
+      input({ name: "Int Doppelt", categoryId: "2" })
+    );
+    expect(clash.ok).toBe(true);
+    expect(await slugOf(third.value.id)).toBe("int-doppelt-2");
+  });
+});
+
 describe("saveProduct / deleteProduct", () => {
-  it("creates a draft, maps a taken slug to a conflict and refuses publishing without articles", async () => {
+  it("creates a draft and refuses publishing without articles", async () => {
     const created = await saveProduct(admin, null, input({}));
     expect(created.ok).toBe(true);
     if (!created.ok) return;
-    const dup = await saveProduct(admin, null, input({}));
-    expect(dup).toEqual({
-      ok: false,
-      error: { kind: "conflict", field: "slug" },
-    });
     const publish = await saveProduct(
       admin,
       created.value.id,
@@ -154,7 +208,7 @@ describe("saveProduct / deleteProduct", () => {
       await saveProduct(
         admin,
         null,
-        input({ slug: "int-fk", materialId: "999999" })
+        input({ name: "Int FK", materialId: "999999" })
       )
     ).toEqual({
       ok: false,

@@ -9,9 +9,11 @@ import { idleState, type FormState } from "@/lib/admin/form";
 import { STATUS_LABEL, type ProductStatus } from "@/lib/admin/labels";
 import type { EditorOptions } from "@/lib/admin/products";
 import type { ProductValues } from "@/lib/admin/schemas";
-import { slugify } from "@/lib/catalog/slug";
+import { autoProductMeta } from "@/lib/catalog/metadata";
+import { AddressLine } from "./address-line";
 import { DeleteProductButton } from "./delete-product-button";
 import { describedBy, Field, selectClass } from "./field";
+import { SeoSection } from "./seo-section";
 
 type Props = {
   action: (
@@ -26,6 +28,10 @@ type Props = {
   options: EditorOptions;
   productId: number | null;
   savedStatus: ProductStatus | null;
+  /** Public path of a saved product; null on create. */
+  address: string | null;
+  /** Saved article numbers and colour count, for the automatic SEO preview. */
+  seoContext: { articleNumbers: string[]; colorCount: number };
 };
 
 export function ProductForm({
@@ -35,22 +41,23 @@ export function ProductForm({
   options,
   productId,
   savedStatus,
+  address,
+  seoContext,
 }: Props) {
   const [state, formAction, pending] = useActionState(
     action,
     idleState(initial)
   );
   const [name, setName] = useState(state.values.name);
-  const [slug, setSlug] = useState(state.values.slug);
-  const slugTouched = useRef(productId !== null);
+  const [subtitle, setSubtitle] = useState(state.values.subtitle);
   const seen = useRef(state);
 
-  // Re-sync controlled fields with each action response (e.g. a derived slug).
+  // Re-sync the controlled name with each action response.
   const [syncedState, setSyncedState] = useState(state);
   if (syncedState !== state) {
     setSyncedState(state);
     setName(state.values.name);
-    setSlug(state.values.slug);
+    setSubtitle(state.values.subtitle);
   }
 
   useEffect(() => {
@@ -61,10 +68,6 @@ export function ProductForm({
 
   const v = state.values;
   const e = state.fieldErrors;
-  const slugHint =
-    productId !== null
-      ? "Eine Änderung von Slug oder Kategorie ändert die öffentliche Adresse."
-      : "Wird aus dem Namen erzeugt.";
   const creating = productId === null;
   const statusHint = creating
     ? "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
@@ -150,26 +153,23 @@ export function ProductForm({
             value={name}
             aria-invalid={Boolean(e.name)}
             aria-describedby={describedBy("name", e.name)}
-            onChange={(ev) => {
-              setName(ev.target.value);
-              if (!slugTouched.current) setSlug(slugify(ev.target.value));
-            }}
+            onChange={(ev) => setName(ev.target.value)}
           />
         </Field>
-        <Field id="slug" label="Slug" error={e.slug} hint={slugHint}>
+        <AddressLine
+          address={address}
+          hint="Eine Änderung der Kategorie ändert die Adresse."
+        />
+        <Field id="subtitle" label="Untertitel" error={e.subtitle}>
           <Input
-            id="slug"
-            name="slug"
-            value={slug}
-            aria-invalid={Boolean(e.slug)}
-            aria-describedby={describedBy("slug", e.slug, slugHint)}
-            onChange={(ev) => {
-              slugTouched.current = true;
-              setSlug(ev.target.value);
-            }}
+            id="subtitle"
+            name="subtitle"
+            value={subtitle}
+            aria-invalid={Boolean(e.subtitle)}
+            aria-describedby={describedBy("subtitle", e.subtitle)}
+            onChange={(ev) => setSubtitle(ev.target.value)}
           />
         </Field>
-        {text("subtitle", "Untertitel")}
         {text("sortOrder", "Reihenfolge")}
         <div className="md:col-span-2">
           {text("description", "Beschreibung (Markdown)", undefined, true)}
@@ -193,16 +193,15 @@ export function ProductForm({
           </select>
         </Field>
         {text("materialNote", "Materialhinweis")}
-        {text(
-          "seoTitle",
-          "SEO-Titel",
-          "Höchstens 70 Zeichen; leer = automatisch."
-        )}
-        {text(
-          "seoDescription",
-          "SEO-Beschreibung",
-          "Höchstens 160 Zeichen; leer = automatisch."
-        )}
+        <SeoSection
+          values={v}
+          errors={e}
+          auto={autoProductMeta({
+            name,
+            subtitle: subtitle.trim() || null,
+            ...seoContext,
+          })}
+        />
         <div className="md:col-span-2">
           <Button type="submit" disabled={pending}>
             {pending

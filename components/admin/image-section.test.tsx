@@ -57,6 +57,15 @@ describe("ImageSection (SC-5)", () => {
     expect((radios[1] as HTMLInputElement).checked).toBe(true);
   });
 
+  it("shows the positions next to the rows (6c SC-4)", () => {
+    renderSection([item(1, "Eins", true), item(2, "Zwei", false)]);
+    const positions = screen
+      .getAllByTestId("position")
+      .map((el) => el.textContent);
+    expect(positions).toEqual(["1", "2"]);
+    expect(screen.getAllByTestId("drag-handle")).toHaveLength(2);
+  });
+
   it("shows an empty state without images", () => {
     renderSection([]);
     expect(screen.getByText("Noch keine Bilder.")).toBeInTheDocument();

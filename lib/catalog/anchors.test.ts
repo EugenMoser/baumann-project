@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { articleAnchorId, exactHitTarget, productPath } from "./anchors";
+import {
+  articleAnchorId,
+  categoryPath,
+  exactHitTarget,
+  productPath,
+} from "./anchors";
 import type { SearchHit } from "./types";
 
 const hit = (over: Partial<SearchHit>): SearchHit => ({
@@ -48,5 +53,11 @@ describe("anchors (FR-4, FR-8, SC-4, SC-8)", () => {
       ])
     ).toBeNull();
     expect(exactHitTarget([])).toBeNull();
+  });
+});
+
+describe("categoryPath (6c SC-2)", () => {
+  it("builds the public category address", () => {
+    expect(categoryPath("moebelteile")).toBe("/produkte/moebelteile");
   });
 });

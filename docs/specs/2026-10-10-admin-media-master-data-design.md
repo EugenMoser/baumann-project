@@ -146,7 +146,7 @@ Needed once for orphans of products deleted in 6a, afterwards as a safety net.
 (Markdown textarea), SEO title and description (same limits as products),
 sort order, and the attribute assignment: a checkbox per existing attribute
 (label, unit, type) with a sort order input. On edit, a hint says that a slug
-change changes the URLs of the category and all its products.
+change changes the URLs of the category and all its products. Corrected by [feature 6c](2026-11-01-admin-editor-usability-design.md) (D1, D2): no slug field; slugs are made on the server.
 
 Saving calls `public.admin_save_category(payload jsonb)` (`security invoker`),
 which inserts or updates the category and replaces its `category_attribute`

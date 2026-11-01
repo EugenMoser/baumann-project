@@ -1,10 +1,9 @@
 import { z } from "zod";
-import { SLUG_PATTERN, slugify } from "@/lib/catalog/slug";
+import { slugBase } from "@/lib/catalog/slug";
 
 export const PRODUCT_FIELDS = [
   "categoryId",
   "name",
-  "slug",
   "subtitle",
   "description",
   "materialId",
@@ -19,7 +18,6 @@ export type ProductValues = Record<(typeof PRODUCT_FIELDS)[number], string>;
 export const emptyProductValues = (): ProductValues => ({
   categoryId: "",
   name: "",
-  slug: "",
   subtitle: "",
   description: "",
   materialId: "",
@@ -29,6 +27,12 @@ export const emptyProductValues = (): ProductValues => ({
   seoTitle: "",
   seoDescription: "",
 });
+
+// The slug is made from the name on the server (6c D1), so the name needs at
+// least one letter or digit.
+export const NAME_NEEDS_CHARACTER =
+  "Der Name braucht mindestens einen Buchstaben oder eine Ziffer.";
+export const nameHasSlug = (name: string): boolean => slugBase(name) !== "";
 
 export const optionalText = (max: number) =>
   z
@@ -53,12 +57,10 @@ export const productSchema = z.object({
     .string()
     .regex(/^[1-9]\d{0,9}$/, "Bitte eine Kategorie wählen.")
     .transform(Number),
-  name: requiredText(200, "Bitte einen Namen eingeben."),
-  slug: z
-    .string()
-    .trim()
-    .max(120, "Höchstens 120 Zeichen.")
-    .regex(SLUG_PATTERN, "Nur Kleinbuchstaben, Ziffern und Bindestriche."),
+  name: requiredText(200, "Bitte einen Namen eingeben.").refine(
+    nameHasSlug,
+    NAME_NEEDS_CHARACTER
+  ),
   subtitle: optionalText(200),
   description: optionalText(10_000),
   materialId: optionalId,
@@ -71,9 +73,3 @@ export const productSchema = z.object({
   seoDescription: optionalText(160),
 });
 export type ProductInput = z.output<typeof productSchema>;
-
-export function withDefaultSlug(values: ProductValues): ProductValues {
-  return values.slug.trim() === ""
-    ? { ...values, slug: slugify(values.name) }
-    : values;
-}

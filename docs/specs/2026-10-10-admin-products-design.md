@@ -121,7 +121,7 @@ note, status, sort order, SEO title and description. On create, the slug is
 filled from the name with the existing `slugify` (moved to
 `lib/catalog/slug.ts` and re-exported for the importer); it stays editable.
 On edit, a hint says that a slug or category change changes the public URL.
-A taken slug (`23505` on `(category_id, slug)`) is a field error.
+A taken slug (`23505` on `(category_id, slug)`) is a field error. Corrected by [feature 6c](2026-11-01-admin-editor-usability-design.md) (D1, D2): no slug field; slugs are made on the server.
 
 ### D7 — Origin fields
 

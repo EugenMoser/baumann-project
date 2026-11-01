@@ -22,6 +22,7 @@ export default async function NewCategoryPage() {
         initial={emptyCategoryValues()}
         attributes={options.attributes}
         categoryId={null}
+        address={null}
       />
     </>
   );

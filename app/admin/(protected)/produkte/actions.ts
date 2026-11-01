@@ -28,7 +28,6 @@ import { deleteProduct, saveProduct } from "@/lib/admin/products";
 import {
   PRODUCT_FIELDS,
   productSchema,
-  withDefaultSlug,
   type ProductValues,
 } from "@/lib/admin/schemas";
 import { CATALOG_BUCKET, fileLog, idFrom, runWrite } from "@/lib/admin/server";
@@ -38,7 +37,7 @@ export async function saveProductAction(
   _prev: FormState<ProductValues>,
   formData: FormData
 ): Promise<FormState<ProductValues>> {
-  const values = withDefaultSlug(readFields(formData, PRODUCT_FIELDS));
+  const values = readFields(formData, PRODUCT_FIELDS);
   const parsed = productSchema.safeParse(values);
   if (!parsed.success)
     return {

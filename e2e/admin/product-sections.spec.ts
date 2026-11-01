@@ -1,6 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { makePng } from "../../tests/fixtures/images";
-import { createPublishedProduct, STORAGE_STATE } from "./support";
+import {
+  createPublishedProduct,
+  dragHandleWithMouse,
+  STORAGE_STATE,
+} from "./support";
 
 test.use({ storageState: STORAGE_STATE });
 test.describe.configure({ mode: "serial" });
@@ -89,6 +93,30 @@ test("edit alt text and order (SC-5, 4b SC-6)", async ({ page }) => {
   // Search results show the list image.
   const search = await page.request.get(`/suche?q=${encodeURIComponent(NAME)}`);
   expect(await search.text()).toContain(`alt="Zweites Bild ${run}"`);
+});
+
+test("drag an image row by its handle to change the gallery (6c SC-4)", async ({
+  page,
+}) => {
+  await page.goto(editUrl);
+  // The editor lists the list image first: Zweites (list image), Erstes,
+  // Drittes. The gallery shows Erstes, then Drittes.
+  const handles = page.getByTestId("drag-handle");
+  await dragHandleWithMouse(page, handles.nth(2), handles.first(), "above");
+  await expect(page.getByText(/steht jetzt auf Position 1 von 3/)).toHaveText(
+    `Drittes Bild ${run} steht jetzt auf Position 1 von 3.`
+  );
+  await page.getByRole("button", { name: "Bilder speichern" }).click();
+  await expect(
+    page.getByText("Bilder gespeichert.", { exact: true })
+  ).toBeVisible();
+
+  // Now Drittes is the first gallery image, then Erstes.
+  const html = await publicHtml(page);
+  const first = html.indexOf(`alt="Erstes Bild neu ${run}"`);
+  const third = html.indexOf(`alt="Drittes Bild ${run}"`);
+  expect(third).toBeGreaterThan(-1);
+  expect(first).toBeGreaterThan(third);
 });
 
 test("remove images until none is left, then upload again (SC-6, Review Focus 4)", async ({

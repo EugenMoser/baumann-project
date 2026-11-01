@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { makeProductPage } from "./fixtures";
-import { categoryMetadata, productMetadata } from "./metadata";
+import {
+  autoCategoryMeta,
+  autoProductMeta,
+  categoryMetadata,
+  productMetadata,
+} from "./metadata";
 
 describe("productMetadata (FR-12, SC-12)", () => {
   it("builds title and description from data", () => {
@@ -53,5 +58,39 @@ describe("categoryMetadata (FR-12, SC-12)", () => {
     expect(
       categoryMetadata({ ...base, introText: "Kurzer Text." }).description
     ).toBe("Kurzer Text.");
+  });
+});
+
+describe("autoProductMeta (6c SC-3)", () => {
+  it("has no article part without articles", () => {
+    expect(
+      autoProductMeta({
+        name: "Testteil",
+        subtitle: "Klein",
+        articleNumbers: [],
+        colorCount: 2,
+      }).description
+    ).toBe("Testteil – Klein.");
+  });
+
+  it("equals the public description for a product with articles", () => {
+    const page = makeProductPage();
+    expect(
+      autoProductMeta({
+        name: page.name,
+        subtitle: page.subtitle,
+        articleNumbers: page.articles.map((a) => a.articleNumber),
+        colorCount: page.colors.length,
+      })
+    ).toEqual(productMetadata(page));
+  });
+});
+
+describe("autoCategoryMeta (6c SC-3)", () => {
+  it("falls back to the overview sentence without intro text", () => {
+    expect(autoCategoryMeta({ name: "Möbel", introText: " " })).toEqual({
+      title: "Möbel",
+      description: "Möbel: alle Produkte im Überblick.",
+    });
   });
 });
