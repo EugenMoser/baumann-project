@@ -24,7 +24,10 @@ export function AdminHeader({ email, shortName, logoutAction }: Props) {
             Admin
           </span>
         </p>
-        <nav aria-label="Admin" className="flex gap-4 text-sm">
+        <nav
+          aria-label="Admin"
+          className="flex flex-wrap gap-x-4 gap-y-1 text-sm"
+        >
           {SECTIONS.map((s) => (
             <Link
               key={s.href}
