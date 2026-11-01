@@ -17,6 +17,7 @@ import { placementNote } from "@/lib/admin/media-placement";
 import { publicMediaUrl } from "@/lib/catalog/media";
 import { describedBy, Field } from "./field";
 import { RemoveImageButton } from "./remove-image-button";
+import { SortableList } from "./sortable-list";
 import { UploadForm } from "./upload-form";
 
 type SaveAction = (
@@ -66,13 +67,6 @@ export function ImageSection({
   }
   const byId = new Map(items.map((m) => [String(m.mediaId), m]));
   const e = state.fieldErrors;
-  const move = (from: number, to: number) =>
-    setRows((rs) => {
-      const next = [...rs];
-      const [row] = next.splice(from, 1);
-      if (row) next.splice(to, 0, row);
-      return next;
-    });
 
   return (
     <section aria-labelledby="images-heading" className="mt-10 grid gap-4">
@@ -90,100 +84,91 @@ export function ImageSection({
       ) : (
         <form action={formAction} className="grid gap-4" noValidate>
           <input type="hidden" name="productId" value={productId} />
-          {rows.map((row, i) => {
-            const media = byId.get(row.mediaId);
-            const aid = `alt-${row.mediaId}`;
-            const tid = `thumb-${row.mediaId}`;
-            const label = `Bild ${i + 1}`;
-            return (
-              <fieldset
-                key={row.mediaId}
-                className="grid grid-cols-[96px_1fr_auto] items-end gap-3"
-              >
-                <legend className="sr-only">{label}</legend>
-                <input
-                  type="hidden"
-                  name="mediaId"
-                  value={row.mediaId}
-                  data-testid="media-id"
-                />
-                {media ? (
-                  <Image
-                    src={publicMediaUrl(media.storagePath)}
-                    alt=""
-                    width={media.width}
-                    height={media.height}
-                    sizes="96px"
-                    className="h-24 w-24 rounded border object-contain"
-                  />
-                ) : (
-                  <span className="h-24 w-24 rounded border" aria-hidden />
-                )}
-                <Field id={aid} label="Alt-Text" error={e[`rows.${i}.altText`]}>
-                  <Input
-                    id={aid}
-                    name="altText"
-                    value={row.altText}
-                    maxLength={250}
-                    aria-invalid={Boolean(e[`rows.${i}.altText`])}
-                    aria-describedby={describedBy(aid, e[`rows.${i}.altText`])}
-                    onChange={(ev) =>
-                      setRows((rs) =>
-                        rs.map((r, j) =>
-                          j === i ? { ...r, altText: ev.target.value } : r
-                        )
-                      )
-                    }
-                  />
-                </Field>
-                <div className="flex flex-wrap items-center gap-2 pb-1">
+          <SortableList
+            items={rows}
+            getKey={(r) => r.mediaId}
+            getLabel={(r) => r.altText.trim() || "Bild"}
+            noun="Bild"
+            onReorder={setRows}
+            renderItem={(row, i) => {
+              const media = byId.get(row.mediaId);
+              const aid = `alt-${row.mediaId}`;
+              const tid = `thumb-${row.mediaId}`;
+              const label = `Bild ${i + 1}`;
+              return (
+                <fieldset className="grid min-w-0 grid-cols-1 items-end gap-3 sm:grid-cols-[96px_1fr_auto]">
+                  <legend className="sr-only">{label}</legend>
                   <input
-                    id={tid}
-                    type="radio"
-                    name="thumbnail"
+                    type="hidden"
+                    name="mediaId"
                     value={row.mediaId}
-                    checked={thumbnailId === row.mediaId}
-                    onChange={() => setThumbnailId(row.mediaId)}
+                    data-testid="media-id"
                   />
-                  <label htmlFor={tid} className="text-sm">
-                    Listenbild
-                  </label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={`${label} nach oben`}
-                    disabled={i === 0}
-                    onClick={() => move(i, i - 1)}
+                  {media ? (
+                    <Image
+                      src={publicMediaUrl(media.storagePath)}
+                      alt=""
+                      width={media.width}
+                      height={media.height}
+                      sizes="96px"
+                      className="h-24 w-24 rounded border object-contain"
+                    />
+                  ) : (
+                    <span className="h-24 w-24 rounded border" aria-hidden />
+                  )}
+                  <Field
+                    id={aid}
+                    label="Alt-Text"
+                    error={e[`rows.${i}.altText`]}
                   >
-                    ↑
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={`${label} nach unten`}
-                    disabled={i === rows.length - 1}
-                    onClick={() => move(i, i + 1)}
+                    <Input
+                      id={aid}
+                      name="altText"
+                      value={row.altText}
+                      maxLength={250}
+                      aria-invalid={Boolean(e[`rows.${i}.altText`])}
+                      aria-describedby={describedBy(
+                        aid,
+                        e[`rows.${i}.altText`]
+                      )}
+                      onChange={(ev) =>
+                        setRows((rs) =>
+                          rs.map((r, j) =>
+                            j === i ? { ...r, altText: ev.target.value } : r
+                          )
+                        )
+                      }
+                    />
+                  </Field>
+                  <div className="flex flex-wrap items-center gap-2 pb-1">
+                    <input
+                      id={tid}
+                      type="radio"
+                      name="thumbnail"
+                      value={row.mediaId}
+                      checked={thumbnailId === row.mediaId}
+                      onChange={() => setThumbnailId(row.mediaId)}
+                    />
+                    <label htmlFor={tid} className="text-sm">
+                      Listenbild
+                    </label>
+                    <RemoveImageButton
+                      action={removeAction}
+                      productId={productId}
+                      mediaId={Number(row.mediaId)}
+                      label={label}
+                    />
+                  </div>
+                  <p
+                    data-testid="placement-note"
+                    className="text-sm text-muted-foreground sm:col-span-3"
                   >
-                    ↓
-                  </Button>
-                  <RemoveImageButton
-                    action={removeAction}
-                    productId={productId}
-                    mediaId={Number(row.mediaId)}
-                    label={label}
-                  />
-                </div>
-                <p
-                  data-testid="placement-note"
-                  className="col-span-3 text-sm text-muted-foreground"
-                >
-                  {placementNote(rows, thumbnailId, i)}
-                </p>
-              </fieldset>
-            );
-          })}
+                    {placementNote(rows, thumbnailId, i)}
+                  </p>
+                </fieldset>
+              );
+            }}
+          />
           {e.media ? (
             <p role="alert" className="text-sm text-destructive">
               {e.media}

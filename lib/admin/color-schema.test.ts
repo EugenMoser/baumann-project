@@ -4,20 +4,17 @@ import {
   DUPLICATE_SUFFIX,
   NEEDS_ONE_DEFAULT,
   parseColors,
+  readColorsForm,
   type ColorValues,
 } from "./color-schema";
 
-const row = (colorId: string, suffix = "", sortOrder = "0") => ({
-  colorId,
-  suffix,
-  sortOrder,
-});
+const row = (colorId: string, suffix = "") => ({ colorId, suffix });
 
 describe("parseColors (SC-10)", () => {
   it("accepts a valid set and marks the default", () => {
     const r = parseColors({
       productId: "1",
-      rows: [row("3", "1"), row("1", " 2 ", "1")],
+      rows: [row("3", "1"), row("1", " 2 ")],
       defaultColorId: "3",
     });
     expect(r.ok && r.value.rows).toEqual([
@@ -65,5 +62,32 @@ describe("parseColors (SC-10)", () => {
     expect(!r.ok && r.fieldErrors["rows.0.suffix"]).toBe(
       "Höchstens 10 Zeichen."
     );
+  });
+});
+
+describe("colour order from row position (6c SC-4)", () => {
+  it("ignores stray sortOrder form entries", () => {
+    const fd = new FormData();
+    fd.append("productId", "1");
+    fd.append("colorId", "3");
+    fd.append("colorId", "1");
+    fd.append("suffix", "1");
+    fd.append("suffix", "2");
+    fd.append("sortOrder", "9");
+    fd.append("sortOrder", "0");
+    fd.append("defaultColor", "3");
+    expect(readColorsForm(fd).rows).toEqual([
+      { colorId: "3", suffix: "1" },
+      { colorId: "1", suffix: "2" },
+    ]);
+  });
+  it("sets sortOrder to the row index", () => {
+    const r = parseColors({
+      productId: "1",
+      rows: [row("3", "1"), row("1", "2"), row("2", "3")],
+      defaultColorId: "3",
+    });
+    expect(r.ok && r.value.rows.map((x) => x.sortOrder)).toEqual([0, 1, 2]);
+    expect(r.ok && r.value.rows.map((x) => x.colorId)).toEqual([3, 1, 2]);
   });
 });

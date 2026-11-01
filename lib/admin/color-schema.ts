@@ -6,7 +6,7 @@ export { DUPLICATE_COLOR, DUPLICATE_SUFFIX, NEEDS_ONE_DEFAULT } from "./errors";
 
 export type ColorValues = {
   productId: string;
-  rows: { colorId: string; suffix: string; sortOrder: string }[];
+  rows: { colorId: string; suffix: string }[];
   defaultColorId: string;
 };
 
@@ -16,13 +16,11 @@ const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 export function readColorsForm(formData: FormData): ColorValues {
   const ids = formData.getAll("colorId").map(str);
   const suffixes = formData.getAll("suffix").map(str);
-  const orders = formData.getAll("sortOrder").map(str);
   return {
     productId: str(formData.get("productId")),
     rows: ids.map((colorId, i) => ({
       colorId,
       suffix: suffixes[i] ?? "",
-      sortOrder: orders[i] ?? String(i),
     })),
     defaultColorId: str(formData.get("defaultColor")),
   };
@@ -46,15 +44,11 @@ export function parseColors(
       errors[`rows.${i}.suffix`] = "Höchstens 10 Zeichen.";
       return;
     }
-    if (!/^-?\d{1,6}$/.test(row.sortOrder.trim())) {
-      errors[`rows.${i}.sortOrder`] = "Bitte eine ganze Zahl eingeben.";
-      return;
-    }
     rows.push({
       colorId: Number(row.colorId),
       suffix: suffix === "" ? null : suffix,
       isDefault: row.colorId === values.defaultColorId,
-      sortOrder: Number(row.sortOrder.trim()),
+      sortOrder: i,
     });
   });
   if (Object.keys(errors).length === 0) {
@@ -67,7 +61,6 @@ export function parseColors(
       errors.colors = NEEDS_ONE_DEFAULT;
   }
   if (Object.keys(errors).length > 0) return { ok: false, fieldErrors: errors };
-  rows.sort((a, b) => a.sortOrder - b.sortOrder);
   return { ok: true, value: { productId: Number(values.productId), rows } };
 }
 
@@ -80,7 +73,6 @@ export function colorValuesFrom(
     rows: rows.map((r) => ({
       colorId: String(r.colorId),
       suffix: r.suffix ?? "",
-      sortOrder: String(r.sortOrder),
     })),
     defaultColorId: String(rows.find((r) => r.isDefault)?.colorId ?? ""),
   };
