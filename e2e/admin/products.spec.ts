@@ -38,9 +38,9 @@ test("create a draft (SC-6)", async ({ page }) => {
     .getByLabel("Kategorie")
     .selectOption({ label: "Möbelteile (Beispiel)" });
   await nameInput(page).fill(NAME);
-  await expect(page.getByLabel("Slug")).toHaveValue(SLUG);
   await page.getByRole("button", { name: "Produkt anlegen" }).click();
   await expect(page).toHaveURL(/\/admin\/produkte\/\d+$/);
+  await expect(page.getByText(`Adresse: ${PUBLIC_URL}`)).toBeVisible();
   editUrl = new URL(page.url()).pathname;
   const response = await page.request.get(PUBLIC_URL);
   expect(response.status()).toBe(404);

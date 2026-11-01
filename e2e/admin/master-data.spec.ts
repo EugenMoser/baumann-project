@@ -52,10 +52,12 @@ async function createMaterial(page: Page, code: string) {
 test("create a category with an attribute (SC-10)", async ({ page }) => {
   await page.goto("/admin/kategorien/neu");
   await page.getByLabel("Name", { exact: true }).fill(CATEGORY);
-  await expect(page.getByLabel("Slug")).toHaveValue(`e2e-kategorie-${run}`);
   await page.getByRole("checkbox", { name: "Oberfläche" }).check();
   await page.getByRole("button", { name: "Kategorie anlegen" }).click();
   await expect(page).toHaveURL(/\/admin\/kategorien\/\d+$/);
+  await expect(
+    page.getByText(`Adresse: /produkte/e2e-kategorie-${run}`)
+  ).toBeVisible();
   const categoryId = Number(page.url().split("/").pop());
 
   await page.goto("/admin/produkte/neu");

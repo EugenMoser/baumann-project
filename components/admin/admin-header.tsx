@@ -41,9 +41,11 @@ export function AdminHeader({ email, shortName, logoutAction }: Props) {
             Zur Website
           </Link>
         </nav>
-        <div className="ml-auto flex items-center gap-3 text-sm">
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-3 text-sm">
           {email ? (
-            <span className="text-muted-foreground">{email}</span>
+            <span className="min-w-0 truncate text-muted-foreground">
+              {email}
+            </span>
           ) : null}
           <form action={logoutAction}>
             <Button type="submit" variant="outline" size="sm">
