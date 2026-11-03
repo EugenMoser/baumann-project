@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 10 of 12 features done (6a/6b count as one). Next: feature 7 (AI text assistant), then 8 (showcase).
+Active. MVP: 11 of 12 features done (6a/6b count as one). Next: feature 8 (showcase).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack

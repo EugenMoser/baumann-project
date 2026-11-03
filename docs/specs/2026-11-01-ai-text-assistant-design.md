@@ -1,6 +1,6 @@
 # Feature 7 — AI text assistant
 
-- **Status:** draft (2026-11-03)
+- **Status:** approved (2026-11-03), implemented (2026-11-03)
 - **Roadmap:** feature 7 ([roadmap](../roadmap.md))
 - **Estimate:** 12 h (roadmap 10 h, plus the request log in D7 and the two
   follow-ups in D11)
