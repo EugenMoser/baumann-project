@@ -54,23 +54,27 @@ export async function POST(
   if (!type.toLowerCase().startsWith("application/json"))
     return fail("bad_request", 415);
 
-  const client = await createSessionSupabase();
-  const auth = await checkAdmin(client);
-  if (auth.kind === "anonymous") return fail("unauthorized", 401);
-  if (auth.kind === "forbidden") return fail("forbidden", 403);
-
   // The body ({}) carries nothing: generation uses the saved product (D2).
   const { id } = await ctx.params;
-  if (!/^[1-9]\d{0,9}$/.test(id)) return fail("bad_request", 400);
 
   try {
+    const client = await createSessionSupabase();
+    const auth = await checkAdmin(client);
+    if (auth.kind === "anonymous") return fail("unauthorized", 401);
+    if (auth.kind === "forbidden") return fail("forbidden", 403);
+    if (!/^[1-9]\d{0,9}$/.test(id)) return fail("bad_request", 400);
+
     const result = await generateCopy(generationDeps(client), Number(id));
     if (result.ok) return Response.json(result.value);
     console.error("[ai] generate failed:", result.error);
     return fail(result.error, STATUS[result.error]);
-  } catch {
-    // Unexpected throw: the editor still gets JSON; nothing of it is logged.
-    console.error("[ai] generate failed:", "unexpected");
+  } catch (error) {
+    // Unexpected throw: the editor still gets JSON; only the error name is
+    // logged, never its message.
+    console.error(
+      "[ai] generate failed:",
+      error instanceof Error ? error.name : "unknown"
+    );
     return fail("db_error", 500);
   }
 }

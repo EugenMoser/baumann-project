@@ -5,13 +5,14 @@ import type { GenerateError } from "@/lib/ai/generate";
 
 const mocks = vi.hoisted(() => ({
   env: { NEXT_PUBLIC_SITE_URL: "http://localhost:3000" },
+  createSessionSupabase: vi.fn(),
   checkAdmin: vi.fn(),
   generateCopy: vi.fn(),
 }));
 
 vi.mock("@/lib/env/public", () => ({ publicEnv: mocks.env }));
 vi.mock("@/lib/supabase/session", () => ({
-  createSessionSupabase: async () => ({ fake: "client" }),
+  createSessionSupabase: mocks.createSessionSupabase,
 }));
 vi.mock("@/lib/admin/auth", () => ({ checkAdmin: mocks.checkAdmin }));
 vi.mock("@/lib/ai/server", () => ({
@@ -38,6 +39,13 @@ function post(
   });
 }
 
+// Request checks run before the session is read (route.ts).
+function expectNoSessionWork() {
+  expect(mocks.createSessionSupabase).not.toHaveBeenCalled();
+  expect(mocks.checkAdmin).not.toHaveBeenCalled();
+  expect(mocks.generateCopy).not.toHaveBeenCalled();
+}
+
 const ctx = (id = "7") => ({ params: Promise.resolve({ id }) });
 
 const success = {
@@ -55,6 +63,7 @@ const success = {
 describe("POST /admin/produkte/[id]/ki-vorschlag (FR-1, SC-1)", () => {
   beforeEach(() => {
     mocks.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+    mocks.createSessionSupabase.mockResolvedValue({ fake: "client" });
     mocks.checkAdmin.mockResolvedValue(admin);
     mocks.generateCopy.mockResolvedValue(success);
   });
@@ -97,7 +106,7 @@ describe("POST /admin/produkte/[id]/ki-vorschlag (FR-1, SC-1)", () => {
     const response = await POST(post(headers), ctx());
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "Ungültige Anfrage." });
-    expect(mocks.generateCopy).not.toHaveBeenCalled();
+    expectNoSessionWork();
   });
 
   it("rejects a request without an Origin header", async () => {
@@ -105,7 +114,7 @@ describe("POST /admin/produkte/[id]/ki-vorschlag (FR-1, SC-1)", () => {
     request.headers.delete("origin");
     const response = await POST(request, ctx());
     expect(response.status).toBe(403);
-    expect(mocks.generateCopy).not.toHaveBeenCalled();
+    expectNoSessionWork();
   });
 
   it.each([["text/plain"], ["application/x-www-form-urlencoded"], [""]])(
@@ -116,7 +125,7 @@ describe("POST /admin/produkte/[id]/ki-vorschlag (FR-1, SC-1)", () => {
       const response = await POST(request, ctx());
       expect(response.status).toBe(415);
       expect(await response.json()).toEqual({ error: "Ungültige Anfrage." });
-      expect(mocks.generateCopy).not.toHaveBeenCalled();
+      expectNoSessionWork();
     }
   );
 
@@ -228,7 +237,21 @@ describe("POST /admin/produkte/[id]/ki-vorschlag (FR-1, SC-1)", () => {
       error:
         "Der Vorschlag konnte nicht erstellt werden. Bitte später erneut versuchen.",
     });
-    expect(log).toHaveBeenCalledWith("[ai] generate failed:", "unexpected");
+    expect(log).toHaveBeenCalledWith("[ai] generate failed:", "Error");
     expect(JSON.stringify(log.mock.calls)).not.toContain("sk-123");
+  });
+
+  it("answers JSON when the admin check throws", async () => {
+    mocks.checkAdmin.mockRejectedValue(new TypeError("fetch failed sk-456"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = await POST(post(), ctx());
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error:
+        "Der Vorschlag konnte nicht erstellt werden. Bitte später erneut versuchen.",
+    });
+    expect(log).toHaveBeenCalledWith("[ai] generate failed:", "TypeError");
+    expect(JSON.stringify(log.mock.calls)).not.toContain("sk-456");
+    expect(mocks.generateCopy).not.toHaveBeenCalled();
   });
 });
