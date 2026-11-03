@@ -26,6 +26,10 @@ const suggestButton = (page: Page) =>
   page.getByRole("button", { name: "Mit KI vorschlagen" });
 const box = (page: Page, label: string) =>
   page.getByRole("group", { name: `KI-Vorschlag: ${label}`, exact: true });
+// The public description block: paragraph -> text wrapper -> block that also
+// holds the origin label (app/(site)/produkte/[category]/[product]/page.tsx).
+const publicDescription = (page: Page, text: string) =>
+  page.getByText(text).locator("xpath=../..");
 const description = (page: Page) => page.getByLabel("Beschreibung (Markdown)");
 const seoTitle = (page: Page) =>
   page.getByLabel("Titel für Suchmaschinen", { exact: true });
@@ -43,12 +47,23 @@ async function requestSuggestions(page: Page, fixture: Fixture) {
 
 test("saving works while a suggestion is pending (SC-1)", async ({ page }) => {
   const fixture = await createProduct("pending");
+  // Hold the answer back until the save is done, so the order does not
+  // depend on the fake model's delay.
+  let release: () => void = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route("**/ki-vorschlag", async (route) => {
+    const response = await route.fetch();
+    await released;
+    await route.fulfill({ response });
+  });
+
   await page.goto(`/admin/produkte/${fixture.id}`);
   await suggestButton(page).click();
-  const pending = page.getByRole("button", {
-    name: "Vorschlag wird erstellt …",
-  });
-  await expect(pending).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Vorschlag wird erstellt …" })
+  ).toBeDisabled();
 
   await page.getByLabel("Untertitel").fill("Neuer Untertitel");
   await save(page);
@@ -56,6 +71,7 @@ test("saving works while a suggestion is pending (SC-1)", async ({ page }) => {
   // Saved while the model was still working: no box exists yet.
   await expect(box(page, "Beschreibung")).toHaveCount(0);
 
+  release();
   await expect(box(page, "Beschreibung")).toBeVisible();
   await expect(box(page, "Titel für Suchmaschinen")).toBeVisible();
   await expect(box(page, "Beschreibung für Suchmaschinen")).toBeVisible();
@@ -86,9 +102,10 @@ test("accepted description and SEO title are labelled and published (SC-5)", asy
   await expect(savedToast(page)).toBeVisible();
 
   await page.goto(fixture.publicUrl);
-  await expect(page.getByText("KI-generiert", { exact: true })).toBeVisible();
+  const text = `Testvorschlag für ${fixture.name}.`;
+  await expect(page.getByText(text)).toBeVisible();
   await expect(
-    page.getByText(`Testvorschlag für ${fixture.name}.`)
+    publicDescription(page, text).getByText("KI-generiert", { exact: true })
   ).toBeVisible();
   await expect(page).toHaveTitle(
     new RegExp(`^${fixture.name} ${SEO_TITLE_SUFFIX}`)
@@ -104,17 +121,18 @@ test("an edited accepted description is labelled as edited (SC-6)", async ({
   await box(page, "Beschreibung")
     .getByRole("button", { name: "Übernehmen" })
     .click();
-  await description(page).fill(
-    `Testvorschlag für ${fixture.name}. Redaktionell ergänzt.`
-  );
+  const text = `Testvorschlag für ${fixture.name}. Redaktionell ergänzt.`;
+  await description(page).fill(text);
   await save(page);
   await expect(savedToast(page)).toBeVisible();
 
   await page.goto(fixture.publicUrl);
+  await expect(page.getByText(text)).toBeVisible();
+  const block = publicDescription(page, text);
   await expect(
-    page.getByText("KI-unterstützt, redaktionell bearbeitet", { exact: true })
+    block.getByText("KI-unterstützt, redaktionell bearbeitet", { exact: true })
   ).toBeVisible();
-  await expect(page.getByText("KI-generiert", { exact: true })).toHaveCount(0);
+  await expect(block.getByText("KI-generiert", { exact: true })).toHaveCount(0);
 });
 
 test("discarding a suggestion leaves the description unchanged (SC-5)", async ({
@@ -139,5 +157,9 @@ test("discarding a suggestion leaves the description unchanged (SC-5)", async ({
   await expect(savedToast(page)).toBeVisible();
   await page.goto(fixture.publicUrl);
   await expect(page.getByText(original)).toBeVisible();
-  await expect(page.getByText("KI-generiert", { exact: true })).toHaveCount(0);
+  const block = publicDescription(page, original);
+  await expect(block.getByText("KI-generiert", { exact: true })).toHaveCount(0);
+  await expect(
+    block.getByText("KI-unterstützt, redaktionell bearbeitet", { exact: true })
+  ).toHaveCount(0);
 });
