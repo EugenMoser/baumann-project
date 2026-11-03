@@ -39,7 +39,15 @@ export default defineConfig({
   // Runs against the standalone production build: run `pnpm build` first.
   webServer: {
     command: "pnpm start:standalone",
-    env: { PORT: String(PORT), HOSTNAME: "127.0.0.1" },
+    env: {
+      PORT: String(PORT),
+      HOSTNAME: "127.0.0.1",
+      // Fake model, no provider. The generous limits keep re-runs within
+      // the same hour from turning into 429s; production is unaffected.
+      AI_FAKE_MODEL: "1",
+      AI_HOURLY_REQUEST_LIMIT: "1000",
+      AI_MONTHLY_REQUEST_CAP: "100000",
+    },
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
