@@ -13,6 +13,13 @@ export const PRODUCT_FIELDS = [
   "seoTitle",
   "seoDescription",
 ] as const;
+// Hidden fields that carry the id of an accepted AI suggestion (D6). They are
+// not product values: the form keeps them apart from PRODUCT_FIELDS.
+export const AI_ACCEPT_FIELDS = {
+  description: "aiDescription",
+  seoTitle: "aiSeoTitle",
+  seoDescription: "aiSeoDescription",
+} as const;
 export type ProductValues = Record<(typeof PRODUCT_FIELDS)[number], string>;
 
 export const emptyProductValues = (): ProductValues => ({

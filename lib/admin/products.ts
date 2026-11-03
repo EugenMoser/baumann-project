@@ -6,7 +6,7 @@ import { fromPg, STALE_SELECTION, type AdminError } from "./errors";
 import { needsAltReview } from "./alt-review";
 import { likePattern, type ProductFilter } from "./filter";
 import type { ProductStatus } from "./labels";
-import { productOrigins } from "./origin";
+import { productOrigins, type AcceptedText } from "./origin";
 import {
   DELETE_PUBLISHED,
   PUBLISH_NEEDS_ARTICLE,
@@ -311,10 +311,75 @@ export async function publishStats(
   });
 }
 
+// Ids of the AI suggestions the admin accepted in the editor (hidden fields).
+export type AcceptedIds = {
+  description: number | null;
+  seoTitle: number | null;
+  seoDescription: number | null;
+};
+
+const SUGGESTION_MAX_AGE_MS = 24 * 3_600_000;
+const SUGGESTION_FIELDS = [
+  { key: "description", field: "description" },
+  { key: "seoTitle", field: "seo_title" },
+  { key: "seoDescription", field: "seo_description" },
+] as const;
+
+// D6: an id counts only for this product and field, within 24 h and once.
+// The database applies every condition; anything else is ignored and logged
+// by field name only.
+async function loadAccepted(
+  client: AdminClient,
+  productId: number,
+  ids: AcceptedIds
+): Promise<Result<{ text: AcceptedText; rowIds: number[] }, AdminError>> {
+  const since = new Date(Date.now() - SUGGESTION_MAX_AGE_MS).toISOString();
+  const text: AcceptedText = {};
+  const rowIds: number[] = [];
+  for (const { key, field } of SUGGESTION_FIELDS) {
+    const rowId = ids[key];
+    if (rowId === null) continue;
+    const { data, error } = await client
+      .from("ai_generation")
+      .select("output")
+      .eq("id", rowId)
+      .eq("entity", "product")
+      .eq("entity_id", productId)
+      .eq("field", field)
+      .gt("created_at", since)
+      .is("accepted_at", null)
+      .maybeSingle();
+    if (error) return err(fromPg(error));
+    if (data === null) {
+      console.warn("[admin] ignored AI suggestion id", field);
+      continue;
+    }
+    text[key] = data.output;
+    rowIds.push(rowId);
+  }
+  return ok({ text, rowIds });
+}
+
+// After the product update; a failure here must not fail the save.
+async function markAccepted(client: AdminClient, rowIds: number[]) {
+  if (rowIds.length === 0) return;
+  const { error } = await client
+    .from("ai_generation")
+    .update({ accepted_at: new Date().toISOString() })
+    .in("id", rowIds)
+    .is("accepted_at", null);
+  if (error)
+    console.error(
+      "[admin] mark AI suggestions accepted",
+      error.code ?? "unknown"
+    );
+}
+
 export async function saveProduct(
   client: AdminClient,
   id: number | null,
-  input: ProductInput
+  input: ProductInput,
+  accepted?: AcceptedIds
 ): Promise<Result<{ id: number }, AdminError>> {
   const fields = {
     category_id: input.categoryId,
@@ -375,6 +440,10 @@ export async function saveProduct(
     const problem = publishProblem(stats.value);
     if (problem) return err({ kind: "invalid", message: problem });
   }
+  const acceptedRows = accepted
+    ? await loadAccepted(client, id, accepted)
+    : ok({ text: {}, rowIds: [] });
+  if (!acceptedRows.ok) return acceptedRows;
   const origins = productOrigins(
     {
       description: prev.description,
@@ -383,7 +452,8 @@ export async function saveProduct(
       descriptionOrigin: prev.description_origin,
       seoOrigin: prev.seo_origin,
     },
-    next
+    next,
+    acceptedRows.value.text
   );
   // The slug is never rewritten, except to keep it unique when the product
   // moves to another category (6c D1).
@@ -403,21 +473,25 @@ export async function saveProduct(
     if (data.length === 0) return err({ kind: "not_found" });
     return ok({ id });
   };
-  if (prev.category_id === input.categoryId) return update(null);
-  return withSlugRetry(async () => {
-    const taken = await takenProductSlugs(
-      client,
-      input.categoryId,
-      prev.slug,
-      id
-    );
-    if (!taken.ok) return taken;
-    return update(
-      taken.value.includes(prev.slug)
-        ? firstFreeSlug(prev.slug, taken.value)
-        : prev.slug
-    );
-  });
+  const saved =
+    prev.category_id === input.categoryId
+      ? await update(null)
+      : await withSlugRetry(async () => {
+          const taken = await takenProductSlugs(
+            client,
+            input.categoryId,
+            prev.slug,
+            id
+          );
+          if (!taken.ok) return taken;
+          return update(
+            taken.value.includes(prev.slug)
+              ? firstFreeSlug(prev.slug, taken.value)
+              : prev.slug
+          );
+        });
+  if (saved.ok) await markAccepted(client, acceptedRows.value.rowIds);
+  return saved;
 }
 
 export async function deleteProduct(
