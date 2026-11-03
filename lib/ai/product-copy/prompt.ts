@@ -12,7 +12,7 @@ Regeln:
 - Sachlicher, neutraler B2B-Ton. Keine direkte Anrede (kein „Sie“, kein „du“), keine Superlative, keine Werbefloskeln.
 - Nenne keine Preise und keine Zulassungen, Zertifikate oder Prüfzeichen, außer sie stehen im JSON-Block.
 - Reiner Fließtext: keine Aufzählungen, keine Überschriften, kein Markdown.
-- Typografie: Anführungszeichen nur als „…“ oder als einfaches ", Apostroph nur als einfaches ', als Strich nur den Gedankenstrich – (nie —), nie das Auslassungszeichen …, keine Emojis und keine Sonderzeichen außer – „ “ ‚ ‘ × ° ± ⌀.
+- Typografie: Anführungszeichen nur als „ “ oder als einfaches ", Apostroph nur als einfaches ', als Strich nur den Gedankenstrich – (nie —), nie das Auslassungszeichen …, keine Emojis und keine Sonderzeichen außer – „ “ ‚ ‘ × ° ± ⌀.
 
 Ausgabe, drei Felder:
 - description: 2–4 Sätze Fließtext, etwa 250–600 Zeichen.
