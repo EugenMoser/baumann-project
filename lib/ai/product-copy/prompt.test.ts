@@ -19,6 +19,14 @@ describe("prompt (FR-8, SC-8)", () => {
     expect(SYSTEM_PROMPT).toContain(phrase);
   });
 
+  it("names the allowed typography", () => {
+    expect(SYSTEM_PROMPT).toContain("Typografie:");
+    expect(SYSTEM_PROMPT).toContain("nie —");
+    expect(SYSTEM_PROMPT).toContain("nie das Auslassungszeichen …");
+    expect(SYSTEM_PROMPT).toContain("keine Emojis");
+    expect(SYSTEM_PROMPT).toContain("– „ “ ‚ ‘ × ° ± ⌀");
+  });
+
   it("names the three output fields", () => {
     for (const field of ["description", "seoTitle", "seoDescription"]) {
       expect(SYSTEM_PROMPT).toContain(field);

@@ -41,7 +41,7 @@ const MARKDOWN_INLINE = /\*\*|__|\[[^\]]*\]\(/;
 // the listed typographic symbols.
 const ALLOWED_CHARS = /^[\p{Script=Latin}0-9\s!-/:-@[-`{-~–„“‚‘×°±⌀]*$/u;
 
-function lengthOk(draft: CopyDraft): keyof CopyDraft | null {
+function findLengthViolation(draft: CopyDraft): keyof CopyDraft | null {
   const { description, seoTitle, seoDescription } = draft;
   if (
     description.length < DESCRIPTION_MIN ||
@@ -67,8 +67,8 @@ export function checkCopy(
   }
   const draft = parsed.data;
 
-  const tooLong = lengthOk(draft);
-  if (tooLong) return { ok: false, failure: "length", field: tooLong };
+  const violation = findLengthViolation(draft);
+  if (violation) return { ok: false, failure: "length", field: violation };
 
   if (!SENTENCE_END.test(draft.description))
     return { ok: false, failure: "ending", field: "description" };

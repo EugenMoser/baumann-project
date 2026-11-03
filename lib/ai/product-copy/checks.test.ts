@@ -270,7 +270,30 @@ describe("checkCopy (FR-3, SC-3)", () => {
 
     it("matches thousands separators on both sides", () => {
       const raw = withField("seoDescription", "Ab 1.000 Stück lieferbar.");
-      expect(checkCopy(raw, new Set(numbersIn("1000"))).ok).toBe(true);
+      expect(checkCopy(raw, new Set(numbersIn("1.000 Stück"))).ok).toBe(true);
+    });
+
+    it("treats a decimal dot in the input as a comma in the output", () => {
+      const raw = withField("seoDescription", "Höhe 15,5 mm.");
+      expect(checkCopy(raw, new Set(numbersIn("15.5"))).ok).toBe(true);
+    });
+
+    it("does not equate 2 with 2,0", () => {
+      const raw = withField("seoDescription", "Höhe 2 mm.");
+      expect(fail(raw, new Set(numbersIn("2,0")))).toEqual({
+        ok: false,
+        failure: "numbers",
+        field: "seoDescription",
+      });
+    });
+  });
+
+  describe("normalisation", () => {
+    it("accepts decomposed umlauts and returns NFC", () => {
+      const nfd = "Kühlschrank-Abdeckung aus Polypropylen".normalize("NFD");
+      expect(nfd).not.toBe(nfd.normalize("NFC"));
+      const result = checkCopy(withField("seoTitle", nfd), none);
+      expect(result.ok && result.value.seoTitle).toBe(nfd.normalize("NFC"));
     });
   });
 });
