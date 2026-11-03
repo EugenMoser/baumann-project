@@ -16,7 +16,9 @@ may log prompts, so the data they see matters.
 - Start with a free (`:free`) model, then a second free model, and fall back to
   a named cheap paid model (chain in "Model choice").
 - Cost cap: a hard limit on the OpenRouter API key (monthly reset) plus an
-  app-side monthly counter.
+  app-side monthly counter. The 2026-11-03 amendment supersedes this: the
+  app-side monthly cap and hourly limit are the main caps, provider limits the
+  backstop.
 - Free models may log prompts, so only public catalog data is sent. Before any
   non-public data is processed, switch to a paid model with
   `data_collection: "deny"`.
