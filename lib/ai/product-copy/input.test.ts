@@ -119,6 +119,18 @@ describe("inputNumbers", () => {
     expect(numbers.has("20")).toBe(true);
     expect(numbers.has("100")).toBe(true);
   });
+
+  it("contains numbers written inside text fields", () => {
+    const numbers = inputNumbers(
+      buildCopyInput({
+        ...source,
+        subtitle: "Für 32 mm Rohre",
+        articles: [{ ...source.articles[0], note: "Ab 2,5 mm Wandstärke" }],
+      })
+    );
+    expect(numbers.has("32")).toBe(true);
+    expect(numbers.has("2,5")).toBe(true);
+  });
 });
 
 function fakeClient(result: { data: unknown; error: unknown }) {
