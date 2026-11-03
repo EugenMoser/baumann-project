@@ -239,6 +239,72 @@ describe("runTry", () => {
     expect(errors.join("\n")).toMatch(/only used for published/);
   });
 
+  it("refuses a lookalike host and creates no client", async () => {
+    const createClient = vi.fn();
+    const code = await runTry(
+      io,
+      {
+        ...baseEnv,
+        NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1.evil.example:54321",
+      },
+      ["--product", "7"],
+      { createClient, tiersFor: () => [] }
+    );
+    expect(code).toBe(2);
+    expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, "not a url"])(
+    "exits 1 without a client for the URL %s",
+    async (url) => {
+      const createClient = vi.fn();
+      const code = await runTry(
+        io,
+        { ...baseEnv, NEXT_PUBLIC_SUPABASE_URL: url },
+        ["--product", "7"],
+        { createClient, tiersFor: () => [] }
+      );
+      expect(code).toBe(1);
+      expect(createClient).not.toHaveBeenCalled();
+    }
+  );
+
+  const hanging: Tier = {
+    kind: "free",
+    model: "free/hang:free",
+    timeoutMs: 10,
+    call: () => new Promise(() => {}),
+  };
+
+  it("prints a timeout row for a tier that never settles", async () => {
+    const { client } = fakeClient();
+    const code = await runTry(io, baseEnv, ["--product", "7"], {
+      createClient: () => client,
+      tiersFor: () => [hanging, tier("anthropic", "claude-x", GOOD)],
+    });
+    const out = logs.join("\n");
+    expect(code).toBe(0);
+    expect(out).toMatch(/1\. free\/hang:free\s+10 ms\s+timeout/);
+    expect(out).toMatch(/2\. claude-x\s+\d+ ms\s+ok/);
+  });
+
+  it("prints a row for every attempt when all fail", async () => {
+    const { client } = fakeClient();
+    const code = await runTry(io, baseEnv, ["--product", "7"], {
+      createClient: () => client,
+      tiersFor: () => [
+        hanging,
+        tier("free", "free/null:free", null),
+        tier("anthropic", "claude-x", new Error("boom")),
+      ],
+    });
+    const out = logs.join("\n");
+    expect(code).toBe(1);
+    expect(out).toMatch(/free\/hang:free\s+10 ms\s+timeout/);
+    expect(out).toMatch(/free\/null:free\s+\d+ ms\s+error/);
+    expect(out).toMatch(/claude-x\s+\d+ ms\s+error/);
+  });
+
   it("fails when no tier is configured", async () => {
     const { client } = fakeClient();
     const code = await runTry(io, baseEnv, ["--product", "7"], {

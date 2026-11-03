@@ -77,15 +77,25 @@ function timed(tier: Tier, rows: Row[], numbers: () => Set<string>): Tier {
   return {
     ...tier,
     async call(input, signal) {
+      // The row exists before the call settles: a tier that never settles
+      // still shows up as a timeout with its configured limit as latency.
+      const row: Row = {
+        model: tier.model,
+        ms: tier.timeoutMs,
+        result: "timeout",
+      };
+      rows.push(row);
       const start = performance.now();
-      const done = (result: string) =>
-        rows.push({
-          model: tier.model,
-          ms: Math.round(performance.now() - start),
-          result,
-        });
+      const done = (result: string) => {
+        row.ms = Math.round(performance.now() - start);
+        row.result = result;
+      };
       try {
         const answer = await tier.call(input, signal);
+        if (answer.raw === null || answer.raw === undefined) {
+          done("error");
+          return answer;
+        }
         const checked = checkCopy(answer.raw, numbers());
         done(
           checked.ok
@@ -230,7 +240,7 @@ if (
     process.exit(code);
   } catch (error: unknown) {
     console.error(
-      `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
+      `Unexpected error: ${error instanceof Error ? error.name : "unknown"}`
     );
     process.exit(1);
   }
