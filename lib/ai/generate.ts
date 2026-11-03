@@ -60,6 +60,11 @@ export async function generateCopy(
 
   const chain = await runChain(buildCopyInput(source.value), published, tiers);
   if (!chain.ok) {
+    // Model ids and reasons only: no product text, output or provider text.
+    console.error(
+      "[ai] chain failed:",
+      chain.error.attempts.map((a) => `${a.model}:${a.reason}`).join(", ")
+    );
     await finishRequest(client, requestId, {
       status: "failed",
       model: null,

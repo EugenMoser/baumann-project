@@ -327,18 +327,20 @@ const SUGGESTION_FIELDS = [
 
 // D6: an id counts only for this product and field, within 24 h and once.
 // The database applies every condition; anything else is ignored and logged
-// by field name only.
+// by field name only. A field saved empty keeps no AI text: its id is skipped,
+// so it neither counts toward the origin nor gets marked accepted.
 async function loadAccepted(
   client: AdminClient,
   productId: number,
-  ids: AcceptedIds
+  ids: AcceptedIds,
+  saved: Record<(typeof SUGGESTION_FIELDS)[number]["key"], string | null>
 ): Promise<Result<{ text: AcceptedText; rowIds: number[] }, AdminError>> {
   const since = new Date(Date.now() - SUGGESTION_MAX_AGE_MS).toISOString();
   const text: AcceptedText = {};
   const rowIds: number[] = [];
   for (const { key, field } of SUGGESTION_FIELDS) {
     const rowId = ids[key];
-    if (rowId === null) continue;
+    if (rowId === null || saved[key] === null) continue;
     const { data, error } = await client
       .from("ai_generation")
       .select("output")
@@ -441,7 +443,7 @@ export async function saveProduct(
     if (problem) return err({ kind: "invalid", message: problem });
   }
   const acceptedRows = accepted
-    ? await loadAccepted(client, id, accepted)
+    ? await loadAccepted(client, id, accepted, next)
     : ok({ text: {}, rowIds: [] });
   if (!acceptedRows.ok) return acceptedRows;
   const origins = productOrigins(

@@ -310,6 +310,30 @@ describe("generateCopy (FR-1, FR-6, FR-8)", () => {
     expect(JSON.stringify(log.mock.calls)).not.toContain("secret detail");
   });
 
+  it("logs the failed attempts as model:reason and nothing else", async () => {
+    const { client } = fakeClient({});
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const result = await generateCopy(
+      {
+        client,
+        settings: full,
+        tiers: [
+          failing("free", "free/a"),
+          tier("anthropic", "claude", { ...draft, seoTitle: "" }).t,
+        ],
+      },
+      7
+    );
+    expect(result).toEqual({ ok: false, error: "failed" });
+    expect(log.mock.calls).toEqual([
+      ["[ai] chain failed:", "free/a:error, claude:shape"],
+    ]);
+    const logged = JSON.stringify(log.mock.calls);
+    expect(logged).not.toContain("secret detail");
+    expect(logged).not.toContain("Polypropylen");
+    expect(logged).not.toContain("Dachhaube");
+  });
+
   it("marks the request failed and reports a database error when the audit insert fails", async () => {
     const { client, calls } = fakeClient({
       insertError: { code: "42501", message: "denied" },

@@ -294,6 +294,64 @@ describe("saveProduct with accepted suggestions (SC-6)", () => {
     warn.mockRestore();
   });
 
+  it("drops an accepted description that is saved empty", async () => {
+    const { client, productUpdates, marks } = updateClient([
+      genRow({ id: 31 }),
+    ]);
+    const result = await saveProduct(client, 7, typed({ description: null }), {
+      ...none,
+      description: 31,
+    });
+    expect(result).toEqual(ok({ id: 7 }));
+    expect(productUpdates[0]).toMatchObject({ description_origin: "human" });
+    expect(marks).toHaveLength(0);
+  });
+
+  it("falls back to the plain rule when the accepted SEO title is saved empty", async () => {
+    const { client, productUpdates, marks } = updateClient([
+      genRow({ id: 32, field: "seo_title", output: "Titel" }),
+    ]);
+    await saveProduct(
+      client,
+      7,
+      typed({ seoTitle: null, seoDescription: "Eigener Text" }),
+      { description: null, seoTitle: 32, seoDescription: null }
+    );
+    // No AI text remains: the human description stays human.
+    expect(productUpdates[0]).toMatchObject({ seo_origin: "human" });
+    expect(marks).toHaveLength(0);
+  });
+
+  it("marks only the accepted SEO row that is still saved", async () => {
+    const { client, productUpdates, marks } = updateClient([
+      genRow({ id: 32, field: "seo_title", output: "Titel" }),
+      genRow({ id: 33, field: "seo_description", output: "Beschreibung" }),
+    ]);
+    await saveProduct(
+      client,
+      7,
+      typed({ seoTitle: null, seoDescription: "Beschreibung" }),
+      { description: null, seoTitle: 32, seoDescription: 33 }
+    );
+    expect(productUpdates[0]).toMatchObject({ seo_origin: "ai" });
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.ids).toEqual([33]);
+  });
+
+  it("sets human when both accepted SEO fields are saved empty", async () => {
+    const { client, productUpdates, marks } = updateClient([
+      genRow({ id: 32, field: "seo_title", output: "Titel" }),
+      genRow({ id: 33, field: "seo_description", output: "Beschreibung" }),
+    ]);
+    await saveProduct(client, 7, typed({ seoTitle: null }), {
+      description: null,
+      seoTitle: 32,
+      seoDescription: 33,
+    });
+    expect(productUpdates[0]).toMatchObject({ seo_origin: "human" });
+    expect(marks).toHaveLength(0);
+  });
+
   it("fails the save when the audit lookup fails (R13)", async () => {
     const { client, productUpdates, marks } = updateClient(
       [genRow({ id: 31 })],
