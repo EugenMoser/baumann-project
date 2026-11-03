@@ -211,13 +211,19 @@ describe("runChain (FR-4, SC-4)", () => {
     expect(JSON.stringify(result)).not.toContain("secret");
   });
 
-  it("fails a wrongly shaped object as shape without throwing", async () => {
-    const extra = working("free", "free/a", { ...good, description: 5 });
-    const result = await runChain(input, true, [extra.t]);
+  it("fails a field of the wrong type as shape without throwing", async () => {
+    const wrongType = working("free", "free/a", { ...good, description: 5 });
+    const result = await runChain(input, true, [wrongType.t]);
     expect(result).toEqual({
       ok: false,
       error: { attempts: [{ model: "free/a", reason: "shape" }] },
     });
+  });
+
+  it("strips extra keys and accepts the draft (D3 needs only the three fields)", async () => {
+    const extra = working("free", "free/a", { ...good, comment: "Hinweis" });
+    const result = await runChain(input, true, [extra.t]);
+    expect(result.ok && result.value.draft).toEqual(good);
   });
 
   it("returns no attempts when no tier is usable", async () => {

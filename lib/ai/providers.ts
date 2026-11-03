@@ -18,6 +18,7 @@ const ANTHROPIC_MAX_TOKENS = 2000;
 // Fixed in code (D4): raising it is a code change, not an env value.
 const ANTHROPIC_EFFORT = "low";
 const FAKE_DELAY_MS = 1500;
+const FAKE_TIMEOUT_MS = 30_000;
 
 const orNull = (value: number | undefined): number | null => value ?? null;
 
@@ -100,7 +101,7 @@ function fakeTier(): Tier {
   return {
     kind: "fake",
     model: "fake",
-    timeoutMs: ANTHROPIC_TIMEOUT_MS,
+    timeoutMs: FAKE_TIMEOUT_MS,
     async call(input: CopyInput, signal: AbortSignal): Promise<TierAnswer> {
       await new Promise<void>((resolve, reject) => {
         const timer = setTimeout(() => {
