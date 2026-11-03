@@ -20,11 +20,12 @@ const service = () =>
 async function deleteRequestsOf(...clients: SupabaseClient<Database>[]) {
   for (const client of clients) {
     const { data } = await client.auth.getUser();
-    if (data.user)
-      await service()
-        .from("ai_request")
-        .delete()
-        .eq("requested_by", data.user.id);
+    if (!data.user) continue;
+    const { error } = await service()
+      .from("ai_request")
+      .delete()
+      .eq("requested_by", data.user.id);
+    if (error) throw new Error(`ai_request cleanup failed: ${error.code}`);
   }
 }
 

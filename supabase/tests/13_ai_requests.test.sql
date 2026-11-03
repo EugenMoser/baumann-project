@@ -1,6 +1,6 @@
 -- supabase/tests/13_ai_requests.test.sql
 begin;
-select plan(29);
+select plan(32);
 
 -- Structure
 select has_table('public', 'ai_request', 'ai_request exists');
@@ -31,9 +31,10 @@ reset role;
 -- authenticated, not admin
 set local role authenticated;
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-0000000000a1","role":"authenticated"}';
-select throws_ok($$select public.reserve_ai_request(1, 100, 100)$$, '42501', null, 'non-admin cannot reserve (RLS insert denied)');
+select throws_ok($$select public.reserve_ai_request(1, 100, 100)$$, '42501', 'admin only', 'non-admin cannot reserve (admin check before the lock)');
 select throws_ok($$insert into public.ai_request (requested_by) values ('00000000-0000-0000-0000-0000000000a1')$$, '42501', null, 'non-admin cannot insert requests');
 reset role;
+select is((select count(*) from public.ai_request where requested_by = '00000000-0000-0000-0000-0000000000a1'), 0::bigint, 'the non-admin path inserted nothing');
 
 -- An older row of a fellow admin: outside the hour and the month.
 insert into public.ai_request (requested_by, created_at) values (
@@ -49,6 +50,8 @@ select results_eq(
   $$values (1::bigint, '00000000-0000-0000-0000-0000000000ad'::uuid, 'started'::text, null::text, null::integer, null::integer)$$,
   'the reservation is a started row of the caller');
 select throws_ok($$insert into public.ai_request (requested_by) values ('00000000-0000-0000-0000-0000000000ae')$$, '42501', null, 'admin cannot log a request for someone else');
+select throws_ok($$select public.reserve_ai_request(1, null, 100)$$, '22023', null, 'a missing monthly cap fails closed');
+select throws_ok($$select public.reserve_ai_request(1, 100, -1)$$, '22023', null, 'a negative hourly limit fails closed');
 
 -- Monthly cap: the cap is relative to this month's rows, so leftovers of an
 -- aborted integration run do not break the test. The row of last month

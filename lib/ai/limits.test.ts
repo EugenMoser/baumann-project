@@ -55,6 +55,7 @@ describe("reserveRequest", () => {
     ["AI001", "monthly_cap"],
     ["AI002", "hourly_limit"],
     ["42501", "db_error"],
+    ["22023", "db_error"],
     [undefined, "db_error"],
   ])("maps error code %s to %s", async (code, error) => {
     const { client } = rpcClient({ data: null, error: { code, message: "x" } });

@@ -43,9 +43,10 @@ create policy "admin update" on public.ai_request for update to authenticated
   using ((select private.is_admin())) with check ((select private.is_admin()));
 
 -- Reserves one request before any provider call. security invoker: RLS
--- applies, so a non-admin fails at the insert (42501). The advisory lock
--- serialises callers until their transaction ends; under read committed each
--- count then sees the rows of every caller before. AI001: monthly cap
+-- applies; the explicit admin check refuses a non-admin before the lock, so
+-- they cannot hold up admins. Missing or negative limits fail closed. The
+-- advisory lock serialises callers until their transaction ends; under read
+-- committed each count then sees the rows of every caller before. AI001: monthly cap
 -- (calendar month in Europe/Berlin), AI002: hourly limit of the caller.
 create function public.reserve_ai_request(p_product_id bigint, p_monthly_cap integer, p_hourly_limit integer)
 returns bigint
@@ -56,6 +57,13 @@ as $$
 declare
   v_id bigint;
 begin
+  if not (select private.is_admin()) then
+    raise exception 'admin only' using errcode = 'insufficient_privilege';
+  end if;
+  if p_monthly_cap is null or p_hourly_limit is null or p_monthly_cap < 0 or p_hourly_limit < 0 then
+    raise exception 'invalid AI request limits' using errcode = 'invalid_parameter_value';
+  end if;
+
   perform pg_advisory_xact_lock(hashtext('ai_request'));
 
   if (select count(*) from public.ai_request
