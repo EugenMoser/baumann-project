@@ -91,9 +91,16 @@ const genRow = (patch: Partial<GenRow> & { id: number }): GenRow => ({
   ...patch,
 });
 
-function updateClient(rows: GenRow[], opts: { markError?: boolean } = {}) {
+function updateClient(
+  rows: GenRow[],
+  opts: { markError?: boolean; lookupError?: boolean } = {}
+) {
   const productUpdates: Record<string, unknown>[] = [];
-  const marks: { patch: Record<string, unknown>; ids: number[] }[] = [];
+  const marks: {
+    patch: Record<string, unknown>;
+    ids: number[];
+    isArgs: unknown[];
+  }[] = [];
   const prev = {
     category_id: 4,
     slug: "dachhaube",
@@ -132,21 +139,30 @@ function updateClient(rows: GenRow[], opts: { markError?: boolean } = {}) {
           filters.push((r) => r[col] === v);
           return chain;
         },
-        maybeSingle: async () => ({
-          data: rows.find((r) => filters.every((f) => f(r))) ?? null,
-          error: null,
-        }),
+        maybeSingle: async () =>
+          opts.lookupError
+            ? { data: null, error: { code: "XX000", message: "boom" } }
+            : {
+                data: rows.find((r) => filters.every((f) => f(r))) ?? null,
+                error: null,
+              },
       };
       return chain;
     },
     update: (patch: Record<string, unknown>) => ({
       in: (_col: string, ids: number[]) => {
-        marks.push({ patch, ids });
+        const mark = { patch, ids, isArgs: [] as unknown[] };
+        marks.push(mark);
         const result = {
           data: null,
           error: opts.markError ? { code: "XX000", message: "boom" } : null,
         };
-        return { is: async () => result };
+        return {
+          is: async (...args: unknown[]) => {
+            mark.isArgs = args;
+            return result;
+          },
+        };
       },
     }),
   };
@@ -182,6 +198,8 @@ describe("saveProduct with accepted suggestions (SC-6)", () => {
     expect(marks).toHaveLength(1);
     expect(marks[0]?.ids).toEqual([31]);
     expect(marks[0]?.patch.accepted_at).toEqual(expect.any(String));
+    // Guards against marking a row a parallel save accepted first.
+    expect(marks[0]?.isArgs).toEqual(["accepted_at", null]);
   });
 
   it("counts CRLF line breaks as unchanged (R11)", async () => {
@@ -251,6 +269,47 @@ describe("saveProduct with accepted suggestions (SC-6)", () => {
       );
       warn.mockRestore();
     });
+  });
+
+  it("keeps the AI origin for one valid SEO id next to an ignored one", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, productUpdates, marks } = updateClient([
+      genRow({ id: 32, field: "seo_title", output: "Titel" }),
+      genRow({ id: 33, field: "seo_description", entity_id: 8 }),
+    ]);
+    await saveProduct(
+      client,
+      7,
+      typed({ seoTitle: "Titel", seoDescription: "Eigener Text" }),
+      { description: null, seoTitle: 32, seoDescription: 33 }
+    );
+    // The ignored id leaves the human SEO description next to the AI title.
+    expect(productUpdates[0]).toMatchObject({ seo_origin: "ai_edited" });
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.ids).toEqual([32]);
+    expect(warn).toHaveBeenCalledWith(
+      "[admin] ignored AI suggestion id",
+      "seo_description"
+    );
+    warn.mockRestore();
+  });
+
+  it("fails the save when the audit lookup fails (R13)", async () => {
+    const { client, productUpdates, marks } = updateClient(
+      [genRow({ id: 31 })],
+      {
+        lookupError: true,
+      }
+    );
+    const result = await saveProduct(
+      client,
+      7,
+      typed({ description: "Vorschlag" }),
+      { ...none, description: 31 }
+    );
+    expect(result.ok).toBe(false);
+    expect(productUpdates).toHaveLength(0);
+    expect(marks).toHaveLength(0);
   });
 
   it("ignores ids on create", async () => {
