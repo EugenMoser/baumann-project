@@ -13,6 +13,8 @@ select is(
   (select count(*) from pg_tables t
    cross join (values ('INSERT'), ('UPDATE'), ('DELETE')) v(cmd)
    where t.schemaname = 'public'
+     -- The AI request log is append-only (D7): no delete policy.
+     and not (t.tablename = 'ai_request' and v.cmd = 'DELETE')
      and not exists (
        select 1 from pg_policies p
        where p.schemaname = 'public' and p.tablename = t.tablename and p.cmd = v.cmd

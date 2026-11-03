@@ -7,16 +7,41 @@ export type Database = {
           Tables: {
             "ai_generation": {
                   Row: {
-                    "accepted_at": string | null,"created_at": string,"entity": string,"entity_id": number,"field": string,"id": number,"model": string,"output": string,"prompt_version": string
+                    "accepted_at": string | null,"created_at": string,"entity": string,"entity_id": number,"field": string,"id": number,"model": string,"output": string,"prompt_version": string,"request_id": number | null
                   }
                   Insert: {
-                    "accepted_at"?: string | null,"created_at"?: string,"entity": string,"entity_id": number,"field": string,"id"?: never,"model": string,"output": string,"prompt_version": string
+                    "accepted_at"?: string | null,"created_at"?: string,"entity": string,"entity_id": number,"field": string,"id"?: never,"model": string,"output": string,"prompt_version": string,"request_id"?: number | null
                   }
                   Update: {
-                    "accepted_at"?: string | null,"created_at"?: string,"entity"?: string,"entity_id"?: number,"field"?: string,"id"?: never,"model"?: string,"output"?: string,"prompt_version"?: string
+                    "accepted_at"?: string | null,"created_at"?: string,"entity"?: string,"entity_id"?: number,"field"?: string,"id"?: never,"model"?: string,"output"?: string,"prompt_version"?: string,"request_id"?: number | null
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "ai_generation_request_id_fkey"
+      columns: ["request_id"]
+isOneToOne: false
+      referencedRelation: "ai_request"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"ai_request": {
+                  Row: {
+                    "created_at": string,"id": number,"input_tokens": number | null,"model": string | null,"output_tokens": number | null,"product_id": number | null,"requested_by": string,"status": string
+                  }
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"input_tokens"?: number | null,"model"?: string | null,"output_tokens"?: number | null,"product_id"?: number | null,"requested_by": string,"status"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"input_tokens"?: number | null,"model"?: string | null,"output_tokens"?: number | null,"product_id"?: number | null,"requested_by"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ai_request_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "product"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"article": {
                   Row: {
@@ -389,6 +414,9 @@ isOneToOne: false
                            },
 "remove_catalog":
 { Args: Record<PropertyKey, never>; Returns: Json
+                           },
+"reserve_ai_request":
+{ Args: { "p_hourly_limit": number,"p_monthly_cap": number,"p_product_id": number }; Returns: number
                            },
 "search_catalog":
 { Args: { "max_results"?: number,"q": string }; Returns: {

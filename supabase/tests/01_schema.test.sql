@@ -5,7 +5,7 @@ select tables_are('public', array[
   'category', 'attribute', 'category_attribute', 'material', 'product',
   'article', 'article_attribute', 'article_packaging', 'product_accessory',
   'color', 'product_color', 'media', 'product_media', 'ai_generation',
-  'certificate', 'certificate_document'
+  'certificate', 'certificate_document', 'ai_request'
 ], 'public schema has exactly the catalog tables');
 select views_are('public', array['variant'], 'public schema has exactly the variant view');
 select enums_are('public', array['product_status', 'content_origin', 'attribute_data_type', 'media_role'], 'catalog enums exist');
@@ -27,7 +27,7 @@ select columns_are('public', 'color', array['id', 'name', 'ral_reference', 'hex_
 select columns_are('public', 'product_color', array['product_id', 'color_id', 'suffix', 'is_default', 'sort_order'], 'product_color columns');
 select columns_are('public', 'media', array['id', 'storage_path', 'width', 'height', 'alt_text', 'alt_origin'], 'media columns');
 select columns_are('public', 'product_media', array['product_id', 'media_id', 'role', 'sort_order'], 'product_media columns');
-select columns_are('public', 'ai_generation', array['id', 'entity', 'entity_id', 'field', 'model', 'prompt_version', 'output', 'created_at', 'accepted_at'], 'ai_generation columns');
+select columns_are('public', 'ai_generation', array['id', 'entity', 'entity_id', 'field', 'model', 'prompt_version', 'output', 'created_at', 'accepted_at', 'request_id'], 'ai_generation columns');
 
 select col_type_is('public', 'article', 'article_number', 'text', 'article numbers are text (some contain a slash)');
 select col_type_is('public', 'article_packaging', 'quantity', 'integer', 'pack sizes are integers');
