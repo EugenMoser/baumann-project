@@ -39,6 +39,8 @@ function updateClient(eq: () => Promise<{ error: unknown }>) {
 }
 
 describe("reserveRequest", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("passes the product and both limits and returns the request id", async () => {
     const { client, calls } = rpcClient({ data: 42, error: null });
     expect(await reserveRequest(client, 7, settings)).toEqual({
@@ -58,12 +60,37 @@ describe("reserveRequest", () => {
     ["22023", "db_error"],
     [undefined, "db_error"],
   ])("maps error code %s to %s", async (code, error) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     const { client } = rpcClient({ data: null, error: { code, message: "x" } });
     expect(await reserveRequest(client, 7, settings)).toEqual({
       ok: false,
       error,
     });
   });
+
+  it("logs only the code of an unexpected database error", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const { client } = rpcClient({
+      data: null,
+      error: { code: "42501", message: "permission denied", details: "d" },
+    });
+    await reserveRequest(client, 7, settings);
+    expect(log).toHaveBeenCalledWith("[ai] reserve request failed:", "42501");
+    expect(JSON.stringify(log.mock.calls)).not.toContain("permission denied");
+  });
+
+  it.each(["AI001", "AI002"])(
+    "does not log the limit error %s",
+    async (code) => {
+      const log = vi.spyOn(console, "error").mockImplementation(() => {});
+      const { client } = rpcClient({
+        data: null,
+        error: { code, message: "x" },
+      });
+      await reserveRequest(client, 7, settings);
+      expect(log).not.toHaveBeenCalled();
+    }
+  );
 
   it("treats a missing id as a database error", async () => {
     const { client } = rpcClient({ data: null, error: null });

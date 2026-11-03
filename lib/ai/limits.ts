@@ -25,7 +25,13 @@ export async function reserveRequest(
     p_monthly_cap: s.monthlyCap,
     p_hourly_limit: s.hourlyLimit,
   });
-  if (error) return { ok: false, error: limitError(error.code) };
+  if (error) {
+    const kind = limitError(error.code);
+    // Limits are expected; anything else logs its code only.
+    if (kind === "db_error")
+      console.error("[ai] reserve request failed:", error.code);
+    return { ok: false, error: kind };
+  }
   if (typeof data !== "number") return { ok: false, error: "db_error" };
   return { ok: true, value: data };
 }

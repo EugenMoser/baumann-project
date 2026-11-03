@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { LOGIN_PATH, loginPathFor } from "@/lib/admin/auth";
+import { GENERATE_MESSAGES } from "@/lib/ai/messages";
 import { publicEnv } from "@/lib/env/public";
+
+const SUGGESTION_ROUTE = /^\/admin\/produkte\/\d+\/ki-vorschlag$/;
 
 // Optimistic check only (spec D2): refreshes the session cookie and sends
 // visitors without a session to the login page. checkAdmin() in the admin
@@ -30,18 +33,21 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const path = request.nextUrl.pathname;
   if (!data?.claims && path !== LOGIN_PATH) {
-    const target = new URL(
-      loginPathFor(path + request.nextUrl.search),
-      request.url
-    );
+    // The editor's fetch needs JSON it can show, not the login page.
+    const answer = SUGGESTION_ROUTE.test(path)
+      ? NextResponse.json(
+          { error: GENERATE_MESSAGES.unauthorized },
+          { status: 401 }
+        )
+      : NextResponse.redirect(
+          new URL(loginPathFor(path + request.nextUrl.search), request.url)
+        );
     // Carry refreshed or cleared auth cookies (and their no-cache headers)
-    // over to the redirect, or the browser keeps a stale session cookie.
-    const redirect = NextResponse.redirect(target);
-    for (const cookie of response.cookies.getAll())
-      redirect.cookies.set(cookie);
+    // over to the answer, or the browser keeps a stale session cookie.
+    for (const cookie of response.cookies.getAll()) answer.cookies.set(cookie);
     for (const [key, value] of Object.entries(cacheHeaders))
-      redirect.headers.set(key, value);
-    return redirect;
+      answer.headers.set(key, value);
+    return answer;
   }
   return response;
 }
