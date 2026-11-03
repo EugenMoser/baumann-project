@@ -108,6 +108,68 @@ succeeded in 2 of 4 calls and made one factual slip. The evidence is small
 - A model listed with `structured_outputs` can still reject `json_schema`
   depending on the serving provider.
 
+## Amendment 2026-11-03 — configurable free models, Anthropic fallback
+
+Feature 7 (AI text assistant) changes the chain. The status stays accepted.
+
+**What changed.** Four weeks after the spike, none of the three free models
+was in the public models list any more. This confirms the risk named in
+"Consequences". The model ids are therefore no longer fixed in this ADR:
+
+1. Free tier: up to two OpenRouter `:free` models from the environment
+   variable `AI_FREE_MODELS`, tried in order, 25 s each.
+2. Paid tier: Anthropic `claude-haiku-5-5` through the official SDK
+   (`AI_FALLBACK_MODEL`), 30 s, replacing `mistralai/mistral-nemo`.
+
+A failure of a tier (HTTP error, timeout, empty answer or an output that
+fails the checks of the spec) moves to the next tier. The ids carry no date
+suffix.
+
+**Data rule.** Free models may log prompts, so they only see published
+products. Drafts and archived products go to Anthropic only; without an
+Anthropic key the editor reports that no model is set up for drafts.
+
+**Limits.** An app-side counter (`ai_request`, monthly cap 200 and hourly
+limit 20 per admin by default, see `docs/data-model.md`) replaces the
+OpenRouter monthly key limit as the main cap. Provider-side: a spend limit
+on the Anthropic workspace and a credit limit of 0 on the OpenRouter key.
+
+**Trial.** Run on 2026-11-03 with `pnpm ai:try` and real keys, on the seeded
+local stack (synthetic data): the preview database was unreachable that day,
+so the run on three published preview products is still pending. Candidates:
+the four `:free` models of the OpenRouter models API that list
+`structured_outputs`. Seed products 1-3 are published, seed product 4 is a
+draft (Anthropic only). "ok" means a valid output; the other results name the
+failure.
+
+| Product           | xingchen-agi/xing4.0-29b-a4b:free | nvidia/nemotron-3.5-super-vl:free | dots-studio/dots-3-note-preview:free | liquid/lfm-2.5-2.6b:free | claude-haiku-5-5 |
+| ----------------- | --------------------------------- | --------------------------------- | ------------------------------------ | ------------------------ | ---------------- |
+| Seed 1, published | numbers check failed (7.5 s)      | timeout (25 s)                    | timeout (25 s)                       | error (0.2 s)            | ok (6.9 s)       |
+| Seed 2, published | error (1.5 s)                     | timeout (25 s)                    | timeout (25 s)                       | ok (8.1 s)               | ok (6.9 s)       |
+| Seed 3, published | ok (3.6 s)                        | timeout (25 s)                    | timeout (25 s)                       | error (0.4 s)            | ok (2.3 s)       |
+| Seed 4, draft     | not allowed                       | not allowed                       | not allowed                          | not allowed              | ok (8.5 s)       |
+| Valid outputs     | 1 of 3                            | 0 of 3                            | 0 of 3                               | 1 of 3                   | 4 of 4           |
+
+**Choice.** Ordered by valid outputs, then latency of the valid answers:
+
+`AI_FREE_MODELS=xingchen-agi/xing4.0-29b-a4b:free,liquid/lfm-2.5-2.6b:free`
+
+Observations:
+
+- The free models are unreliable (one valid output in three at best) and the
+  valid answers are weaker than Haiku's. One answer has broken German
+  ("Die Oberfläche ist mit glatt beschrieben."), and the valid lfm answer
+  adds an unsupported claim about robust pipe connections. No check catches
+  that, because the sentence contains no number. Haiku stayed with the data
+  in all four runs.
+- Leaving `AI_FREE_MODELS` empty (Anthropic only) is a valid operator choice:
+  at 0.10 / 0.50 USD per million input / output tokens and the default cap of
+  200 requests per month the cost stays in the cent range.
+- Sample size is small (one run per cell, synthetic data); the free ranking
+  is indicative and will go stale as models are withdrawn. Rerun
+  `pnpm ai:try` before changing the list.
+- `effort: "low"` with structured output is accepted by `claude-haiku-5-5`.
+
 ## Alternatives considered
 
 - **Single paid provider SDK directly:** not chosen. OpenRouter allows

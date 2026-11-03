@@ -19,6 +19,10 @@ committed with real values.
    unset IMPORT_SUPABASE_SECRET_KEY
    ```
 
+   The removal also clears the AI request log (`ai_request`) and the
+   suggestion audit log (`ai_generation`), which can hold suggested texts
+   derived from the catalog.
+
    Without a matching `--confirm` the command deletes nothing and exits `1`
    (mismatch) or `2` (missing).
    On success it deletes every catalog row in one transaction, then empties the

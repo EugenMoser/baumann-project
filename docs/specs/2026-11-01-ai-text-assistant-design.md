@@ -263,6 +263,10 @@ draft path to Anthropic is tried on a seeded draft on the local stack. This
 is a read-only model trial, not a test suite; tests stay on the local seed.
 If the keys are missing, both steps are listed as open in the Gate 2 report.
 
+Note (2026-11-03): the trial ran on the seeded local stack because the preview
+database was unreachable that day. The run on three published preview products
+is still pending.
+
 ### D11 — Follow-ups from 6c
 
 - Unit tests for the slug retry on a concurrent clash through
@@ -349,6 +353,7 @@ that is at least a week old (`@anthropic-ai/sdk` 1.4.0 appeared on
 | No usable tier                         | Button disabled, "Der KI-Assistent ist nicht eingerichtet."                            |
 | Draft, only free tier set up           | Button disabled, "Für Entwürfe ist kein Modell eingerichtet."                          |
 | All tiers fail                         | "Es konnte kein brauchbarer Vorschlag erstellt werden. Bitte später erneut versuchen." |
+| Database error while generating        | "Der Vorschlag konnte nicht erstellt werden. Bitte später erneut versuchen."           |
 | Accepted id invalid on save            | Ignored, server log; origin as without id                                              |
 | Product saved with errors after accept | Field values stay, hidden ids stay, boxes are gone                                     |
 

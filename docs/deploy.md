@@ -566,3 +566,46 @@ not change for this.
 - Run it once after deploying the admin image feature (it also catches files of
   products deleted before it existed), and again whenever failed file removals
   show up in the app logs (`[admin] remove files`).
+
+## 14. AI text assistant
+
+The admin editor offers "Mit KI vorschlagen" (route
+`POST /admin/produkte/<id>/ki-vorschlag`). Model chain and data rule:
+`docs/decisions/0004-ai-provider.md`.
+
+- Runtime variables of the app resource (server-only, not build-time):
+
+  | Variable                  | Purpose                                                        | Default            |
+  | ------------------------- | -------------------------------------------------------------- | ------------------ |
+  | `OPENROUTER_API_KEY`      | free tier                                                      | unset: tier off    |
+  | `AI_FREE_MODELS`          | comma-separated OpenRouter model ids, tried in order (max two) | empty: tier off    |
+  | `ANTHROPIC_API_KEY`       | fallback tier, the only tier for drafts                        | unset: tier off    |
+  | `AI_FALLBACK_MODEL`       | Anthropic model id                                             | `claude-haiku-5-5` |
+  | `AI_MONTHLY_REQUEST_CAP`  | requests per calendar month (Europe/Berlin), all admins        | 200                |
+  | `AI_HOURLY_REQUEST_LIMIT` | requests per hour and admin                                    | 20                 |
+
+  Recommended (2026-11-03 trial, ADR 0004):
+  `AI_FREE_MODELS=xingchen-agi/xing4.0-29b-a4b:free,liquid/lfm-2.5-2.6b:free`.
+  Leaving it empty and using Anthropic only is valid; the cost stays in the
+  cent range at the default cap.
+
+- Do not set `AI_FAKE_MODEL` on the preview. The app refuses it unless
+  `NEXT_PUBLIC_SITE_URL` is `localhost` or `127.0.0.1`.
+- A malformed value (for example a non-numeric cap) fails the app start. Check
+  the container log after changing a variable. Empty values count as unset.
+- Provider-side limits, set before the first deploy with keys:
+  - Anthropic: a spend limit on the workspace of the key.
+  - OpenRouter: a credit limit of 0 on the key, so it can only use free
+    models.
+- Proxy timeout: one request can take two free attempts of up to 25 s each
+  plus the Anthropic call of up to 30 s. The reverse proxy timeout for the
+  suggestion route must be at least 90 s. Check the proxy setting in Coolify
+  after the first deploy; a shorter value shows up as a failed request in the
+  browser although the app finished.
+- First live click after deploy: open a published product in the admin,
+  press "Mit KI vorschlagen" and check that a suggestion appears, that
+  nothing is saved before "Speichern", and that `ai_request` has a
+  `succeeded` row with the model. Do it with an admin account on the
+  preview; it counts against the monthly cap.
+- `pnpm ai:try` (see `CLAUDE.md`) tries the chain from a developer machine
+  without writing anything.
