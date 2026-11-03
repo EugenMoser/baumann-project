@@ -25,7 +25,7 @@ const limit = (fallback: number) =>
       .string()
       .regex(/^\d+$/, "must be a non-negative integer")
       .transform(Number)
-      .pipe(z.number().int().safe())
+      .pipe(z.int())
       .optional()
       .transform((value) => value ?? fallback)
   );
