@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type Ref } from "react";
-import { Sparkles } from "lucide-react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type Ref,
+  type RefObject,
+} from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import type { ProductStatus } from "@/lib/admin/labels";
@@ -76,8 +82,12 @@ type AiSuggestProps = {
   /** Saved status of the product; free-only setups serve published ones. */
   status: ProductStatus;
   /** Lets the parent move focus back here after the last box is discarded. */
-  buttonRef?: Ref<HTMLButtonElement>;
-  onResult: (suggestions: Suggestion[]) => void;
+  buttonRef: RefObject<HTMLButtonElement | null>;
+  /**
+   * `focusLost` is true when focus had fallen back to the page (the button is
+   * disabled while pending); the parent then moves it to the first box.
+   */
+  onResult: (suggestions: Suggestion[], focusLost: boolean) => void;
 };
 
 export function AiSuggest({
@@ -94,7 +104,17 @@ export function AiSuggest({
   const hintId = useId();
   const reasonId = useId();
 
+  const refocusButton = useRef(false);
+
   useEffect(() => () => controller.current?.abort(), []);
+
+  // The button is enabled again only after the render that ends `pending`.
+  useEffect(() => {
+    if (!pending && refocusButton.current) {
+      refocusButton.current = false;
+      buttonRef.current?.focus();
+    }
+  }, [pending, buttonRef]);
 
   const unavailable =
     availability === "none"
@@ -112,13 +132,18 @@ export function AiSuggest({
     setMessage(PENDING);
     const result = await requestSuggestions(productId, current.signal);
     if (current.signal.aborted) return;
+    // Never steal focus from a field the admin moved on to.
+    const active = document.activeElement;
+    const focusLost =
+      !active || active === document.body || active === buttonRef.current;
     setPending(false);
     if (result.ok) {
       setMessage(READY);
-      onResult(result.value);
+      onResult(result.value, focusLost);
     } else {
       setFailed(true);
       setMessage(result.error);
+      refocusButton.current = focusLost;
     }
   }
 
@@ -133,7 +158,12 @@ export function AiSuggest({
           aria-describedby={unavailable ? `${hintId} ${reasonId}` : hintId}
           onClick={run}
         >
-          <Sparkles aria-hidden="true" />
+          <span
+            aria-hidden="true"
+            className="rounded bg-secondary px-1 text-xs font-semibold text-secondary-foreground"
+          >
+            KI
+          </span>
           {pending ? PENDING : "Mit KI vorschlagen"}
         </Button>
       </div>
@@ -157,6 +187,8 @@ export function AiSuggest({
 
 type SuggestionBoxProps = {
   suggestion: Suggestion;
+  /** Label of the field the suggestion is for; names the group. */
+  fieldLabel: string;
   onAccept: (suggestion: Suggestion) => void;
   onDiscard: (suggestion: Suggestion) => void;
   /** Lets the parent focus this box's "Übernehmen" button. */
@@ -165,20 +197,18 @@ type SuggestionBoxProps = {
 
 export function SuggestionBox({
   suggestion,
+  fieldLabel,
   onAccept,
   onDiscard,
   acceptRef,
 }: SuggestionBoxProps) {
-  const headingId = useId();
   return (
     <div
       role="group"
-      aria-labelledby={headingId}
+      aria-label={`KI-Vorschlag: ${fieldLabel}`}
       className="grid gap-2 rounded-md border border-dashed bg-surface p-3"
     >
-      <p id={headingId} className="text-sm font-medium">
-        KI-Vorschlag
-      </p>
+      <p className="text-sm font-medium">KI-Vorschlag</p>
       <p className="text-sm whitespace-pre-wrap">{suggestion.text}</p>
       <p className="text-xs text-muted-foreground">
         Modell: {suggestion.model}

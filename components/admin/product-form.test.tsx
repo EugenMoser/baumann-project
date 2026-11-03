@@ -1,4 +1,5 @@
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -290,24 +291,24 @@ describe("ProductForm AI assistant (SC-1, SC-5)", () => {
     );
   }
 
-  async function generate() {
+  async function generate(body: typeof suggestions = suggestions) {
     vi.stubGlobal(
       "fetch",
       vi.fn(
         async () =>
-          new Response(JSON.stringify(suggestions), {
+          new Response(JSON.stringify(body), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           })
       )
     );
     fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
-    await screen.findAllByRole("group", { name: "KI-Vorschlag" });
+    await screen.findAllByRole("group", { name: /^KI-Vorschlag/ });
   }
 
   const hiddenId = (name: string) =>
     document.querySelector<HTMLInputElement>(`input[name="${name}"]`);
-  const boxes = () => screen.queryAllByRole("group", { name: "KI-Vorschlag" });
+  const boxes = () => screen.queryAllByRole("group", { name: /^KI-Vorschlag/ });
 
   it("renders the button and hint for a saved product, nothing on create", () => {
     const { unmount } = renderEditor();
@@ -363,6 +364,73 @@ describe("ProductForm AI assistant (SC-1, SC-5)", () => {
     expect(screen.getByText("KI-Titel")).toBeInTheDocument();
     expect(screen.getByText("KI-SEO-Text")).toBeInTheDocument();
     expect(document.querySelector("details")?.open).toBe(true);
+  });
+
+  it("names each box after its field", async () => {
+    renderEditor();
+    await generate();
+    for (const name of [
+      "KI-Vorschlag: Beschreibung",
+      "KI-Vorschlag: Titel für Suchmaschinen",
+      "KI-Vorschlag: Beschreibung für Suchmaschinen",
+    ])
+      expect(screen.getByRole("group", { name })).toBeInTheDocument();
+  });
+
+  it("moves focus to the first box after the result when focus was lost", async () => {
+    renderEditor();
+    await generate();
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole("button", { name: "Übernehmen" })[0]
+      ).toHaveFocus()
+    );
+  });
+
+  it("leaves focus alone when the admin moved on to another field", async () => {
+    renderEditor();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        screen.getByLabelText("Name").focus();
+        return new Response(JSON.stringify(suggestions), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
+    await screen.findAllByRole("group", { name: /^KI-Vorschlag/ });
+    expect(screen.getByLabelText("Name")).toHaveFocus();
+  });
+
+  it("reopens the SEO section for every new set of boxes after the user closed it", async () => {
+    renderEditor();
+    const seo = () => document.querySelector("details") as HTMLDetailsElement;
+    // Closes the section like a user would; jsdom fires the toggle event.
+    const closeSeo = () =>
+      act(async () => {
+        seo().open = false;
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    fireEvent.change(screen.getByLabelText("Titel für Suchmaschinen"), {
+      target: { value: "Eigener Titel" },
+    });
+    expect(seo().open).toBe(true);
+    await closeSeo();
+    expect(seo().open).toBe(false);
+    await generate();
+    expect(seo().open).toBe(true);
+
+    await closeSeo();
+    await generate({
+      ...suggestions,
+      suggestions: suggestions.suggestions.map((s, i) => ({
+        ...s,
+        generationId: 21 + i,
+      })),
+    });
+    await waitFor(() => expect(seo().open).toBe(true));
   });
 
   it("a new result replaces open boxes", async () => {

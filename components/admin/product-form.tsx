@@ -32,13 +32,22 @@ const TARGET = {
   description: {
     key: "description",
     accept: AI_ACCEPT_FIELDS.description,
+    label: "Beschreibung",
   },
-  seo_title: { key: "seoTitle", accept: AI_ACCEPT_FIELDS.seoTitle },
+  seo_title: {
+    key: "seoTitle",
+    accept: AI_ACCEPT_FIELDS.seoTitle,
+    label: "Titel für Suchmaschinen",
+  },
   seo_description: {
     key: "seoDescription",
     accept: AI_ACCEPT_FIELDS.seoDescription,
+    label: "Beschreibung für Suchmaschinen",
   },
-} as const satisfies Record<SuggestionField, { key: TextKey; accept: string }>;
+} as const satisfies Record<
+  SuggestionField,
+  { key: TextKey; accept: string; label: string }
+>;
 const ORDER: SuggestionField[] = [
   "description",
   "seo_title",
@@ -102,6 +111,8 @@ export function ProductForm({
   const acceptButtons = useRef<
     Partial<Record<SuggestionField, HTMLButtonElement | null>>
   >({});
+  // Set by a result that arrived while focus was lost; used once the boxes exist.
+  const focusFirstBox = useRef(false);
   const seen = useRef(state);
 
   // Re-sync the controlled fields with each action response. Accepted ids
@@ -145,11 +156,19 @@ export function ProductForm({
     (next ? acceptButtons.current[next] : generateButton.current)?.focus();
   };
 
+  useEffect(() => {
+    if (!focusFirstBox.current) return;
+    focusFirstBox.current = false;
+    const first = ORDER.find((f) => suggestions[f]);
+    if (first) acceptButtons.current[first]?.focus();
+  }, [suggestions]);
+
   const box = (field: SuggestionField) => {
     const suggestion = suggestions[field];
     return suggestion ? (
       <SuggestionBox
         suggestion={suggestion}
+        fieldLabel={TARGET[field].label}
         onAccept={accept}
         onDiscard={discard}
         acceptRef={(el) => {
@@ -286,11 +305,12 @@ export function ProductForm({
               availability={ai.availability}
               status={ai.status}
               buttonRef={generateButton}
-              onResult={(list) =>
+              onResult={(list, focusLost) => {
+                focusFirstBox.current = focusLost;
                 setSuggestions(
                   Object.fromEntries(list.map((s) => [s.field, s]))
-                )
-              }
+                );
+              }}
             />
           ) : null}
           <Field
@@ -335,6 +355,10 @@ export function ProductForm({
           errors={e}
           onChange={setText}
           origin={origins.seo}
+          boxesKey={ORDER.slice(1)
+            .map((f) => suggestions[f]?.generationId)
+            .filter((id) => id !== undefined)
+            .join("-")}
           boxes={{
             seoTitle: box("seo_title"),
             seoDescription: box("seo_description"),

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SeoSection } from "./seo-section";
 
@@ -8,6 +8,14 @@ const noop = () => {};
 
 function details() {
   return document.querySelector("details") as HTMLDetailsElement;
+}
+
+// Closes the section like a user would; jsdom fires the toggle event itself.
+async function closeDetails() {
+  await act(async () => {
+    details().open = false;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }
 
 describe("SeoSection (6c SC-3)", () => {
@@ -74,6 +82,7 @@ describe("SeoSection (6c SC-3)", () => {
         values={empty}
         errors={{}}
         auto={auto}
+        boxesKey="1"
         boxes={{ seoTitle: <p>Box</p> }}
       />
     );
@@ -87,6 +96,28 @@ describe("SeoSection (6c SC-3)", () => {
         errors={{}}
         auto={auto}
       />
+    );
+    expect(details().open).toBe(true);
+  });
+
+  it("reopens for every new boxesKey even when the user closed it", async () => {
+    const props = {
+      onChange: noop,
+      origin: "human" as const,
+      values: { seoTitle: "Eigener Titel", seoDescription: "" },
+      errors: {},
+      auto,
+    };
+    const { rerender } = render(<SeoSection {...props} />);
+    expect(details().open).toBe(true);
+    await closeDetails();
+    rerender(
+      <SeoSection {...props} boxesKey="1-2" boxes={{ seoTitle: <p>A</p> }} />
+    );
+    expect(details().open).toBe(true);
+    await closeDetails();
+    rerender(
+      <SeoSection {...props} boxesKey="3-4" boxes={{ seoTitle: <p>B</p> }} />
     );
     expect(details().open).toBe(true);
   });

@@ -21,6 +21,8 @@ type Props = {
   auto: PageMeta;
   /** AI suggestion boxes, rendered below their field; open the section. */
   boxes?: Partial<Record<SeoField, ReactNode>>;
+  /** Changes with every new set of boxes; each new non-empty key opens the section. */
+  boxesKey?: string;
 };
 
 const TITLE_HINT = "Höchstens 70 Zeichen.";
@@ -33,22 +35,27 @@ export function SeoSection({
   origin,
   auto,
   boxes = {},
+  boxesKey = "",
 }: Props) {
   const wantsOpen = Boolean(
     values.seoTitle ||
     values.seoDescription ||
     errors.seoTitle ||
-    errors.seoDescription ||
-    boxes.seoTitle ||
-    boxes.seoDescription
+    errors.seoDescription
   );
-  // Opens when a reason appears, but never closes by itself (typing, accepting
-  // a suggestion); closing stays with the user.
-  const [open, setOpen] = useState(wantsOpen);
+  // Opens when a reason appears (content, errors, a new set of suggestion
+  // boxes, also after the user collapsed it), but never closes by itself
+  // (typing, accepting a suggestion); closing stays with the user.
+  const [open, setOpen] = useState(wantsOpen || boxesKey !== "");
   const [prevWantsOpen, setPrevWantsOpen] = useState(wantsOpen);
+  const [prevBoxesKey, setPrevBoxesKey] = useState(boxesKey);
   if (prevWantsOpen !== wantsOpen) {
     setPrevWantsOpen(wantsOpen);
     if (wantsOpen) setOpen(true);
+  }
+  if (prevBoxesKey !== boxesKey) {
+    setPrevBoxesKey(boxesKey);
+    if (boxesKey !== "") setOpen(true);
   }
   return (
     <details

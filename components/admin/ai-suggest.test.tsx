@@ -1,3 +1,4 @@
+import { createRef } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GENERATE_MESSAGES } from "@/lib/ai/messages";
@@ -31,6 +32,7 @@ function setup(
       productId={7}
       availability="full"
       status="draft"
+      buttonRef={createRef<HTMLButtonElement>()}
       onResult={onResult}
       {...props}
     />
@@ -109,26 +111,29 @@ describe("AiSuggest (SC-5, SC-1)", () => {
         "Drei Vorschläge bereit."
       )
     );
-    expect(onResult).toHaveBeenCalledWith([
-      {
-        field: "description",
-        generationId: 11,
-        text: "Beschreibung",
-        model: "test-model",
-      },
-      {
-        field: "seo_title",
-        generationId: 12,
-        text: "Titel",
-        model: "test-model",
-      },
-      {
-        field: "seo_description",
-        generationId: 13,
-        text: "SEO-Text",
-        model: "test-model",
-      },
-    ]);
+    expect(onResult).toHaveBeenCalledWith(
+      [
+        {
+          field: "description",
+          generationId: 11,
+          text: "Beschreibung",
+          model: "test-model",
+        },
+        {
+          field: "seo_title",
+          generationId: 12,
+          text: "Titel",
+          model: "test-model",
+        },
+        {
+          field: "seo_description",
+          generationId: 13,
+          text: "SEO-Text",
+          model: "test-model",
+        },
+      ],
+      true
+    );
     expect(
       screen.getByRole("button", { name: "Mit KI vorschlagen" })
     ).toBeEnabled();
@@ -197,6 +202,68 @@ describe("AiSuggest (SC-5, SC-1)", () => {
     expect(onResult).not.toHaveBeenCalled();
   });
 
+  it("moves focus back to the button after an error when focus was lost", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => jsonResponse({ error: "Bitte neu anmelden." }, 401))
+    );
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Mit KI vorschlagen" })
+      ).toHaveFocus()
+    );
+  });
+
+  it("does not steal focus from another field, on error or success", async () => {
+    let resolve!: (r: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>((r) => (resolve = r)))
+    );
+    const onResult = vi.fn();
+    render(
+      <>
+        <input aria-label="Anderes Feld" />
+        <AiSuggest
+          productId={7}
+          availability="full"
+          status="draft"
+          buttonRef={createRef<HTMLButtonElement>()}
+          onResult={onResult}
+        />
+      </>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
+    screen.getByLabelText("Anderes Feld").focus();
+    resolve(jsonResponse(okBody));
+    await waitFor(() => expect(onResult).toHaveBeenCalled());
+    expect(onResult.mock.calls[0][1]).toBe(false);
+    expect(screen.getByLabelText("Anderes Feld")).toHaveFocus();
+
+    fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
+    screen.getByLabelText("Anderes Feld").focus();
+    resolve(jsonResponse({ error: "Fehler." }, 500));
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("Fehler.")
+    );
+    expect(screen.getByLabelText("Anderes Feld")).toHaveFocus();
+  });
+
+  it("keeps a visible KI marker while pending", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {}))
+    );
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
+    const pending = screen.getByRole("button", {
+      name: "Vorschlag wird erstellt …",
+    });
+    expect(pending).toHaveTextContent("KI");
+  });
+
   it("aborts the request on unmount", () => {
     const fetchMock = vi.fn(
       (_url: string, init: RequestInit) =>
@@ -212,6 +279,7 @@ describe("AiSuggest (SC-5, SC-1)", () => {
         productId={7}
         availability="full"
         status="draft"
+        buttonRef={createRef<HTMLButtonElement>()}
         onResult={vi.fn()}
       />
     );
@@ -237,11 +305,14 @@ describe("SuggestionBox (SC-5)", () => {
     render(
       <SuggestionBox
         suggestion={suggestion}
+        fieldLabel="Beschreibung"
         onAccept={onAccept}
         onDiscard={onDiscard}
       />
     );
-    const group = screen.getByRole("group", { name: "KI-Vorschlag" });
+    const group = screen.getByRole("group", {
+      name: "KI-Vorschlag: Beschreibung",
+    });
     expect(group).toHaveTextContent("Ein Vorschlag");
     expect(group).toHaveTextContent("test-model");
     fireEvent.click(screen.getByRole("button", { name: "Übernehmen" }));
