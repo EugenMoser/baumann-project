@@ -42,6 +42,10 @@ export function CategoryForm({
   const [state, formAction, pending] = useActionState(run, idleState(initial));
   const [name, setName] = useState(state.values.name);
   const [introText, setIntroText] = useState(state.values.introText);
+  const [seo, setSeo] = useState({
+    seoTitle: state.values.seoTitle,
+    seoDescription: state.values.seoDescription,
+  });
 
   // Re-sync the controlled fields with each action response.
   const [syncedState, setSyncedState] = useState(state);
@@ -49,6 +53,10 @@ export function CategoryForm({
     setSyncedState(state);
     setName(state.values.name);
     setIntroText(state.values.introText);
+    setSeo({
+      seoTitle: state.values.seoTitle,
+      seoDescription: state.values.seoDescription,
+    });
   }
 
   const v = state.values;
@@ -99,8 +107,11 @@ export function CategoryForm({
         />
       </Field>
       <SeoSection
-        values={v}
+        values={seo}
         errors={e}
+        onChange={(field, value) =>
+          setSeo((prev) => ({ ...prev, [field]: value }))
+        }
         auto={autoCategoryMeta({ name, introText })}
       />
       {text("sortOrder", "Reihenfolge")}

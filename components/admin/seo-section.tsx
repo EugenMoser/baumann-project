@@ -1,29 +1,64 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { PageMeta } from "@/lib/catalog/metadata";
+import type { ContentOrigin } from "@/lib/catalog/types";
 import { describedBy, Field } from "./field";
+import { OriginBadge } from "./origin-badge";
+
+type SeoField = "seoTitle" | "seoDescription";
 
 type Props = {
-  values: { seoTitle: string; seoDescription: string };
+  /** Current (controlled) values of the two fields. */
+  values: Record<SeoField, string>;
   errors: { seoTitle?: string; seoDescription?: string };
+  onChange: (field: SeoField, value: string) => void;
+  /** Saved origin of the SEO texts, shown in the summary; omit if none. */
+  origin?: ContentOrigin;
   /** Automatic title and description, shown as placeholders. */
   auto: PageMeta;
+  /** AI suggestion boxes, rendered below their field; open the section. */
+  boxes?: Partial<Record<SeoField, ReactNode>>;
 };
 
 const TITLE_HINT = "Höchstens 70 Zeichen.";
 const DESCRIPTION_HINT = "Höchstens 160 Zeichen.";
 
-export function SeoSection({ values, errors, auto }: Props) {
-  const open = Boolean(
+export function SeoSection({
+  values,
+  errors,
+  onChange,
+  origin,
+  auto,
+  boxes = {},
+}: Props) {
+  const wantsOpen = Boolean(
     values.seoTitle ||
     values.seoDescription ||
     errors.seoTitle ||
-    errors.seoDescription
+    errors.seoDescription ||
+    boxes.seoTitle ||
+    boxes.seoDescription
   );
+  // Opens when a reason appears, but never closes by itself (typing, accepting
+  // a suggestion); closing stays with the user.
+  const [open, setOpen] = useState(wantsOpen);
+  const [prevWantsOpen, setPrevWantsOpen] = useState(wantsOpen);
+  if (prevWantsOpen !== wantsOpen) {
+    setPrevWantsOpen(wantsOpen);
+    if (wantsOpen) setOpen(true);
+  }
   return (
-    <details open={open} className="rounded-md border p-4 md:col-span-2">
+    <details
+      open={open}
+      onToggle={(ev) => setOpen(ev.currentTarget.open)}
+      className="rounded-md border p-4 md:col-span-2"
+    >
       <summary className="cursor-pointer text-sm font-medium">
-        Suchmaschinen (optional)
+        Suchmaschinen (optional){" "}
+        {origin ? <OriginBadge origin={origin} /> : null}
       </summary>
       <div className="mt-3 grid gap-4">
         <p className="text-sm text-muted-foreground">
@@ -39,7 +74,8 @@ export function SeoSection({ values, errors, auto }: Props) {
           <Input
             id="seoTitle"
             name="seoTitle"
-            defaultValue={values.seoTitle}
+            value={values.seoTitle}
+            onChange={(ev) => onChange("seoTitle", ev.target.value)}
             placeholder={auto.title}
             aria-invalid={Boolean(errors.seoTitle)}
             aria-describedby={describedBy(
@@ -49,6 +85,7 @@ export function SeoSection({ values, errors, auto }: Props) {
             )}
           />
         </Field>
+        {boxes.seoTitle}
         <Field
           id="seoDescription"
           label="Beschreibung für Suchmaschinen"
@@ -59,7 +96,8 @@ export function SeoSection({ values, errors, auto }: Props) {
             id="seoDescription"
             name="seoDescription"
             rows={3}
-            defaultValue={values.seoDescription}
+            value={values.seoDescription}
+            onChange={(ev) => onChange("seoDescription", ev.target.value)}
             placeholder={auto.description}
             aria-invalid={Boolean(errors.seoDescription)}
             aria-describedby={describedBy(
@@ -69,6 +107,7 @@ export function SeoSection({ values, errors, auto }: Props) {
             )}
           />
         </Field>
+        {boxes.seoDescription}
       </div>
     </details>
   );

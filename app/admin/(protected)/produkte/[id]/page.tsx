@@ -16,7 +16,9 @@ import {
   toProductValues,
 } from "@/lib/admin/products";
 import { unwrapAdmin } from "@/lib/admin/server";
+import { availability } from "@/lib/ai/settings";
 import { productPath } from "@/lib/catalog/anchors";
+import { aiSettings } from "@/lib/env/server";
 import { createSessionSupabase } from "@/lib/supabase/session";
 import { saveAccessoriesAction } from "../accessory-actions";
 import {
@@ -98,6 +100,14 @@ export default async function EditProductPage({
         seoContext={{
           articleNumbers: editor.articles.map((a) => a.articleNumber),
           colorCount: editor.colors.length,
+        }}
+        ai={{
+          availability: availability(aiSettings),
+          status: product.status,
+        }}
+        origins={{
+          description: product.descriptionOrigin,
+          seo: product.seoOrigin,
         }}
       />
       <ArticleSection

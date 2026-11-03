@@ -1,9 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { SeoSection } from "./seo-section";
 
 const auto = { title: "Auto-Titel", description: "Auto-Beschreibung." };
 const empty = { seoTitle: "", seoDescription: "" };
+const noop = () => {};
 
 function details() {
   return document.querySelector("details") as HTMLDetailsElement;
@@ -11,7 +12,15 @@ function details() {
 
 describe("SeoSection (6c SC-3)", () => {
   it("is closed with empty values", () => {
-    render(<SeoSection values={empty} errors={{}} auto={auto} />);
+    render(
+      <SeoSection
+        onChange={noop}
+        origin="human"
+        values={empty}
+        errors={{}}
+        auto={auto}
+      />
+    );
     expect(details().open).toBe(false);
     expect(screen.getByText("Suchmaschinen (optional)")).toBeInTheDocument();
   });
@@ -19,6 +28,8 @@ describe("SeoSection (6c SC-3)", () => {
   it("is open when only the description has a value", () => {
     render(
       <SeoSection
+        onChange={noop}
+        origin="human"
         values={{ seoTitle: "", seoDescription: "Eigene" }}
         errors={{}}
         auto={auto}
@@ -34,6 +45,8 @@ describe("SeoSection (6c SC-3)", () => {
   it("is open when a field has an error", () => {
     render(
       <SeoSection
+        onChange={noop}
+        origin="human"
         values={empty}
         errors={{ seoTitle: "Zu lang." }}
         auto={auto}
@@ -43,8 +56,70 @@ describe("SeoSection (6c SC-3)", () => {
     expect(screen.getByText("Zu lang.")).toBeInTheDocument();
   });
 
+  it("opens when a suggestion box appears and stays open afterwards", () => {
+    const { rerender } = render(
+      <SeoSection
+        onChange={noop}
+        origin="human"
+        values={empty}
+        errors={{}}
+        auto={auto}
+      />
+    );
+    expect(details().open).toBe(false);
+    rerender(
+      <SeoSection
+        onChange={noop}
+        origin="human"
+        values={empty}
+        errors={{}}
+        auto={auto}
+        boxes={{ seoTitle: <p>Box</p> }}
+      />
+    );
+    expect(details().open).toBe(true);
+    expect(screen.getByText("Box")).toBeInTheDocument();
+    rerender(
+      <SeoSection
+        onChange={noop}
+        origin="human"
+        values={empty}
+        errors={{}}
+        auto={auto}
+      />
+    );
+    expect(details().open).toBe(true);
+  });
+
+  it("reports edits and shows the origin badge in the summary", () => {
+    const onChange = vi.fn();
+    render(
+      <SeoSection
+        onChange={onChange}
+        origin="ai"
+        values={{ seoTitle: "A", seoDescription: "B" }}
+        errors={{}}
+        auto={auto}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("Titel für Suchmaschinen"), {
+      target: { value: "Neu" },
+    });
+    expect(onChange).toHaveBeenCalledWith("seoTitle", "Neu");
+    expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveValue("A");
+    expect(document.querySelector("summary")).toHaveTextContent("KI-generiert");
+  });
+
   it("uses the automatic values as placeholders", () => {
-    render(<SeoSection values={empty} errors={{}} auto={auto} />);
+    render(
+      <SeoSection
+        onChange={noop}
+        origin="human"
+        values={empty}
+        errors={{}}
+        auto={auto}
+      />
+    );
     expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveAttribute(
       "placeholder",
       auto.title

@@ -20,12 +20,21 @@ export function Field(props: {
   label: string;
   error?: string;
   hint?: string;
+  /** Shown next to the label, outside of it (keeps the control's name). */
+  badge?: ReactNode;
   children: ReactNode;
 }) {
-  const { id, label, error, hint, children } = props;
+  const { id, label, error, hint, badge, children } = props;
   return (
     <div className="grid gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      {badge ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Label htmlFor={id}>{label}</Label>
+          {badge}
+        </div>
+      ) : (
+        <Label htmlFor={id}>{label}</Label>
+      )}
       {children}
       {hint ? (
         <p id={`${id}-hint`} className="text-xs text-muted-foreground">

@@ -5,8 +5,10 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { emptyProductValues } from "@/lib/admin/schemas";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { FormState } from "@/lib/admin/form";
+import { emptyProductValues, type ProductValues } from "@/lib/admin/schemas";
+import type { ContentOrigin } from "@/lib/catalog/types";
 import { ProductForm } from "./product-form";
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
@@ -17,6 +19,7 @@ const options = {
   colors: [],
   attributes: [],
 };
+const human = { description: "human", seo: "human" } as const;
 const noop = async <S,>(s: S) => s;
 
 describe("ProductForm (SC-6, SC-12)", () => {
@@ -31,6 +34,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus={null}
         address={null}
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     expect(document.querySelector('input[name="slug"]')).toBeNull();
@@ -55,6 +60,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus="draft"
         address="/produkte/moebelteile/testkeil-mit-daempfung"
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     expect(document.querySelector('input[name="slug"]')).toBeNull();
@@ -85,6 +92,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus="published"
         address="/produkte/moebelteile/x"
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     expect(
@@ -113,6 +122,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus="draft"
         address="/produkte/moebelteile/x"
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     fireEvent.change(screen.getByLabelText("Status"), {
@@ -141,6 +152,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus="draft"
         address="/produkte/moebelteile/x"
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     expect(
@@ -158,6 +171,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus={null}
         address={null}
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     const select = screen.getByLabelText("Status");
@@ -166,7 +181,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
       .map((o) => (o as HTMLOptionElement).value);
     expect(values).toEqual(["draft"]);
     const hint = screen.getByText(
-      "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
+      "Artikel, Farben, Bilder und KI-Vorschläge folgen nach dem ersten Speichern."
     );
     expect(hint.id).not.toBe("");
     expect(select.getAttribute("aria-describedby") ?? "").toContain(hint.id);
@@ -187,6 +202,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus="draft"
         address="/produkte/moebelteile/x"
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     const values = within(screen.getByLabelText("Status"))
@@ -195,7 +212,7 @@ describe("ProductForm (SC-6, SC-12)", () => {
     expect(values).toEqual(["draft", "published", "archived"]);
     expect(
       screen.queryByText(
-        "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
+        "Artikel, Farben, Bilder und KI-Vorschläge folgen nach dem ersten Speichern."
       )
     ).toBeNull();
   });
@@ -210,6 +227,8 @@ describe("ProductForm (SC-6, SC-12)", () => {
         savedStatus={null}
         address={null}
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
       />
     );
     const title = screen.getByLabelText("Titel für Suchmaschinen");
@@ -223,5 +242,239 @@ describe("ProductForm (SC-6, SC-12)", () => {
       target: { value: "Klein" },
     });
     expect(description).toHaveAttribute("placeholder", "Neuer Name – Klein.");
+  });
+});
+
+describe("ProductForm AI assistant (SC-1, SC-5)", () => {
+  const initial: ProductValues = {
+    ...emptyProductValues(),
+    name: "Testkeil",
+    categoryId: "1",
+  };
+  const suggestions = {
+    model: "test-model",
+    suggestions: [
+      { field: "description", generationId: 11, text: "KI-Beschreibung" },
+      { field: "seo_title", generationId: 12, text: "KI-Titel" },
+      { field: "seo_description", generationId: 13, text: "KI-SEO-Text" },
+    ],
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function renderEditor(
+    props: {
+      action?: (
+        prev: FormState<ProductValues>,
+        formData: FormData
+      ) => Promise<FormState<ProductValues>>;
+      availability?: "none" | "free_only" | "full";
+      origins?: { description: ContentOrigin; seo: ContentOrigin };
+    } = {}
+  ) {
+    return render(
+      <ProductForm
+        action={props.action ?? noop}
+        deleteAction={noop}
+        initial={initial}
+        options={options}
+        productId={7}
+        savedStatus="draft"
+        address="/produkte/moebelteile/testkeil"
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={{ availability: props.availability ?? "full", status: "draft" }}
+        origins={props.origins ?? human}
+      />
+    );
+  }
+
+  async function generate() {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify(suggestions), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          })
+      )
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Mit KI vorschlagen" }));
+    await screen.findAllByRole("group", { name: "KI-Vorschlag" });
+  }
+
+  const hiddenId = (name: string) =>
+    document.querySelector<HTMLInputElement>(`input[name="${name}"]`);
+  const boxes = () => screen.queryAllByRole("group", { name: "KI-Vorschlag" });
+
+  it("renders the button and hint for a saved product, nothing on create", () => {
+    const { unmount } = renderEditor();
+    expect(
+      screen.getByRole("button", { name: "Mit KI vorschlagen" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Grundlage ist der zuletzt gespeicherte Stand. Vorschläge werden erst mit „Speichern“ übernommen."
+      )
+    ).toBeInTheDocument();
+    unmount();
+    render(
+      <ProductForm
+        action={noop}
+        deleteAction={noop}
+        initial={emptyProductValues()}
+        options={options}
+        productId={null}
+        savedStatus={null}
+        address={null}
+        seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={human}
+      />
+    );
+    expect(
+      screen.queryByRole("button", { name: "Mit KI vorschlagen" })
+    ).toBeNull();
+    expect(
+      screen.getByText(
+        "Artikel, Farben, Bilder und KI-Vorschläge folgen nach dem ersten Speichern."
+      )
+    ).toBeInTheDocument();
+  });
+
+  it("disables the button when the assistant is not set up", () => {
+    renderEditor({ availability: "none" });
+    expect(
+      screen.getByRole("button", { name: "Mit KI vorschlagen" })
+    ).toBeDisabled();
+    expect(
+      screen.getByText("Der KI-Assistent ist nicht eingerichtet.")
+    ).toBeInTheDocument();
+  });
+
+  it("shows three boxes and opens the SEO section", async () => {
+    renderEditor();
+    expect(document.querySelector("details")?.open).toBe(false);
+    await generate();
+    expect(boxes()).toHaveLength(3);
+    expect(screen.getByText("KI-Beschreibung")).toBeInTheDocument();
+    expect(screen.getByText("KI-Titel")).toBeInTheDocument();
+    expect(screen.getByText("KI-SEO-Text")).toBeInTheDocument();
+    expect(document.querySelector("details")?.open).toBe(true);
+  });
+
+  it("a new result replaces open boxes", async () => {
+    renderEditor();
+    await generate();
+    fireEvent.click(screen.getAllByRole("button", { name: "Verwerfen" })[0]);
+    expect(boxes()).toHaveLength(2);
+    await generate();
+    expect(boxes()).toHaveLength(3);
+  });
+
+  it("accepting fills the field, sets the hidden id and focuses the field", async () => {
+    renderEditor();
+    await generate();
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    const field = screen.getByLabelText("Beschreibung (Markdown)");
+    expect(field).toHaveValue("KI-Beschreibung");
+    expect(field).toHaveFocus();
+    expect(hiddenId("aiDescription")).toHaveValue("11");
+    expect(boxes()).toHaveLength(2);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    const title = screen.getByLabelText("Titel für Suchmaschinen");
+    expect(title).toHaveValue("KI-Titel");
+    expect(title).toHaveFocus();
+    expect(hiddenId("aiSeoTitle")).toHaveValue("12");
+
+    fireEvent.click(screen.getByRole("button", { name: "Übernehmen" }));
+    expect(screen.getByLabelText("Beschreibung für Suchmaschinen")).toHaveValue(
+      "KI-SEO-Text"
+    );
+    expect(hiddenId("aiSeoDescription")).toHaveValue("13");
+    expect(boxes()).toHaveLength(0);
+  });
+
+  it("discarding leaves the field and moves focus to the next box, then the button", async () => {
+    renderEditor();
+    await generate();
+    fireEvent.click(screen.getAllByRole("button", { name: "Verwerfen" })[0]);
+    expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue("");
+    expect(hiddenId("aiDescription")).toBeNull();
+    expect(
+      screen.getAllByRole("button", { name: "Übernehmen" })[0]
+    ).toHaveFocus();
+    fireEvent.click(screen.getAllByRole("button", { name: "Verwerfen" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Verwerfen" }));
+    expect(boxes()).toHaveLength(0);
+    expect(
+      screen.getByRole("button", { name: "Mit KI vorschlagen" })
+    ).toHaveFocus();
+  });
+
+  it("keeps values and hidden ids after a save with errors, clears them after a save", async () => {
+    let call = 0;
+    const action = vi.fn(
+      async (
+        _prev: FormState<ProductValues>,
+        formData: FormData
+      ): Promise<FormState<ProductValues>> => {
+        call += 1;
+        const values = {
+          ...initial,
+          description: String(formData.get("description")),
+        };
+        return call === 1
+          ? {
+              status: "error",
+              values,
+              fieldErrors: { name: "Pflichtfeld." },
+              formError: null,
+            }
+          : { status: "saved", values, fieldErrors: {}, formError: null };
+      }
+    );
+    renderEditor({ action });
+    await generate();
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
+    expect((action.mock.calls[0][1] as FormData).get("aiDescription")).toBe(
+      "11"
+    );
+    await screen.findByText("Pflichtfeld.");
+    expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
+      "KI-Beschreibung"
+    );
+    expect(hiddenId("aiDescription")).toHaveValue("11");
+
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(2));
+    expect((action.mock.calls[1][1] as FormData).get("aiDescription")).toBe(
+      "11"
+    );
+    await waitFor(() => expect(hiddenId("aiDescription")).toBeNull());
+    expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
+      "KI-Beschreibung"
+    );
+  });
+
+  it("shows the origin badges with the public wording, none for human", () => {
+    const { unmount } = renderEditor({
+      origins: { description: "ai", seo: "ai_edited" },
+    });
+    expect(screen.getByText("KI-generiert")).toBeInTheDocument();
+    expect(
+      screen.getByText("KI-unterstützt, redaktionell bearbeitet")
+    ).toBeInTheDocument();
+    unmount();
+    renderEditor();
+    expect(screen.queryByText("KI-generiert")).toBeNull();
+    expect(
+      screen.queryByText("KI-unterstützt, redaktionell bearbeitet")
+    ).toBeNull();
   });
 });
