@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 16.3 App Router, React 19.2, TypeScript strict, Tailwind 4, Supabase (local stack for tests), Vitest + Testing Library, Playwright, pnpm 10.
 
-**Spec:** `docs/specs/2026-10-28-product-images-selection-design.md` (absolute: `/Users/eugen/Projects/baumann-demo/.claude/worktrees/feat+product-images-selection/docs/specs/2026-10-28-product-images-selection-design.md`). Read D1–D8 before your task.
+**Spec:** `docs/specs/2026-10-28-product-images-selection-design.md`. Read D1–D8 before your task.
 
 ## Global Constraints
 
