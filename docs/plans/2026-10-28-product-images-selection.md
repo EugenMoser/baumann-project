@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Work only in the worktree `/Users/eugen/Projects/baumann-demo/.claude/worktrees/feat+product-images-selection` on branch `feat/product-images-selection`. pnpm only, never npm.
+- Work only in the feature worktree on branch `feat/product-images-selection`. pnpm only, never npm.
 - No new dependencies.
 - Read the relevant guide in `node_modules/next/dist/docs/` before touching `next/image` or client components (Next.js 16 differs from older versions).
 - Tests carry the spec IDs of this feature as `(4b SC-n)` in the `describe`/`test` title, so they are not confused with the catalog spec's IDs.
