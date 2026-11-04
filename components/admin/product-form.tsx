@@ -8,12 +8,51 @@ import { Textarea } from "@/components/ui/textarea";
 import { idleState, type FormState } from "@/lib/admin/form";
 import { STATUS_LABEL, type ProductStatus } from "@/lib/admin/labels";
 import type { EditorOptions } from "@/lib/admin/products";
-import type { ProductValues } from "@/lib/admin/schemas";
+import { AI_ACCEPT_FIELDS, type ProductValues } from "@/lib/admin/schemas";
+import type { AiAvailability } from "@/lib/ai/settings";
 import { autoProductMeta } from "@/lib/catalog/metadata";
+import type { ContentOrigin } from "@/lib/catalog/types";
 import { AddressLine } from "./address-line";
+import {
+  AiSuggest,
+  SuggestionBox,
+  type Suggestion,
+  type SuggestionField,
+} from "./ai-suggest";
 import { DeleteProductButton } from "./delete-product-button";
 import { describedBy, Field, selectClass } from "./field";
+import { OriginBadge } from "./origin-badge";
 import { SeoSection } from "./seo-section";
+
+type TextKey = "description" | "seoTitle" | "seoDescription";
+
+// Suggestion field of the route -> form field (also its element id) and the
+// hidden input that carries the accepted generation id to the save action.
+const TARGET = {
+  description: {
+    key: "description",
+    accept: AI_ACCEPT_FIELDS.description,
+    label: "Beschreibung",
+  },
+  seo_title: {
+    key: "seoTitle",
+    accept: AI_ACCEPT_FIELDS.seoTitle,
+    label: "Titel für Suchmaschinen",
+  },
+  seo_description: {
+    key: "seoDescription",
+    accept: AI_ACCEPT_FIELDS.seoDescription,
+    label: "Beschreibung für Suchmaschinen",
+  },
+} as const satisfies Record<
+  SuggestionField,
+  { key: TextKey; accept: string; label: string }
+>;
+const ORDER: SuggestionField[] = [
+  "description",
+  "seo_title",
+  "seo_description",
+];
 
 type Props = {
   action: (
@@ -32,6 +71,10 @@ type Props = {
   address: string | null;
   /** Saved article numbers and colour count, for the automatic SEO preview. */
   seoContext: { articleNumbers: string[]; colorCount: number };
+  /** AI assistant of a saved product; null on create. */
+  ai: { availability: AiAvailability; status: ProductStatus } | null;
+  /** Saved origin of the description and of the SEO texts. */
+  origins: { description: ContentOrigin; seo: ContentOrigin };
 };
 
 export function ProductForm({
@@ -43,6 +86,8 @@ export function ProductForm({
   savedStatus,
   address,
   seoContext,
+  ai,
+  origins,
 }: Props) {
   const [state, formAction, pending] = useActionState(
     action,
@@ -50,15 +95,88 @@ export function ProductForm({
   );
   const [name, setName] = useState(state.values.name);
   const [subtitle, setSubtitle] = useState(state.values.subtitle);
+  const [texts, setTexts] = useState<Record<TextKey, string>>({
+    description: state.values.description,
+    seoTitle: state.values.seoTitle,
+    seoDescription: state.values.seoDescription,
+  });
+  // Ids of accepted AI suggestions, sent as hidden fields (D6).
+  const [accepted, setAccepted] = useState<Partial<Record<TextKey, number>>>(
+    {}
+  );
+  const [suggestions, setSuggestions] = useState<
+    Partial<Record<SuggestionField, Suggestion>>
+  >({});
+  const generateButton = useRef<HTMLButtonElement>(null);
+  const acceptButtons = useRef<
+    Partial<Record<SuggestionField, HTMLButtonElement | null>>
+  >({});
+  // Set by a result that arrived while focus was lost; used once the boxes exist.
+  const focusFirstBox = useRef(false);
   const seen = useRef(state);
 
-  // Re-sync the controlled name with each action response.
+  // Re-sync the controlled fields with each action response. Accepted ids
+  // survive a save with errors and are consumed by a successful save.
   const [syncedState, setSyncedState] = useState(state);
   if (syncedState !== state) {
     setSyncedState(state);
     setName(state.values.name);
     setSubtitle(state.values.subtitle);
+    setTexts({
+      description: state.values.description,
+      seoTitle: state.values.seoTitle,
+      seoDescription: state.values.seoDescription,
+    });
+    if (state.status === "saved") setAccepted({});
   }
+
+  const setText = (key: TextKey, value: string) =>
+    setTexts((prev) => ({ ...prev, [key]: value }));
+
+  const removeSuggestion = (field: SuggestionField) =>
+    setSuggestions((prev) => {
+      const rest = { ...prev };
+      delete rest[field];
+      return rest;
+    });
+
+  const accept = (s: Suggestion) => {
+    const { key } = TARGET[s.field];
+    setText(key, s.text);
+    setAccepted((prev) => ({ ...prev, [key]: s.generationId }));
+    removeSuggestion(s.field);
+    document.getElementById(key)?.focus();
+  };
+
+  const discard = (s: Suggestion) => {
+    removeSuggestion(s.field);
+    const open = ORDER.filter((f) => f !== s.field && suggestions[f]);
+    const next =
+      open.find((f) => ORDER.indexOf(f) > ORDER.indexOf(s.field)) ?? open[0];
+    (next ? acceptButtons.current[next] : generateButton.current)?.focus();
+  };
+
+  useEffect(() => {
+    if (!focusFirstBox.current) return;
+    focusFirstBox.current = false;
+    const first = ORDER.find((f) => suggestions[f]);
+    if (first) acceptButtons.current[first]?.focus();
+  }, [suggestions]);
+
+  const box = (field: SuggestionField) => {
+    const suggestion = suggestions[field];
+    return suggestion ? (
+      <SuggestionBox
+        suggestion={suggestion}
+        fieldLabel={TARGET[field].label}
+        onAccept={accept}
+        onDiscard={discard}
+        acceptRef={(el) => {
+          acceptButtons.current[field] = el;
+        }}
+      />
+    ) : null;
+  };
 
   useEffect(() => {
     if (seen.current === state) return;
@@ -70,7 +188,7 @@ export function ProductForm({
   const e = state.fieldErrors;
   const creating = productId === null;
   const statusHint = creating
-    ? "Artikel, Farben und Bilder folgen nach dem ersten Speichern."
+    ? "Artikel, Farben, Bilder und KI-Vorschläge folgen nach dem ersten Speichern."
     : undefined;
   const statusOptions = (Object.keys(STATUS_LABEL) as ProductStatus[]).filter(
     (s) => !creating || s === "draft"
@@ -103,6 +221,15 @@ export function ProductForm({
         noValidate
       >
         <input type="hidden" name="id" value={productId ?? ""} />
+        {ai
+          ? ORDER.map((field) => {
+              const { key, accept: hidden } = TARGET[field];
+              const id = accepted[key];
+              return id === undefined ? null : (
+                <input key={hidden} type="hidden" name={hidden} value={id} />
+              );
+            })
+          : null}
         {state.formError ? (
           <p
             role="alert"
@@ -171,8 +298,38 @@ export function ProductForm({
           />
         </Field>
         {text("sortOrder", "Reihenfolge")}
-        <div className="md:col-span-2">
-          {text("description", "Beschreibung (Markdown)", undefined, true)}
+        <div className="grid gap-4 md:col-span-2">
+          {ai && productId !== null ? (
+            <AiSuggest
+              productId={productId}
+              availability={ai.availability}
+              status={ai.status}
+              buttonRef={generateButton}
+              onResult={(list, focusLost) => {
+                focusFirstBox.current = focusLost;
+                setSuggestions(
+                  Object.fromEntries(list.map((s) => [s.field, s]))
+                );
+              }}
+            />
+          ) : null}
+          <Field
+            id="description"
+            label="Beschreibung (Markdown)"
+            error={e.description}
+            badge={<OriginBadge origin={origins.description} />}
+          >
+            <Textarea
+              id="description"
+              name="description"
+              rows={6}
+              value={texts.description}
+              onChange={(ev) => setText("description", ev.target.value)}
+              aria-invalid={Boolean(e.description)}
+              aria-describedby={describedBy("description", e.description)}
+            />
+          </Field>
+          {box("description")}
         </div>
         <Field id="materialId" label="Material" error={e.materialId}>
           <select
@@ -194,8 +351,18 @@ export function ProductForm({
         </Field>
         {text("materialNote", "Materialhinweis")}
         <SeoSection
-          values={v}
+          values={texts}
           errors={e}
+          onChange={setText}
+          origin={origins.seo}
+          boxesKey={ORDER.slice(1)
+            .map((f) => suggestions[f]?.generationId)
+            .filter((id) => id !== undefined)
+            .join("-")}
+          boxes={{
+            seoTitle: box("seo_title"),
+            seoDescription: box("seo_description"),
+          }}
           auto={autoProductMeta({
             name,
             subtitle: subtitle.trim() || null,

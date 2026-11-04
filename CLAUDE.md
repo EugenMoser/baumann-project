@@ -9,7 +9,7 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 10 of 12 features done (6a/6b count as one). Next: feature 7 (AI text assistant), then 8 (showcase).
+Active. MVP: 11 of 12 features done (6a/6b count as one). Next: feature 8 (showcase).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
@@ -34,6 +34,7 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 - DB tests (pgTAP + integration, stack must run): `pnpm db:test`
 - Regenerate DB types: `pnpm db:types`
 - Import legacy catalog: `pnpm catalog:import --snapshot <dir> [--dry-run] [--overwrite-admin-edits]` — the preview is not re-imported; a real run against a non-local target needs the flag (see `docs/import.md`)
+- Try the AI chain against real providers: `pnpm ai:try --product <id> [--model <id>] [--allow-remote]` — reads only, writes nothing; a non-local Supabase URL needs the flag (see `docs/decisions/0004-ai-provider.md`)
 - Remove all customer data: `pnpm catalog:remove --confirm <api host>` (see `docs/revocation.md`)
 - Create or reset an admin user: `printf '%s' "$PW" | pnpm admin:create --email <address>` (see `docs/deploy.md`)
 - Remove orphan images: `pnpm media:prune [--apply]` (see `docs/deploy.md`)

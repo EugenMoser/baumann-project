@@ -54,23 +54,37 @@ test("reject a file that is not an image (SC-1)", async ({ page }) => {
   await expect(page.getByText("Nur JPEG, PNG oder WebP.")).toBeVisible();
 });
 
-async function uploadImage(page: Page, name: string, alt: string) {
+// `rows`: number of image rows once this upload is saved.
+async function uploadImage(
+  page: Page,
+  name: string,
+  alt: string,
+  rows: number
+) {
+  const uploadAlt = page.getByLabel("Alt-Text", { exact: true }).last();
   await page.getByLabel("Bilddatei").setInputFiles({
     name,
     mimeType: "image/png",
     buffer: Buffer.from(makePng(30, 30)),
   });
-  await page.getByLabel("Alt-Text", { exact: true }).last().fill(alt);
+  await uploadAlt.fill(alt);
   await page.getByRole("button", { name: "Bild hochladen" }).click();
   await expect(
     page.getByText("Bild hochgeladen.", { exact: true })
   ).toBeVisible();
+  // The toast fires inside the action, before React resets the form; the
+  // previous toast may still be visible, too. Wait for the reset and the new
+  // row, or the next upload's input is cleared before it is sent.
+  await expect(uploadAlt).toHaveValue("");
+  await expect(page.getByRole("group", { name: /^Bild \d+$/ })).toHaveCount(
+    rows
+  );
 }
 
 test("edit alt text and order (SC-5, 4b SC-6)", async ({ page }) => {
   await page.goto(editUrl);
-  await uploadImage(page, "zwei.png", `Zweites Bild ${run}`);
-  await uploadImage(page, "drei.png", `Drittes Bild ${run}`);
+  await uploadImage(page, "zwei.png", `Zweites Bild ${run}`, 2);
+  await uploadImage(page, "drei.png", `Drittes Bild ${run}`, 3);
 
   // Rows: Erstes (list image), Zweites, Drittes.
   const alts = page.getByLabel("Alt-Text", { exact: true });

@@ -117,6 +117,35 @@ test.describe("slugs and SEO section", () => {
     await page.goto(`/produkte/moebelteile/${slug}`);
     await expect(page).toHaveTitle(new RegExp(`E2E SEO ${run}`));
   });
+
+  // A prefetch render that started before a save could finish after its
+  // revalidation and keep the old page cached for up to an hour.
+  test("the editor never prefetches the public page", async ({ page }) => {
+    const slug = `e2e-prefetch-${run}`;
+    const id = await createPublishedProduct(
+      slug,
+      `E2E Prefetch ${run}`,
+      `E2E-PREFETCH-${run}`
+    );
+    const publicPath = `/produkte/moebelteile/${slug}`;
+    const prefetches: string[] = [];
+    page.on("request", (request) => {
+      if (
+        new URL(request.url()).pathname === publicPath &&
+        request.headers()["next-router-prefetch"] !== undefined
+      )
+        prefetches.push(request.url());
+    });
+    await page.goto(`/admin/produkte/${id}`);
+    // Hovering prefetches a default link; the click then navigates on the
+    // client, so any prefetch was sent before the public page is reached.
+    await page.getByRole("link", { name: "Öffentliche Seite ansehen" }).click();
+    await expect(page).toHaveURL(publicPath);
+    await expect(
+      page.getByRole("heading", { level: 1, name: `E2E Prefetch ${run}` })
+    ).toBeVisible();
+    expect(prefetches).toEqual([]);
+  });
 });
 
 test.describe("colour order (6c SC-4)", () => {

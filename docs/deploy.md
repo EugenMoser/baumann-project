@@ -36,8 +36,8 @@ push to main
   This run's smoke check goes red because the app reports the newer commit.
   Expand/contract limits the impact; the next run fixes it forward.
 - The smoke check polls `/api/health` for up to 10 minutes until it reports the
-  commit that was pushed. `/api/health` always answers 200 with
-  `{ commit, db }`; `db` is `error` when the database is slow or down. The
+  commit that was pushed. `/api/health` answers 200 with
+  `{ commit, db }` as long as the server env parses (section 14); `db` is `error` when the database is slow or down. The
   Dockerfile has a `HEALTHCHECK` on the same endpoint. A 401 from the basic
   auth (section 6) ends the check at once.
 - Migrations run before the new app is deployed, except in the residual
@@ -566,3 +566,49 @@ not change for this.
 - Run it once after deploying the admin image feature (it also catches files of
   products deleted before it existed), and again whenever failed file removals
   show up in the app logs (`[admin] remove files`).
+
+## 14. AI text assistant
+
+The admin editor offers "Mit KI vorschlagen" (route
+`POST /admin/produkte/<id>/ki-vorschlag`). Model chain and data rule:
+`docs/decisions/0004-ai-provider.md`.
+
+- Runtime variables of the app resource (server-only, not build-time):
+
+  | Variable                  | Purpose                                                        | Default            |
+  | ------------------------- | -------------------------------------------------------------- | ------------------ |
+  | `OPENROUTER_API_KEY`      | free tier                                                      | unset: tier off    |
+  | `AI_FREE_MODELS`          | comma-separated OpenRouter model ids, tried in order (max two) | empty: tier off    |
+  | `ANTHROPIC_API_KEY`       | fallback tier, the only tier for drafts                        | unset: tier off    |
+  | `AI_FALLBACK_MODEL`       | Anthropic model id                                             | `claude-haiku-5-5` |
+  | `AI_MONTHLY_REQUEST_CAP`  | requests per calendar month (Europe/Berlin), all admins        | 200                |
+  | `AI_HOURLY_REQUEST_LIMIT` | requests per hour and admin                                    | 20                 |
+
+  Recommended (2026-11-03 trial, ADR 0004):
+  `AI_FREE_MODELS=xingchen-agi/xing4.0-29b-a4b:free,liquid/lfm-2.5-2.6b:free`.
+  Leaving it empty and using Anthropic only is valid; the cost stays in the
+  cent range at the default cap.
+
+- Do not set `AI_FAKE_MODEL` on the preview. The app refuses it unless
+  `NEXT_PUBLIC_SITE_URL` is `localhost` or `127.0.0.1`.
+- A malformed value (for example a non-numeric cap) makes every route that
+  imports the server env, including `/api/health`, fail on its first request.
+  The container then turns unhealthy and the deploy smoke check fails. Missing
+  or empty values never do; empty values count as unset. Check the container
+  log after changing a variable.
+- Provider-side limits, set before the first deploy with keys:
+  - Anthropic: a spend limit on the workspace of the key.
+  - OpenRouter: a credit limit of 0 on the key, so it can only use free
+    models.
+- Proxy timeout: one request can take two free attempts of up to 25 s each
+  plus the Anthropic call of up to 30 s. The reverse proxy timeout for the
+  suggestion route must be at least 90 s. Check the proxy setting in Coolify
+  after the first deploy; a shorter value shows up as a failed request in the
+  browser although the app finished.
+- First live click after deploy: open a published product in the admin,
+  press "Mit KI vorschlagen" and check that a suggestion appears, that
+  nothing is saved before "Speichern", and that `ai_request` has a
+  `succeeded` row with the model. Do it with an admin account on the
+  preview; it counts against the monthly cap.
+- `pnpm ai:try` (see `CLAUDE.md`) tries the chain from a developer machine
+  without writing anything.

@@ -183,8 +183,42 @@ Search, the inquiry form and structured data all read from this view.
 ### `ai_generation`
 
 Audit log for the AI assistant: `entity`, `entity_id`, `field`, `model`,
-`prompt_version`, `output`, `created_at`, `accepted_at`. Feeds the AI label and
-the cost counter.
+`prompt_version`, `output`, `created_at`, `accepted_at`, and `request_id`
+(FK → `ai_request`, cascade; null for generations from before the request log).
+Feeds the AI label.
+
+### `ai_request`
+
+Append-only log of AI suggestion requests. One row is reserved before any
+provider call and counts whatever the outcome.
+
+| Column                          | Type                                       | Notes                                      |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------ |
+| `id`                            | bigint identity PK                         |                                            |
+| `product_id`                    | FK → product, nullable, on delete set null |                                            |
+| `requested_by`                  | uuid                                       | The admin's user id                        |
+| `status`                        | `started` \| `succeeded` \| `failed`       | Default `started`                          |
+| `model`                         | text, nullable                             | Model that answered                        |
+| `input_tokens`, `output_tokens` | int, nullable                              |                                            |
+| `created_at`                    | timestamptz                                | Default `now()`; defines the limit windows |
+
+Column grants keep the log append-only: `authenticated` may insert
+`product_id` and `requested_by` and update `status`, `model`, `input_tokens`
+and `output_tokens`; there is no delete, and `created_at` and `requested_by`
+cannot be changed afterwards, so a request cannot leave its limit window.
+RLS is on: the admin reads, inserts (only in their own name) and updates;
+`anon` reads nothing.
+
+`reserve_ai_request(product_id, monthly_cap, hourly_limit)` is a
+`security invoker` function executable by `authenticated`. It refuses a
+non-admin (`42501`) and a NULL or negative limit (`22023`, fail closed), takes
+an advisory lock so parallel callers see each other's rows, then raises
+`AI001` when the requests of the current calendar month (Europe/Berlin)
+reach the monthly cap and `AI002` when the caller's requests of the last hour
+reach the hourly limit. Otherwise it inserts a `started` row and returns its
+id. The limits come from `AI_MONTHLY_REQUEST_CAP` and
+`AI_HOURLY_REQUEST_LIMIT` (see `docs/deploy.md` section 14). `remove_catalog()`
+deletes `ai_request` and `ai_generation`.
 
 ### `certificate` and `certificate_document`
 
@@ -220,7 +254,7 @@ legacy exports contain none.
 
 - RLS is enabled on every table.
 - Anonymous users read published catalog data only; `status <> 'published'`
-  rows and `ai_generation` are invisible.
+  rows, `ai_generation` and `ai_request` are invisible.
 - Certificates have no draft state; everyone reads them.
 - Writes are restricted to the admin role. Admin = JWT
   `app_metadata.role = 'admin'`, checked by `private.is_admin()`.

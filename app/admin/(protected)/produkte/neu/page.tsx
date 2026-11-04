@@ -26,6 +26,8 @@ export default async function NewProductPage() {
         savedStatus={null}
         address={null}
         seoContext={{ articleNumbers: [], colorCount: 0 }}
+        ai={null}
+        origins={{ description: "human", seo: "human" }}
       />
     </>
   );

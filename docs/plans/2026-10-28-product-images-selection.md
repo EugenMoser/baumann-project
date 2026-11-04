@@ -8,11 +8,11 @@
 
 **Tech Stack:** Next.js 16.3 App Router, React 19.2, TypeScript strict, Tailwind 4, Supabase (local stack for tests), Vitest + Testing Library, Playwright, pnpm 10.
 
-**Spec:** `docs/specs/2026-10-28-product-images-selection-design.md` (absolute: `/Users/eugen/Projects/baumann-demo/.claude/worktrees/feat+product-images-selection/docs/specs/2026-10-28-product-images-selection-design.md`). Read D1–D8 before your task.
+**Spec:** `docs/specs/2026-10-28-product-images-selection-design.md`. Read D1–D8 before your task.
 
 ## Global Constraints
 
-- Work only in the worktree `/Users/eugen/Projects/baumann-demo/.claude/worktrees/feat+product-images-selection` on branch `feat/product-images-selection`. pnpm only, never npm.
+- Work only in the feature worktree on branch `feat/product-images-selection`. pnpm only, never npm.
 - No new dependencies.
 - Read the relevant guide in `node_modules/next/dist/docs/` before touching `next/image` or client components (Next.js 16 differs from older versions).
 - Tests carry the spec IDs of this feature as `(4b SC-n)` in the `describe`/`test` title, so they are not confused with the catalog spec's IDs.

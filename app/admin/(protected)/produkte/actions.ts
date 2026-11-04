@@ -26,6 +26,7 @@ import {
 import { deleteProductWithFiles } from "@/lib/admin/media-flow";
 import { deleteProduct, saveProduct } from "@/lib/admin/products";
 import {
+  AI_ACCEPT_FIELDS,
   PRODUCT_FIELDS,
   productSchema,
   type ProductValues,
@@ -57,7 +58,11 @@ export async function saveProductAction(
       formError: "Ungültige Anfrage.",
     };
   const done = await runWrite(values, "[admin] save product", (client) =>
-    saveProduct(client, id, parsed.data)
+    saveProduct(client, id, parsed.data, {
+      description: idFrom(formData, AI_ACCEPT_FIELDS.description),
+      seoTitle: idFrom(formData, AI_ACCEPT_FIELDS.seoTitle),
+      seoDescription: idFrom(formData, AI_ACCEPT_FIELDS.seoDescription),
+    })
   );
   if ("state" in done) return done.state;
   if (id === null) redirect(`/admin/produkte/${done.value.id}`);

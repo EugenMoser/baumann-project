@@ -16,7 +16,9 @@ import {
   toProductValues,
 } from "@/lib/admin/products";
 import { unwrapAdmin } from "@/lib/admin/server";
+import { availability } from "@/lib/ai/settings";
 import { productPath } from "@/lib/catalog/anchors";
+import { aiSettings } from "@/lib/env/server";
 import { createSessionSupabase } from "@/lib/supabase/session";
 import { saveAccessoriesAction } from "../accessory-actions";
 import {
@@ -79,8 +81,11 @@ export default async function EditProductPage({
         <h1 className="text-2xl font-semibold">{product.name}</h1>
         <StatusBadge status={product.status} />
         {product.status === "published" ? (
+          // No prefetch: a public render started before a save could finish
+          // after its revalidation and keep the old page cached (revalidate).
           <Link
             href={productPath(product.categorySlug, product.slug)}
+            prefetch={false}
             className="text-sm underline-offset-4 hover:underline"
           >
             Öffentliche Seite ansehen
@@ -98,6 +103,14 @@ export default async function EditProductPage({
         seoContext={{
           articleNumbers: editor.articles.map((a) => a.articleNumber),
           colorCount: editor.colors.length,
+        }}
+        ai={{
+          availability: availability(aiSettings),
+          status: product.status,
+        }}
+        origins={{
+          description: product.descriptionOrigin,
+          seo: product.seoOrigin,
         }}
       />
       <ArticleSection

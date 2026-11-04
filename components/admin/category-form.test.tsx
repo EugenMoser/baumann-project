@@ -157,6 +157,59 @@ describe("CategoryForm errors (SC-10)", () => {
     expect(fd?.get("attrSort-3")).toBe("4");
     expect(fd?.get("name")).toBe("X");
   });
+  it("keeps the typed SEO values after a validation error and shows the saved ones after a save", async () => {
+    let call = 0;
+    const action = vi.fn<Action>(
+      async (prev, formData): Promise<FormState<CategoryValues>> => {
+        call += 1;
+        const values: CategoryValues = {
+          ...prev.values,
+          seoTitle: String(formData.get("seoTitle")),
+          seoDescription: String(formData.get("seoDescription")),
+        };
+        return call === 1
+          ? {
+              status: "error",
+              values,
+              fieldErrors: { seoTitle: "Zu lang." },
+              formError: null,
+            }
+          : {
+              status: "saved",
+              values: { ...values, seoTitle: "Gespeicherter Titel" },
+              fieldErrors: {},
+              formError: null,
+            };
+      }
+    );
+    renderForm(action);
+    fireEvent.change(screen.getByLabelText("Titel für Suchmaschinen"), {
+      target: { value: "Eigener Titel" },
+    });
+    fireEvent.change(screen.getByLabelText("Beschreibung für Suchmaschinen"), {
+      target: { value: "Eigene Beschreibung" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Kategorie anlegen" }));
+    await screen.findByText("Zu lang.");
+    expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveValue(
+      "Eigener Titel"
+    );
+    expect(screen.getByLabelText("Beschreibung für Suchmaschinen")).toHaveValue(
+      "Eigene Beschreibung"
+    );
+    expect(document.querySelector("details")?.open).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Kategorie anlegen" }));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveValue(
+        "Gespeicherter Titel"
+      )
+    );
+    expect(screen.getByLabelText("Beschreibung für Suchmaschinen")).toHaveValue(
+      "Eigene Beschreibung"
+    );
+  });
+
   it("follows the typed intro text in the SEO preview (6c SC-3)", () => {
     render(
       <CategoryForm
