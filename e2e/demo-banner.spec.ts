@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { branding } from "../config/branding";
 
-const paths = ["/", "/qualitaet", "/anfrage", "/diese-seite-gibt-es-nicht"];
+const paths = [
+  "/",
+  "/qualitaet",
+  "/anfrage",
+  "/datenschutz",
+  "/diese-seite-gibt-es-nicht",
+];
 const viewports = [
   { width: 1280, height: 800 },
   { width: 360, height: 740 },

@@ -30,7 +30,7 @@ test.describe("content pages", () => {
   test("footer links imprint and privacy on every page type (SC-1)", async ({
     page,
   }) => {
-    for (const path of ["/", "/qualitaet", "/anfrage"]) {
+    for (const path of ["/", "/qualitaet", "/anfrage", "/datenschutz"]) {
       await page.goto(path);
       const footer = page.getByRole("contentinfo");
       await expect(
