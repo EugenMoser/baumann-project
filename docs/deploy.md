@@ -55,7 +55,8 @@ Create A (and AAAA, if the VPS has IPv6) records pointing to the VPS:
 1. Coolify: New resource -> Service -> Supabase. Do not deploy yet; adjust the
    compose file first (step 2).
 2. Edit Compose File (the raw compose, not "Show Deployable Compose"), then
-   Save. The Coolify template lags behind upstream Supabase in two places:
+   Save. The Coolify template lags behind upstream Supabase in two places,
+   and it starts services and logs this project does not need:
    - **Postgres 17.** The template ships `supabase/postgres:15.x`; this project
      uses Postgres 17 (`major_version` in `supabase/config.toml`). Set the
      `supabase-db` image to `supabase/postgres:17.6.1.136`. Only on a fresh
@@ -76,8 +77,46 @@ Create A (and AAAA, if the VPS has IPv6) records pointing to the VPS:
      ```
 
      Keep `STORAGE_S3_BUCKET=stub` (internal folder name) and the
-     `./volumes/storage:/var/lib/storage` volume; `imgproxy` reads the same
-     directory.
+     `./volumes/storage:/var/lib/storage` volume.
+
+   - **No log collection.** Delete the `supabase-analytics` (Logflare) and
+     `supabase-vector` services and every `depends_on` entry that points to
+     them (in rest, auth, meta and `supabase-db` → vector). In kong and
+     studio nothing else remains, so delete the whole `depends_on` block; an
+     empty one fails. Vector reads the Docker logs of every container on the
+     host through the Docker socket, including client IPs and user agents,
+     and Logflare stores them in the `_supabase` database (schema
+     `_analytics`) with no retention limit. In `supabase-studio`, delete the
+     `LOGFLARE_*` variables and `NEXT_ANALYTICS_BACKEND_PROVIDER`, and set
+     `NEXT_PUBLIC_ENABLE_LOGS=false` and `ENABLED_FEATURES_LOGS_ALL=false`.
+     An install that already ran Logflare keeps its tables; step 7 drops
+     them.
+   - **No unused services.** The app uses PostgREST, Auth and Storage only:
+     no Realtime, Edge Functions, connection pooler or Storage image
+     transformations (`next/image` resizes). Delete `realtime-dev`,
+     `supabase-edge-functions`, `supabase-supavisor` and `imgproxy`. In
+     `supabase-storage`, set `ENABLE_IMAGE_TRANSFORMATION=false` and delete
+     `IMGPROXY_URL` and `depends_on: imgproxy`. Studio and meta stay. Kong's
+     declarative config keeps its routes to the removed services; they answer
+     with an error (`/functions/v1/` returns 500, even without a key) and can
+     stay.
+   - **Error-level logs only.** Add to the environment of:
+     - `supabase-kong`: `KONG_PROXY_ACCESS_LOG=off`,
+       `KONG_ADMIN_ACCESS_LOG=off`, `KONG_LOG_LEVEL=error` and
+       `KONG_ANONYMOUS_REPORTS=off` (no access log, no usage reports to Kong)
+     - `supabase-auth`: `GOTRUE_LOG_LEVEL=error` and
+       `GOTRUE_AUDIT_LOG_DISABLE_POSTGRES=true` (no per-request lines with the
+       client IP, no rows in `auth.audit_log_entries`). Audit events then go
+       to the log at info level, which `error` suppresses: raising the level
+       for debugging brings back lines with client IPs, and admin sign-ins
+       leave no audit trail.
+     - `supabase-storage`: `LOG_LEVEL=error` (info and warn lines carry the
+       client IP and user agent of every request)
+
+     PostgREST (default `error`) and Postgres (`log_min_messages=fatal` in the
+     template) need no change. In the list form (`- KEY=value`) each item is
+     one string; in the map form, quote `'off'` and `'true'`, or YAML turns
+     them into booleans.
 
    Also add the loopback port mapping from section 4 in the same edit.
 
@@ -86,8 +125,12 @@ Create A (and AAAA, if the VPS has IPv6) records pointing to the VPS:
    Coolify routes to; the public port stays 443).
 4. Environment: `DISABLE_SIGNUP=true` (the template maps it to
    `GOTRUE_DISABLE_SIGNUP`). Leave `ENABLE_EMAIL_SIGNUP` alone: `false`
-   disables email login entirely, which the admin login needs. Leave `SMTP_*`
-   empty (the default `SMTP_PORT` is harmless without `SMTP_HOST`).
+   disables email login entirely, which the admin login needs. Set
+   `ENABLE_PHONE_SIGNUP=false` and `ENABLE_PHONE_AUTOCONFIRM=false` (template
+   default `true`): the app has no phone login, and with autoconfirm a lost
+   `DISABLE_SIGNUP` would let anyone create a confirmed account with any phone
+   number. Leave `SMTP_*` empty (the default `SMTP_PORT` is harmless without
+   `SMTP_HOST`).
    Admin users are created with `pnpm admin:create` from a developer machine
    (service-role key in `.env.import`, see `docs/import.md`):
    `read -s PW && printf '%s' "$PW" | pnpm admin:create --email <address>`.
@@ -103,9 +146,19 @@ Create A (and AAAA, if the VPS has IPv6) records pointing to the VPS:
 7. Deploy, then verify:
 
    ```bash
-   docker ps --format '{{.Names}}\t{{.Status}}' | grep <service-uuid>   # all up, no minio
+   docker ps --format '{{.Names}}\t{{.Status}}' | grep <service-uuid>   # 7 up: kong studio db rest auth storage meta
+   docker exec <supabase-kong-container> printenv KONG_PROXY_ACCESS_LOG  # off
+   docker exec <supabase-auth-container> printenv GOTRUE_LOG_LEVEL GOTRUE_AUDIT_LOG_DISABLE_POSTGRES  # error, true
    docker exec <supabase-db-container> psql -U postgres -tAc "select version();"  # PostgreSQL 17.6
    curl -sSI https://api.baumann.eugen-moser.com | head -1              # HTTP/2 401
+   ```
+
+   On an install that already ran Logflare, drop its tables once
+   `supabase-analytics` no longer shows up in `docker ps` (a running Logflare
+   recreates them):
+
+   ```bash
+   docker exec <supabase-db-container> sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U supabase_admin -d _supabase -c "drop schema _analytics cascade"'
    ```
 
 8. The service images are pinned; record them here:
