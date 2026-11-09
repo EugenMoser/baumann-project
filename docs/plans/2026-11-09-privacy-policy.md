@@ -168,7 +168,7 @@
 
 **Files:**
 
-- Add: `docs/specs/2026-11-09-privacy-policy-design.md`, `docs/plans/2026-11-09-privacy-policy.md` (copy from the main checkout `/Users/eugen/Projects/baumann-demo/docs/…`)
+- Add: `docs/specs/2026-11-09-privacy-policy-design.md`, `docs/plans/2026-11-09-privacy-policy.md` (copy from the main checkout, same relative paths)
 - Modify: `docs/roadmap.md`, `docs/specs/2026-10-09-content-inquiry-design.md`, `docs/deploy.md`
 
 - [ ] **Step 1: Copy spec and plan** from the main checkout into the worktree (same relative paths).
@@ -186,10 +186,10 @@
 **Run by the orchestrating session, not by an implementer.** Reviewers get absolute paths and change nothing.
 
 - [ ] **Step 1: Build-output search** (template step 5a): after the Task 3 build, `grep -rlE "localStorage|sessionStorage|document.cookie|indexedDB" .next/static` in the worktree; record hits with the module they come from ("look", not "stores").
-- [ ] **Step 2: Three reviewers in parallel** (read `app/(site)/datenschutz/page.tsx`, the spec, the code; facts reviewer also gets the private handover note `/Users/eugen/Projects/_notizen/Business/Freelance/Rechtliches/Datenschutz/2026-11-06_Uebergabe-Datenschutz-Websites.md` section 4 and `…/2026-11-06_Pruefskript-Ausgabe-1538UTC.md` as server evidence):
+- [ ] **Step 2: Three reviewers in parallel** (read `app/(site)/datenschutz/page.tsx`, the spec, the code; facts reviewer also gets the developer's private handover note (server state section) and the latest server check script output as server evidence):
   - Legal (Opus, high): Art. 13 GDPR completeness per processing (purpose, data, legal basis with interest, recipients, retention, necessity, third country), § 25 TDDDG, wording that implies consent.
   - Facts (Sonnet, high): every sentence → evidence class (spec D7) with file:line or note section; mismatches are blockers.
   - Language (Sonnet, medium): plain German, the `vermenschlichen` rules, consistency with the template.
 - [ ] **Step 3: Apply findings** within the authority of spec D7 (wording, clear factual or citation errors); anything of substance goes unchanged to the Gate 2 report. Re-run `pnpm test "app/(site)/datenschutz"` after text edits; commit `fix: refine the privacy policy text after review`.
 - [ ] **Step 4: Final pass** (Sonnet, high): checks that every finding is resolved or listed, and that the page still matches the tests.
-- [ ] **Step 5: Check report** to the main checkout: `/Users/eugen/Projects/baumann-demo/.claude/notes/2026-11-09_pruefbericht-datenschutz.md` (German, private): table "Satz → Beleg" with evidence class, build-output search result, findings per reviewer with resolution, open items with reason, and the go-live checklist from spec D9.
+- [ ] **Step 5: Check report** to the main checkout's private `.claude/notes/` (German): table "Satz → Beleg" with evidence class, build-output search result, findings per reviewer with resolution, open items with reason, and the go-live checklist from spec D9.
