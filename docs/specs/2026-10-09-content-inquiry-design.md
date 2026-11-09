@@ -48,6 +48,8 @@ Out of scope:
 
 ### D1 — Imprint and privacy are links to the developer's pages
 
+Superseded for the privacy policy by feature 5b ([spec](2026-11-09-privacy-policy-design.md)); the imprint stays a link.
+
 The developer operates the preview domain, so the developer's imprint and
 privacy policy apply. `config/branding.ts` gets `developer.imprintUrl` and
 `developer.privacyUrl` (same values in the customer and the placeholder
