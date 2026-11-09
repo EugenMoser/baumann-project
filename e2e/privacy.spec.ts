@@ -23,7 +23,15 @@ test.describe("privacy policy facts", () => {
     page,
     context,
   }) => {
-    for (const path of ["/", PRODUCT, PRIVACY_PATH]) {
+    for (const path of [
+      "/",
+      "/produkte",
+      "/produkte/moebelteile",
+      PRODUCT,
+      "/suche?q=Befestigung",
+      "/qualitaet",
+      PRIVACY_PATH,
+    ]) {
       await page.goto(path);
     }
     await submitInquiry(page);

@@ -4,6 +4,7 @@ import { findVariant } from "@/lib/catalog/variant-lookup";
 import { NoopInquirySender } from "@/lib/inquiry/sender";
 import { handleInquiry, type InquiryState } from "@/lib/inquiry/submit";
 
+// The privacy policy (/datenschutz#anfrageformular) promises this; change both together.
 const sender = new NoopInquirySender();
 
 // Validates and discards (spec D6). Origin check against CSRF is built into

@@ -60,15 +60,14 @@ export default function PrivacyPage() {
           Überblick
         </h2>
         <p className="max-w-prose">
-          Die öffentlichen Seiten setzen keine Cookies und nutzen keinen lokalen
+          Die öffentlichen Seiten setzen keine Cookies, nutzen keinen lokalen
           Browserspeicher und keine Tracking- oder Analyse-Dienste.
           Personenbezogene Daten verarbeite ich, wenn Sie die Website aufrufen
           oder das Anfrageformular ausprobieren.
         </p>
         <p className="max-w-prose">
           Sie können die öffentlichen Seiten ohne Anmeldung nutzen. Das
-          Anfrageformular versendet nichts; Sie können es auch mit erfundenen
-          Angaben ausprobieren.
+          Anfrageformular können Sie auch mit erfundenen Angaben ausprobieren.
         </p>
       </section>
 
@@ -79,11 +78,12 @@ export default function PrivacyPage() {
         <p className="max-w-prose">
           Die Website läuft auf einem Server der Hostinger International Ltd.,
           61 Lordou Vironos str., 6023 Larnaca, Zypern. Der Server steht in
-          Frankfurt am Main. Auch die Datenbank der Website und die Zertifikate
-          als PDF liegen dort, ebenso meine E-Mails. Hostinger verarbeitet die
-          Daten, die beim Aufruf der Website und bei E-Mails an mich anfallen,
-          in meinem Auftrag. Mit Hostinger besteht ein Vertrag zur
-          Auftragsverarbeitung nach Art. 28 DSGVO.
+          Frankfurt am Main. Dort liegen auch die Datenbank der Website und die
+          PDF-Dateien der Qualitätszertifikate. Auch meine E-Mails liegen bei
+          Hostinger. Hostinger verarbeitet die Daten, die beim Aufruf und bei
+          der Nutzung der Website und bei E-Mails an mich anfallen, in meinem
+          Auftrag. Mit Hostinger besteht ein Vertrag zur Auftragsverarbeitung
+          nach Art. 28 DSGVO.
         </p>
         <p className="max-w-prose">
           Hostinger setzt weitere Dienstleister ein, auch in den USA und Kanada.
@@ -123,23 +123,25 @@ export default function PrivacyPage() {
           Anfrageformular
         </h2>
         <p className="max-w-prose">
-          Das Anfrageformular gehört zur Vorschau und versendet nichts. Wenn Sie
-          es absenden, prüft der Server Ihre Angaben (Name, E-Mail-Adresse und
-          je nach Eingabe Firma, Telefonnummer, Bestellnummer, Menge und
-          Nachricht) auf Vollständigkeit und Format und sucht die Bestellnummer
-          im Produktkatalog. Danach verwirft er die Angaben. Das Formular
-          speichert sie nicht und schickt sie weder an mich noch an die Firma,
-          deren Katalog die Vorschau zeigt.
+          Das Anfrageformular gehört zur Vorschau. Wenn Sie es absenden, prüft
+          der Server Ihre Angaben auf Vollständigkeit und Format und sucht die
+          Bestellnummer im Produktkatalog. Verarbeitet werden Name und
+          E-Mail-Adresse, je nach Eingabe auch Firma, Telefonnummer,
+          Bestellnummer, Menge und Nachricht. Danach verwirft der Server die
+          Angaben. Eine Anfrage an mich oder an die Firma, deren Katalog die
+          Vorschau zeigt, entsteht dabei nicht.
         </p>
         <p className="max-w-prose">
-          Ihre Angaben sind freiwillig. Das Formular lässt sich aber nur mit
-          Name, E-Mail-Adresse, Bestellnummer oder Nachricht und dem Häkchen bei
-          den Datenschutzhinweisen absenden; Firma, Telefonnummer und Menge sind
-          optional.
+          Ihre Angaben sind freiwillig. Das Formular lässt sich aber nur
+          absenden, wenn Name, E-Mail-Adresse und entweder Bestellnummer oder
+          Nachricht ausgefüllt sind und das Häkchen bei „Ich habe die
+          Datenschutzhinweise gelesen.“ gesetzt ist. Firma, Telefonnummer und
+          Menge sind optional.
         </p>
         <p className="max-w-prose">
           Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Mein berechtigtes
-          Interesse liegt darin, die Funktion des Formulars vorzuführen.
+          Interesse liegt darin, Ihnen und anderen Interessenten zu zeigen, wie
+          das Formular funktioniert.
         </p>
       </section>
 
@@ -149,13 +151,15 @@ export default function PrivacyPage() {
         </h2>
         <p className="max-w-prose">
           Der Admin-Bereich ist nur für mich; eine Registrierung gibt es nicht.
-          Wer sich dort anmeldet, schickt E-Mail-Adresse und Passwort an den
-          Anmeldedienst auf demselben Server. Nach der Anmeldung setzt die
-          Website ein Cookie, das die Anmeldung hält. Es ist dafür technisch
-          erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG) und wird beim Abmelden
-          gelöscht, spätestens nach 400 Tagen. Rechtsgrundlage ist Art. 6 Abs. 1
-          lit. f DSGVO. Mein berechtigtes Interesse liegt darin, den
-          Admin-Bereich vor fremdem Zugriff zu schützen.
+          Wer sich dort anmeldet, schickt E-Mail-Adresse und Passwort über die
+          Website an den Anmeldedienst auf demselben Server. Nach der Anmeldung
+          setzt die Website Cookies, damit die Anmeldung bestehen bleibt. Sie
+          sind dafür technisch erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Beim
+          Abmelden werden sie gelöscht, sonst laufen sie spätestens 400 Tage
+          nach dem letzten Besuch im Admin-Bereich ab. Rechtsgrundlage ist Art.
+          6 Abs. 1 lit. f DSGVO. Mein berechtigtes Interesse liegt darin, den
+          Katalog pflegen zu können und den Admin-Bereich vor fremdem Zugriff zu
+          schützen.
         </p>
       </section>
 
