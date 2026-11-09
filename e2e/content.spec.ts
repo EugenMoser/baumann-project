@@ -38,7 +38,7 @@ test.describe("content pages", () => {
       ).toHaveAttribute("href", branding.developer.imprintUrl);
       await expect(
         footer.getByRole("link", { name: "Datenschutz" })
-      ).toHaveAttribute("href", branding.developer.privacyUrl);
+      ).toHaveAttribute("href", "/datenschutz");
     }
   });
 });

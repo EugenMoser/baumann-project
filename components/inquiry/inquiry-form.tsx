@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { productPath } from "@/lib/catalog/anchors";
+import { INQUIRY_PRIVACY_HREF } from "@/lib/legal";
 import type { VariantMatch } from "@/lib/catalog/variant-lookup";
 import {
   fieldErrors,
@@ -31,7 +32,6 @@ type Props = {
   action: (prev: InquiryState, formData: FormData) => Promise<InquiryState>;
   initialState: InquiryState;
   prefill: Prefill;
-  privacyUrl: string;
   officialSiteUrl: string;
 };
 
@@ -39,7 +39,6 @@ export function InquiryForm({
   action,
   initialState,
   prefill,
-  privacyUrl,
   officialSiteUrl,
 }: Props) {
   const [state, formAction, pending] = useActionState(action, initialState);
@@ -187,12 +186,12 @@ export function InquiryForm({
           />
           <span>
             Ich habe die{" "}
-            <a
-              href={privacyUrl}
+            <Link
+              href={INQUIRY_PRIVACY_HREF}
               className="text-ink underline decoration-accent underline-offset-4 hover:text-accent-strong motion-safe:transition-colors motion-safe:duration-150"
             >
               Datenschutzhinweise
-            </a>{" "}
+            </Link>{" "}
             gelesen.
           </span>
         </label>

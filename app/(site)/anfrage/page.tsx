@@ -49,7 +49,6 @@ export default async function InquiryPage({
         action={submitInquiry}
         initialState={initialInquiryState(initialNumber)}
         prefill={prefill}
-        privacyUrl={branding.developer.privacyUrl}
         officialSiteUrl={branding.officialSiteUrl}
       />
     </main>

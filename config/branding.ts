@@ -22,9 +22,9 @@ export const brandingSchema = z.object({
   developer: z.object({
     name: z.string().min(1),
     url: httpUrl,
-    // The developer operates the preview, so their legal pages apply (spec D1).
+    // The developer operates the preview; the imprint is theirs, the privacy policy is a page of this app (feature 5b).
     imprintUrl: httpUrl,
-    privacyUrl: httpUrl,
+    email: z.email(),
   }),
 });
 
@@ -62,7 +62,7 @@ const customerBranding: Branding = brandingSchema.parse({
     name: "Eugen Moser",
     url: "https://eugen-moser.com",
     imprintUrl: "https://eugen-moser.com/impressum",
-    privacyUrl: "https://eugen-moser.com/datenschutz",
+    email: "info@eugen-moser.com",
   },
 });
 
@@ -85,7 +85,7 @@ export const placeholderBranding: Branding = brandingSchema.parse({
     name: "Eugen Moser",
     url: "https://eugen-moser.com",
     imprintUrl: "https://eugen-moser.com/impressum",
-    privacyUrl: "https://eugen-moser.com/datenschutz",
+    email: "info@eugen-moser.com",
   },
 });
 
