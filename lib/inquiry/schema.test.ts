@@ -106,3 +106,50 @@ describe("readInquiryForm", () => {
     expect(emptyInquiryValues("99010 - 1").orderNumber).toBe("99010 - 1");
   });
 });
+
+describe("required fields (5b SC-5)", () => {
+  const empty = emptyInquiryValues();
+
+  it("requires exactly the fields the privacy policy lists (5b SC-5)", () => {
+    const result = inquirySchema.safeParse(empty);
+    expect(result.success).toBe(false);
+    const paths = new Set(
+      result.success ? [] : result.error.issues.map((i) => String(i.path[0]))
+    );
+    // The order-number-or-message rule is a refine that only runs once the
+    // field-level checks pass, so "message" shows up in a second step.
+    expect(paths).toEqual(new Set(["name", "email", "privacy"]));
+    const withoutMessage = inquirySchema.safeParse({
+      ...empty,
+      name: "Er",
+      email: "e@example.com",
+      privacy: "on",
+    });
+    expect(withoutMessage.success).toBe(false);
+    expect(
+      withoutMessage.success
+        ? []
+        : withoutMessage.error.issues.map((i) => String(i.path[0]))
+    ).toEqual(["message"]);
+
+    expect(
+      inquirySchema.safeParse({
+        ...empty,
+        name: "Er",
+        email: "e@example.com",
+        message: "x",
+        privacy: "on",
+      }).success
+    ).toBe(true);
+    expect(
+      inquirySchema.safeParse({
+        ...empty,
+        name: "Er",
+        email: "e@example.com",
+        orderNumber: "1",
+        message: "",
+        privacy: "on",
+      }).success
+    ).toBe(true);
+  });
+});
