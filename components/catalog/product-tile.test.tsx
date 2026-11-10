@@ -37,6 +37,28 @@ describe("ProductTile (4b SC-2)", () => {
     expect(container.querySelector(".aspect-\\[2\\/1\\]")).not.toBeNull();
   });
 
+  it("clamps name and subtitle to two lines each and reserves their height", () => {
+    render(
+      <ProductTile
+        categorySlug="moebel"
+        product={{ ...product, subtitle: "Untertitel" }}
+      />
+    );
+    const name = screen.getByText("Testkeil");
+    expect(name.className).toMatch(/\bline-clamp-2\b/);
+    expect(name.className).toMatch(/\bh-12\b/);
+    const subtitle = screen.getByText("Untertitel");
+    expect(subtitle.className).toMatch(/\bline-clamp-2\b/);
+    expect(subtitle.className).toMatch(/\bh-10\b/);
+  });
+
+  it("keeps the subtitle box without a subtitle", () => {
+    const { container } = render(
+      <ProductTile categorySlug="moebel" product={product} />
+    );
+    expect(container.querySelector(".h-10.line-clamp-2")).not.toBeNull();
+  });
+
   it("shows 'Kein Bild' without a tile image", () => {
     render(
       <ProductTile

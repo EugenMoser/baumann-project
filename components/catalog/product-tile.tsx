@@ -21,13 +21,14 @@ export function ProductTile({
         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
         variant="tile"
       />
+      {/* Both blocks reserve two lines, so every tile has the same height. */}
       <span className="flex flex-col">
-        <span className="font-medium group-hover:text-accent-strong">
+        <span className="line-clamp-2 h-12 break-words font-medium leading-6 group-hover:text-accent-strong">
           {product.name}
         </span>
-        {product.subtitle && (
-          <span className="text-sm text-muted">{product.subtitle}</span>
-        )}
+        <span className="line-clamp-2 h-10 break-words text-sm leading-5 text-muted">
+          {product.subtitle}
+        </span>
       </span>
     </Link>
   );
