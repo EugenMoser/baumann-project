@@ -213,6 +213,13 @@ smoke check runs without credentials.
 Headings are `h2` unless noted. Reviews (D7) may change wording; changes of
 substance go to Gate 2.
 
+This appendix is the draft the build started from. After the reviews and the
+Gate 2 decisions the binding text is `app/(site)/datenschutz/page.tsx`: wording
+was refined, a section "Kontakt per E-Mail" follows "Anfrageformular" (ten
+`h2` headings), the overview names e-mail, and the address sentence reads
+"Meine Postanschrift finden Sie in meinem Impressum." Do not align the page
+with this draft.
+
 **Datenschutzerklärung** (page title)
 
 **Verantwortlicher**

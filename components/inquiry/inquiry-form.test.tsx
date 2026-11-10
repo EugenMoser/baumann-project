@@ -81,6 +81,23 @@ describe("InquiryForm (FR-8, FR-11)", () => {
     ).toHaveAttribute("href", INQUIRY_PRIVACY_HREF);
   });
 
+  // The privacy policy quotes this label verbatim (section "Anfrageformular").
+  it("labels the checkbox with the wording the privacy policy quotes (5b, review)", () => {
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={vi.fn()}
+        initialState={initialInquiryState()}
+        prefill={{ kind: "none" }}
+      />
+    );
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Ich habe die Datenschutzhinweise gelesen.",
+      })
+    ).toBeInTheDocument();
+  });
+
   it("replaces the form with the result panel after a discarded submit", () => {
     render(
       <InquiryForm

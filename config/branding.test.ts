@@ -103,6 +103,10 @@ describe("brandingSchema legal links and policy", () => {
     expect(placeholderBranding.developer.email).toBe("info@eugen-moser.com");
   });
 
+  it("names the same developer in both brandings, so the privacy policy renders the same (5b FR-6)", () => {
+    expect(placeholderBranding.developer).toEqual(branding.developer);
+  });
+
   it("rejects an empty quality policy (FR-7, SC-7)", () => {
     expect(
       brandingSchema.safeParse({ ...valid, qualityPolicy: [] }).success

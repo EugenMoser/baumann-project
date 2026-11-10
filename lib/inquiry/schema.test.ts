@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   emptyInquiryValues,
   fieldErrors,
+  INQUIRY_FIELDS,
   inquirySchema,
   readInquiryForm,
   type InquiryValues,
@@ -109,6 +110,23 @@ describe("readInquiryForm", () => {
 
 describe("required fields (5b SC-5)", () => {
   const empty = emptyInquiryValues();
+
+  // The privacy policy (app/(site)/datenschutz/page.tsx, section
+  // "Anfrageformular") lists these fields. A new field must be added there.
+  it("has exactly the fields the privacy policy lists (5b, review)", () => {
+    expect([...INQUIRY_FIELDS].sort()).toEqual(
+      [
+        "company",
+        "email",
+        "message",
+        "name",
+        "orderNumber",
+        "phone",
+        "privacy",
+        "quantity",
+      ].sort()
+    );
+  });
 
   it("requires exactly the fields the privacy policy lists (5b SC-5)", () => {
     const result = inquirySchema.safeParse(empty);

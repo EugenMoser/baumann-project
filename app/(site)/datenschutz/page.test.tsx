@@ -4,7 +4,7 @@ import { branding } from "@/config/branding";
 import PrivacyPage from "./page";
 
 describe("PrivacyPage (5b)", () => {
-  it("renders the headings of Appendix A in order (SC-1, FR-1)", () => {
+  it("renders the headings in order (SC-1, FR-1)", () => {
     render(<PrivacyPage />);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "Datenschutzerklärung"
