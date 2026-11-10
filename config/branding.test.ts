@@ -17,7 +17,7 @@ const valid = {
     name: "Dev Person",
     url: "https://dev.example",
     imprintUrl: "https://dev.example/impressum",
-    privacyUrl: "https://dev.example/datenschutz",
+    email: "dev@example.com",
   },
 };
 
@@ -65,7 +65,7 @@ describe("brandingSchema (FR-5, SC-5)", () => {
 });
 
 describe("brandingSchema legal links and policy", () => {
-  it.each(["imprintUrl", "privacyUrl"] as const)(
+  it.each(["imprintUrl"] as const)(
     "rejects a missing or non-http %s (FR-1, SC-1)",
     (key) => {
       const rest = Object.fromEntries(
@@ -82,6 +82,30 @@ describe("brandingSchema legal links and policy", () => {
       ).toBe(false);
     }
   );
+
+  it("rejects a developer without a valid e-mail (5b SC-2)", () => {
+    const rest = Object.fromEntries(
+      Object.entries(valid.developer).filter(([k]) => k !== "email")
+    );
+    expect(
+      brandingSchema.safeParse({ ...valid, developer: rest }).success
+    ).toBe(false);
+    expect(
+      brandingSchema.safeParse({
+        ...valid,
+        developer: { ...valid.developer, email: "kein-mail" },
+      }).success
+    ).toBe(false);
+  });
+
+  it("ships info@eugen-moser.com in both brandings (5b D2)", () => {
+    expect(branding.developer.email).toBe("info@eugen-moser.com");
+    expect(placeholderBranding.developer.email).toBe("info@eugen-moser.com");
+  });
+
+  it("names the same developer in both brandings, so the privacy policy renders the same (5b FR-6)", () => {
+    expect(placeholderBranding.developer).toEqual(branding.developer);
+  });
 
   it("rejects an empty quality policy (FR-7, SC-7)", () => {
     expect(

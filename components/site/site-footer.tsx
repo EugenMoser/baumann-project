@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Branding } from "@/config/branding";
+import { PRIVACY_PATH } from "@/lib/legal";
 
 export function SiteFooter({ branding }: { branding: Branding }) {
   return (
@@ -30,12 +31,12 @@ export function SiteFooter({ branding }: { branding: Branding }) {
           >
             Impressum
           </a>
-          <a
-            href={branding.developer.privacyUrl}
+          <Link
+            href={PRIVACY_PATH}
             className="underline underline-offset-2 hover:text-accent-strong"
           >
             Datenschutz
-          </a>
+          </Link>
         </nav>
         <p>
           Umsetzung:{" "}

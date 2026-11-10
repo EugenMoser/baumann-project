@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { emptyInquiryValues } from "@/lib/inquiry/schema";
+import { INQUIRY_PRIVACY_HREF } from "@/lib/legal";
 import { initialInquiryState, type InquiryState } from "@/lib/inquiry/submit";
 import { InquiryForm } from "./inquiry-form";
 
 const PROPS = {
-  privacyUrl: "https://dev.example/datenschutz",
   officialSiteUrl: "https://example.com",
 };
 
@@ -78,7 +78,24 @@ describe("InquiryForm (FR-8, FR-11)", () => {
     );
     expect(
       screen.getByRole("link", { name: /Datenschutzhinweise/ })
-    ).toHaveAttribute("href", PROPS.privacyUrl);
+    ).toHaveAttribute("href", INQUIRY_PRIVACY_HREF);
+  });
+
+  // The privacy policy quotes this label verbatim (section "Anfrageformular").
+  it("labels the checkbox with the wording the privacy policy quotes (5b, review)", () => {
+    render(
+      <InquiryForm
+        {...PROPS}
+        action={vi.fn()}
+        initialState={initialInquiryState()}
+        prefill={{ kind: "none" }}
+      />
+    );
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Ich habe die Datenschutzhinweise gelesen.",
+      })
+    ).toBeInTheDocument();
   });
 
   it("replaces the form with the result panel after a discarded submit", () => {

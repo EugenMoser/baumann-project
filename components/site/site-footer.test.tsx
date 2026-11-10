@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { placeholderBranding } from "@/config/branding";
+import { PRIVACY_PATH } from "@/lib/legal";
 import { SiteFooter } from "./site-footer";
 
 describe("SiteFooter (FR-1, SC-1)", () => {
@@ -15,7 +16,7 @@ describe("SiteFooter (FR-1, SC-1)", () => {
     );
   });
 
-  it("links imprint, privacy and the quality page (FR-1, SC-1)", () => {
+  it("links imprint, privacy and the quality page (FR-1, SC-1, 5b SC-2)", () => {
     render(<SiteFooter branding={placeholderBranding} />);
     expect(screen.getByRole("link", { name: "Impressum" })).toHaveAttribute(
       "href",
@@ -23,7 +24,7 @@ describe("SiteFooter (FR-1, SC-1)", () => {
     );
     expect(screen.getByRole("link", { name: "Datenschutz" })).toHaveAttribute(
       "href",
-      placeholderBranding.developer.privacyUrl
+      PRIVACY_PATH
     );
     expect(screen.getByRole("link", { name: "Qualität" })).toHaveAttribute(
       "href",

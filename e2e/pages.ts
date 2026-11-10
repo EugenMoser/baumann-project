@@ -8,4 +8,5 @@ export const PAGES = [
   "/suche?q=Befestigung",
   "/qualitaet",
   "/anfrage?bestellnummer=99010%20-%201",
+  "/datenschutz",
 ];

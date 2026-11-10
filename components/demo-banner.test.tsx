@@ -15,7 +15,7 @@ const fixture: Branding = {
     name: "Dev Person",
     url: "https://dev.example",
     imprintUrl: "https://dev.example/impressum",
-    privacyUrl: "https://dev.example/datenschutz",
+    email: "dev@example.com",
   },
 };
 

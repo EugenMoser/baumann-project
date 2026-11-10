@@ -269,8 +269,8 @@ it (it is stored as a GitHub secret).
   label management stays "Managed by Coolify". Redeploy afterwards. The
   container health check runs inside the container and is not affected; the
   CI smoke check sends the credentials from `PREVIEW_BASIC_AUTH` (section 7).
-  To make the preview public, switch the authentication off, redeploy and
-  delete the secret.
+  Once the privacy policy page (feature 5b) is live, the preview may go
+  public: switch the authentication off, redeploy and delete the secret.
 
 ## 7. GitHub repository secrets
 
