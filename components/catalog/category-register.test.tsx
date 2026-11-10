@@ -66,7 +66,7 @@ describe("CategoryRegister (D3)", () => {
       .map((el) => (el.textContent ?? "").trim())
       .filter(Boolean);
     expect(texts.sort()).toEqual(
-      ["01", "1 Produktgruppe", "Sanitärteile", "→"].sort()
+      ["01", "1 Produktgruppe", "Sanitärteile"].sort()
     );
   });
 

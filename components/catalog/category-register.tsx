@@ -1,5 +1,7 @@
 import Link from "next/link";
+
 import type { RegisterItem } from "@/lib/catalog/types";
+
 import { ProductImage } from "./product-image";
 
 export function CategoryRegister({ items }: { items: RegisterItem[] }) {
@@ -44,9 +46,6 @@ export function CategoryRegister({ items }: { items: RegisterItem[] }) {
                 ))}
               </span>
             ) : null}
-            <span aria-hidden="true" className="shrink-0 text-muted">
-              →
-            </span>
           </Link>
         </li>
       ))}
