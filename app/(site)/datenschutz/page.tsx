@@ -41,7 +41,7 @@ export default function PrivacyPage() {
           <br />
           E-Mail: {mail}
           <br />
-          Meine Anschrift steht im{" "}
+          Meine Postanschrift finden Sie in meinem{" "}
           <a href={developer.imprintUrl} className={linkClass}>
             Impressum
           </a>
@@ -62,8 +62,8 @@ export default function PrivacyPage() {
         <p className="max-w-prose">
           Die öffentlichen Seiten setzen keine Cookies, nutzen keinen lokalen
           Browserspeicher und keine Tracking- oder Analyse-Dienste.
-          Personenbezogene Daten verarbeite ich, wenn Sie die Website aufrufen
-          oder das Anfrageformular ausprobieren.
+          Personenbezogene Daten verarbeite ich, wenn Sie die Website aufrufen,
+          das Anfrageformular ausprobieren oder mir eine E-Mail schreiben.
         </p>
         <p className="max-w-prose">
           Sie können die öffentlichen Seiten ohne Anmeldung nutzen. Das
@@ -142,6 +142,39 @@ export default function PrivacyPage() {
           Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Mein berechtigtes
           Interesse liegt darin, Ihnen und anderen Interessenten zu zeigen, wie
           das Formular funktioniert.
+        </p>
+      </section>
+
+      {/* Same mailbox and retention periods as the policy on the developer's
+          own site; keep both texts in step. */}
+      <section aria-labelledby="email" className={sectionClass}>
+        <h2 id="email" className={headingClass}>
+          Kontakt per E-Mail
+        </h2>
+        <p className="max-w-prose">
+          Wenn Sie mir eine E-Mail schreiben, verarbeite ich Ihre Angaben (etwa
+          Name, E-Mail-Adresse und Ihr Anliegen), um Ihre Nachricht zu
+          beantworten und Ihnen auf Wunsch ein Angebot zu machen. Ihre Angaben
+          sind freiwillig. Ohne E-Mail-Adresse kann ich Ihnen aber nicht
+          antworten.
+        </p>
+        <p className="max-w-prose">
+          Zielt Ihre Nachricht auf einen Vertrag mit Ihnen selbst, ist
+          Rechtsgrundlage Art. 6 Abs. 1 lit. b DSGVO, sonst (etwa bei
+          Nachrichten für ein Unternehmen) Art. 6 Abs. 1 lit. f DSGVO. Mein
+          berechtigtes Interesse liegt darin, Nachrichten zu beantworten und
+          Aufträge anzubahnen.
+        </p>
+        <p className="max-w-prose">
+          Nachrichten, aus denen kein Auftrag entsteht, lösche ich sechs Monate
+          nach der letzten Nachricht. Kommt ein Auftrag zustande, bewahre ich
+          Rechnungen und steuerlich relevante Unterlagen auf, solange das
+          Steuerrecht es verlangt, in der Regel bis zu zehn Jahre ab Ende des
+          Kalenderjahres (§ 147 AO, § 14b UStG). Rechtsgrundlage ist Art. 6 Abs.
+          1 lit. c DSGVO. Die übrige Korrespondenz bewahre ich bis zum Ende des
+          dritten Kalenderjahres nach Abschluss des Auftrags auf.
+          Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Mein berechtigtes
+          Interesse liegt darin, Ansprüche nachweisen oder abwehren zu können.
         </p>
       </section>
 

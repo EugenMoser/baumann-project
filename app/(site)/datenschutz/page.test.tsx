@@ -17,6 +17,7 @@ describe("PrivacyPage (5b)", () => {
       "Hosting",
       "Aufruf der Website",
       "Anfrageformular",
+      "Kontakt per E-Mail",
       "Admin-Bereich",
       "Ihre Rechte",
       "Widerspruchsrecht (Art. 21 DSGVO)",
@@ -31,6 +32,33 @@ describe("PrivacyPage (5b)", () => {
         /Fehlermeldungen des Servers können Ihre IP-Adresse enthalten\. Sie werden spätestens nach 30 Tagen gelöscht, auch in den Sicherungen\./
       )
     ).toBeTruthy();
+  });
+
+  it("describes e-mail contact with the retention periods of the developer's mailbox (legal B1)", () => {
+    const { container } = render(<PrivacyPage />);
+    const text = container.textContent ?? "";
+    expect(text).toContain(
+      "wenn Sie die Website aufrufen, das Anfrageformular ausprobieren oder mir eine E-Mail schreiben."
+    );
+    const section = screen
+      .getByRole("heading", { level: 2, name: "Kontakt per E-Mail" })
+      .closest("section");
+    const sectionText = section?.textContent ?? "";
+    expect(sectionText).toContain(
+      "Nachrichten, aus denen kein Auftrag entsteht, lösche ich sechs Monate nach der letzten Nachricht."
+    );
+    expect(sectionText).toContain("Art. 6 Abs. 1 lit. b DSGVO");
+    expect(sectionText).toContain("§ 147 AO, § 14b UStG");
+    expect(sectionText).toContain(
+      "bis zum Ende des dritten Kalenderjahres nach Abschluss des Auftrags"
+    );
+  });
+
+  it("points to the imprint for the postal address (legal S2)", () => {
+    const { container } = render(<PrivacyPage />);
+    expect(container.textContent).toContain(
+      "Meine Postanschrift finden Sie in meinem Impressum."
+    );
   });
 
   it("links the e-mail and the imprint (SC-1, FR-2)", () => {
