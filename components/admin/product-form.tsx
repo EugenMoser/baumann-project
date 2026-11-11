@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { AI_SUGGESTION_EXPIRED } from "@/lib/admin/errors";
 import { idleState, type FormState } from "@/lib/admin/form";
 import { STATUS_LABEL, type ProductStatus } from "@/lib/admin/labels";
 import type { EditorOptions } from "@/lib/admin/products";
@@ -115,19 +116,35 @@ export function ProductForm({
   const focusFirstBox = useRef(false);
   const seen = useRef(state);
 
+  // The values the form was loaded with, or last saved: the fallback for an
+  // AI text that the server no longer honours. After a save these are the
+  // raw submitted values, not server-normalised ones; the page reloads the
+  // normalised values on the next visit and the difference is cosmetic.
+  const [baseline, setBaseline] = useState(initial);
+
   // Re-sync the controlled fields with each action response. Accepted ids
-  // survive a save with errors and are consumed by a successful save.
+  // survive a save with errors and are consumed by a successful save. When the
+  // server rejects the save because an id is no longer honoured (D6), it does
+  // not say which one: every field with an accepted id goes back to its saved
+  // text and all ids are dropped, so a second save cannot store the expired
+  // AI text unlabelled. Other fields keep their edits.
   const [syncedState, setSyncedState] = useState(state);
   if (syncedState !== state) {
     setSyncedState(state);
+    const expired = state.formError === AI_SUGGESTION_EXPIRED;
+    const restored = (key: TextKey) =>
+      expired && accepted[key] !== undefined
+        ? baseline[key]
+        : state.values[key];
     setName(state.values.name);
     setSubtitle(state.values.subtitle);
     setTexts({
-      description: state.values.description,
-      seoTitle: state.values.seoTitle,
-      seoDescription: state.values.seoDescription,
+      description: restored("description"),
+      seoTitle: restored("seoTitle"),
+      seoDescription: restored("seoDescription"),
     });
-    if (state.status === "saved") setAccepted({});
+    if (state.status === "saved") setBaseline(state.values);
+    if (state.status === "saved" || expired) setAccepted({});
   }
 
   const setText = (key: TextKey, value: string) =>

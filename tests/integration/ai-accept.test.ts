@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { AI_SUGGESTION_EXPIRED } from "@/lib/admin/errors";
 import { saveProduct } from "@/lib/admin/products";
+import { err } from "@/lib/result";
 import { emptyProductValues, productSchema } from "@/lib/admin/schemas";
 import {
   deleteProductsBySlugPrefix,
@@ -55,6 +57,17 @@ async function acceptedAt(id: number): Promise<string | null | undefined> {
   return data?.accepted_at;
 }
 
+const rejected = err({ kind: "invalid", message: AI_SUGGESTION_EXPIRED });
+
+async function description(): Promise<string | null | undefined> {
+  const { data } = await admin
+    .from("product")
+    .select("description")
+    .eq("id", productId)
+    .single();
+  return data?.description;
+}
+
 async function descriptionOrigin(): Promise<string | undefined> {
   const { data } = await admin
     .from("product")
@@ -93,7 +106,8 @@ describe("accepted suggestions on save (SC-6)", () => {
     expect(await acceptedAt(id)).not.toBeNull();
   });
 
-  it("ignores an accepted row on a second save", async () => {
+  // D6: an id that is not honoured rejects the whole save; nothing is written.
+  it("rejects an already accepted id on a second save", async () => {
     const id = await suggestion("description", "Zweiter Vorschlag");
     await saveProduct(
       admin,
@@ -102,16 +116,19 @@ describe("accepted suggestions on save (SC-6)", () => {
       { ...NO_IDS, description: id }
     );
     const first = await acceptedAt(id);
-    // Same id again with other text: reused, so only the plain rule applies.
-    await saveProduct(admin, productId, input({ description: "Ganz anders" }), {
-      ...NO_IDS,
-      description: id,
-    });
-    expect(await descriptionOrigin()).toBe("ai_edited");
+    const second = await saveProduct(
+      admin,
+      productId,
+      input({ description: "Ganz anders" }),
+      { ...NO_IDS, description: id }
+    );
+    expect(second).toEqual(rejected);
+    expect(await description()).toBe("Zweiter Vorschlag");
+    expect(await descriptionOrigin()).toBe("ai");
     expect(await acceptedAt(id)).toBe(first);
   });
 
-  it("ignores a stale row and leaves it unaccepted", async () => {
+  it("rejects a stale row and leaves it unaccepted", async () => {
     // An emptied description resets the origin to human.
     await saveProduct(admin, productId, input({}));
     const stale = await suggestion(
@@ -119,20 +136,28 @@ describe("accepted suggestions on save (SC-6)", () => {
       "Alter Text",
       new Date(Date.now() - 25 * 3_600_000).toISOString()
     );
-    await saveProduct(admin, productId, input({ description: "Alter Text" }), {
-      ...NO_IDS,
-      description: stale,
-    });
+    const saved = await saveProduct(
+      admin,
+      productId,
+      input({ description: "Alter Text" }),
+      { ...NO_IDS, description: stale }
+    );
+    expect(saved).toEqual(rejected);
+    expect(await description()).toBeNull();
     expect(await descriptionOrigin()).toBe("human");
     expect(await acceptedAt(stale)).toBeNull();
   });
 
-  it("ignores a row of another field", async () => {
+  it("rejects a row of another field", async () => {
     const wrong = await suggestion("seo_title", "Titel");
-    await saveProduct(admin, productId, input({ description: "Titel" }), {
-      ...NO_IDS,
-      description: wrong,
-    });
+    const saved = await saveProduct(
+      admin,
+      productId,
+      input({ description: "Titel" }),
+      { ...NO_IDS, description: wrong }
+    );
+    expect(saved).toEqual(rejected);
+    expect(await description()).toBeNull();
     expect(await acceptedAt(wrong)).toBeNull();
   });
 });

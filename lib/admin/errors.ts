@@ -50,6 +50,11 @@ const KNOWN_DB_MESSAGES: readonly string[] = [
   DELETE_PUBLISHED,
 ];
 
+// A submitted AI suggestion id cannot be honoured (other product or field,
+// older than 24 h, already accepted): the save is rejected (AI spec D6).
+export const AI_SUGGESTION_EXPIRED =
+  "Der KI-Vorschlag ist nicht mehr gültig; die betroffenen Felder wurden zurückgesetzt. Bitte neu generieren.";
+
 // 23503 on a product save: a chosen category or material was deleted meanwhile.
 export const STALE_SELECTION =
   "Eine Auswahl gibt es nicht mehr. Bitte die Seite neu laden.";

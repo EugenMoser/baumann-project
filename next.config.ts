@@ -17,10 +17,14 @@ const nextConfig: NextConfig = {
         hostname: supabase.hostname,
         port: supabase.port,
         pathname: "/storage/v1/object/public/catalog/**",
+        // No query string: a varying one would bypass the optimizer cache.
+        search: "",
       },
     ],
     // One day: keeps re-encoding work on the shared VPS low.
     minimumCacheTTL: 86_400,
+    // Cap the on-disk image cache (500 MB) on the shared VPS.
+    maximumDiskCacheSize: 500_000_000,
   },
   experimental: {
     serverActions: {
