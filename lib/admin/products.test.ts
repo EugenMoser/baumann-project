@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { ok } from "@/lib/result";
+import { err, ok } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
+import { AI_SUGGESTION_EXPIRED } from "./errors";
 import { saveProduct } from "./products";
 import type { ProductInput } from "./schemas";
 
@@ -247,9 +248,8 @@ describe("saveProduct with accepted suggestions (SC-6)", () => {
     ["a row of another field", { field: "seo_title" }],
     ["a row older than 24 h", { created_at: hoursAgo(25) }],
     ["a row that was accepted before", { accepted_at: hoursAgo(2) }],
-  ] as const)("ignores %s", (_label, patch) => {
-    it("falls back to the plain rule, warns and marks nothing", async () => {
-      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  ] as const)("rejects the save for %s", (_label, patch) => {
+    it("returns the expired-suggestion error and writes nothing", async () => {
       const { client, productUpdates, marks } = updateClient([
         genRow({ id: 31, ...patch }),
       ]);
@@ -259,39 +259,43 @@ describe("saveProduct with accepted suggestions (SC-6)", () => {
         typed({ description: "Vorschlag" }),
         { ...none, description: 31 }
       );
-      expect(result).toEqual(ok({ id: 7 }));
-      // No accepted row: the product was human, so the text stays human.
-      expect(productUpdates[0]).toMatchObject({ description_origin: "human" });
-      expect(marks).toHaveLength(0);
-      expect(warn).toHaveBeenCalledWith(
-        "[admin] ignored AI suggestion id",
-        "description"
+      expect(result).toEqual(
+        err({ kind: "invalid", message: AI_SUGGESTION_EXPIRED })
       );
-      warn.mockRestore();
+      expect(productUpdates).toHaveLength(0);
+      expect(marks).toHaveLength(0);
     });
   });
 
-  it("keeps the AI origin for one valid SEO id next to an ignored one", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("rejects the whole save when one of two SEO ids is not honoured, even if the other is valid", async () => {
     const { client, productUpdates, marks } = updateClient([
       genRow({ id: 32, field: "seo_title", output: "Titel" }),
       genRow({ id: 33, field: "seo_description", entity_id: 8 }),
     ]);
-    await saveProduct(
+    const result = await saveProduct(
       client,
       7,
       typed({ seoTitle: "Titel", seoDescription: "Eigener Text" }),
       { description: null, seoTitle: 32, seoDescription: 33 }
     );
-    // The ignored id leaves the human SEO description next to the AI title.
-    expect(productUpdates[0]).toMatchObject({ seo_origin: "ai_edited" });
-    expect(marks).toHaveLength(1);
-    expect(marks[0]?.ids).toEqual([32]);
-    expect(warn).toHaveBeenCalledWith(
-      "[admin] ignored AI suggestion id",
-      "seo_description"
+    expect(result).toEqual(
+      err({ kind: "invalid", message: AI_SUGGESTION_EXPIRED })
     );
-    warn.mockRestore();
+    expect(productUpdates).toHaveLength(0);
+    expect(marks).toHaveLength(0);
+  });
+
+  it("still saves when the id of an expired suggestion belongs to a field saved empty", async () => {
+    const { client, productUpdates, marks } = updateClient([
+      genRow({ id: 31, created_at: hoursAgo(25) }),
+    ]);
+    const result = await saveProduct(client, 7, typed({ description: null }), {
+      ...none,
+      description: 31,
+    });
+    expect(result).toEqual(ok({ id: 7 }));
+    expect(productUpdates[0]).toMatchObject({ description_origin: "human" });
+    expect(marks).toHaveLength(0);
   });
 
   it("drops an accepted description that is saved empty", async () => {

@@ -2,7 +2,12 @@ import { firstFreeSlug, slugBase } from "@/lib/catalog/slug";
 import type { ContentOrigin } from "@/lib/catalog/types";
 import { err, ok, type Result } from "@/lib/result";
 import type { AdminClient } from "@/lib/supabase/session";
-import { fromPg, STALE_SELECTION, type AdminError } from "./errors";
+import {
+  AI_SUGGESTION_EXPIRED,
+  fromPg,
+  STALE_SELECTION,
+  type AdminError,
+} from "./errors";
 import { needsAltReview } from "./alt-review";
 import { likePattern, type ProductFilter } from "./filter";
 import type { ProductStatus } from "./labels";
@@ -326,9 +331,10 @@ const SUGGESTION_FIELDS = [
 ] as const;
 
 // D6: an id counts only for this product and field, within 24 h and once.
-// The database applies every condition; anything else is ignored and logged
-// by field name only. A field saved empty keeps no AI text: its id is skipped,
-// so it neither counts toward the origin nor gets marked accepted.
+// The database applies every condition; an id that fails any of them rejects
+// the whole save (AI_SUGGESTION_EXPIRED), so AI text is never saved as human.
+// A field saved empty keeps no AI text: its id is skipped, so it neither
+// counts toward the origin nor gets marked accepted.
 async function loadAccepted(
   client: AdminClient,
   productId: number,
@@ -352,10 +358,8 @@ async function loadAccepted(
       .is("accepted_at", null)
       .maybeSingle();
     if (error) return err(fromPg(error));
-    if (data === null) {
-      console.warn("[admin] ignored AI suggestion id", field);
-      continue;
-    }
+    if (data === null)
+      return err({ kind: "invalid", message: AI_SUGGESTION_EXPIRED });
     text[key] = data.output;
     rowIds.push(rowId);
   }

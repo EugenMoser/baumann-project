@@ -7,6 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { AI_SUGGESTION_EXPIRED } from "@/lib/admin/errors";
 import type { FormState } from "@/lib/admin/form";
 import { emptyProductValues, type ProductValues } from "@/lib/admin/schemas";
 import type { ContentOrigin } from "@/lib/catalog/types";
@@ -528,6 +529,125 @@ describe("ProductForm AI assistant (SC-1, SC-5)", () => {
     expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
       "KI-Beschreibung"
     );
+  });
+
+  it("resets accepted fields to their saved text after the expired-suggestion error", async () => {
+    const action = vi.fn(
+      async (
+        _prev: FormState<ProductValues>,
+        formData: FormData
+      ): Promise<FormState<ProductValues>> => ({
+        status: "error",
+        values: {
+          ...initial,
+          name: String(formData.get("name")),
+          description: String(formData.get("description")),
+          seoTitle: String(formData.get("seoTitle")),
+          seoDescription: String(formData.get("seoDescription")),
+        },
+        fieldErrors: {},
+        formError: AI_SUGGESTION_EXPIRED,
+      })
+    );
+    renderEditor({ action });
+    await generate();
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    fireEvent.change(screen.getByLabelText("Name"), {
+      target: { value: "Geänderter Name" },
+    });
+    // A field without an accepted id keeps its edit through the reset.
+    fireEvent.change(screen.getByLabelText("Beschreibung für Suchmaschinen"), {
+      target: { value: "Eigener SEO-Text" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await screen.findByText(AI_SUGGESTION_EXPIRED);
+    expect((action.mock.calls[0][1] as FormData).get("aiDescription")).toBe(
+      "11"
+    );
+
+    expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
+      initial.description
+    );
+    expect(screen.getByLabelText("Titel für Suchmaschinen")).toHaveValue(
+      initial.seoTitle
+    );
+    expect(screen.getByLabelText("Name")).toHaveValue("Geänderter Name");
+    expect(screen.getByLabelText("Beschreibung für Suchmaschinen")).toHaveValue(
+      "Eigener SEO-Text"
+    );
+    expect(hiddenId("aiDescription")).toBeNull();
+    expect(hiddenId("aiSeoTitle")).toBeNull();
+
+    // A second save sends the saved text and no generation id.
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(2));
+    const second = action.mock.calls[1][1] as FormData;
+    expect(second.get("description")).toBe(initial.description);
+    expect(second.get("aiDescription")).toBeNull();
+    expect(second.get("aiSeoTitle")).toBeNull();
+
+    // A new suggestion can still be requested and accepted.
+    await generate({
+      model: "test-model",
+      suggestions: [
+        { field: "description", generationId: 21, text: "Neue Beschreibung" },
+        { field: "seo_title", generationId: 22, text: "Neuer Titel" },
+        { field: "seo_description", generationId: 23, text: "Neuer SEO-Text" },
+      ],
+    });
+    await waitFor(() =>
+      expect(screen.getByText("Neue Beschreibung")).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    expect(hiddenId("aiDescription")).toHaveValue("21");
+  });
+
+  it("falls back to the last saved text, not the loaded one, after the expired-suggestion error", async () => {
+    let call = 0;
+    const action = vi.fn(
+      async (
+        _prev: FormState<ProductValues>,
+        formData: FormData
+      ): Promise<FormState<ProductValues>> => {
+        call += 1;
+        const values = {
+          ...initial,
+          description: String(formData.get("description")),
+        };
+        return call === 1
+          ? { status: "saved", values, fieldErrors: {}, formError: null }
+          : {
+              status: "error",
+              values,
+              fieldErrors: {},
+              formError: AI_SUGGESTION_EXPIRED,
+            };
+      }
+    );
+    renderEditor({ action });
+    fireEvent.change(screen.getByLabelText("Beschreibung (Markdown)"), {
+      target: { value: "Erster Text" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
+        "Erster Text"
+      )
+    );
+
+    await generate();
+    fireEvent.click(screen.getAllByRole("button", { name: "Übernehmen" })[0]);
+    expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
+      "KI-Beschreibung"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Speichern" }));
+    await screen.findByText(AI_SUGGESTION_EXPIRED);
+    expect(screen.getByLabelText("Beschreibung (Markdown)")).toHaveValue(
+      "Erster Text"
+    );
+    expect(hiddenId("aiDescription")).toBeNull();
   });
 
   it("shows the origin badges with the public wording, none for human", () => {
