@@ -294,13 +294,40 @@ it (it is stored as a GitHub secret).
   neither curl nor wget.
 - Create an API token with deploy permission and copy the deploy webhook URL
   of the resource.
-- Access protection until the preview is public: **General → Security →
-  Authentication → HTTP Basic Authentication** with a user name and password,
-  label management stays "Managed by Coolify". Redeploy afterwards. The
-  container health check runs inside the container and is not affected; the
-  CI smoke check sends the credentials from `PREVIEW_BASIC_AUTH` (section 7).
-  Once the privacy policy page (feature 5b) is live, the preview may go
-  public: switch the authentication off, redeploy and delete the secret.
+- Rate limit per client IP in Traefik: under **General → Container labels**,
+  set **Label management** to "Managed manually", put `baumann-ratelimit`
+  first in the HTTPS router's middlewares
+  (`traefik.http.routers.https-0-<resource-id>.middlewares=baumann-ratelimit,gzip`)
+  and add:
+
+  ```ini
+  traefik.http.middlewares.baumann-ratelimit.ratelimit.average=20
+  traefik.http.middlewares.baumann-ratelimit.ratelimit.period=1s
+  traefik.http.middlewares.baumann-ratelimit.ratelimit.burst=200
+  ```
+
+  Save the labels with their own Save button, then redeploy. 20 requests per
+  second with a burst of 200 cover a page view with images and prefetches
+  (about 70 requests), also for several people behind one address. In manual
+  mode Coolify no longer regenerates labels: a changed domain or port has to
+  be edited by hand, and switching back to "Managed by Coolify" resets all
+  labels, which drops the limit. Check on the server (three middleware lines
+  and the router line):
+
+  ```bash
+  docker inspect <app-container> | grep -i ratelimit
+  ```
+
+  From one machine, 600 parallel requests to `/robots.txt` return about 300 ×
+  `200` and the rest `429`.
+
+- Access protection: until the privacy policy page (feature 5b) went live,
+  the preview sat behind **General → Security → Authentication → HTTP Basic
+  Authentication**, and the CI smoke check sent the credentials from
+  `PREVIEW_BASIC_AUTH` (section 7). The preview is public since November 2026:
+  the authentication is off and the secret is no longer needed. Should it
+  come back, check after the redeploy that the HTTPS router's middlewares
+  list the basic auth middleware, since the labels are managed manually.
 
 ## 7. GitHub repository secrets
 
