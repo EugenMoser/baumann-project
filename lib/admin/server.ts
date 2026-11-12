@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
+import { knownSlugs } from "@/lib/catalog/known-slugs";
 import type { Result } from "@/lib/result";
 import {
   createSessionSupabase,
@@ -39,7 +40,10 @@ export const editIdFrom = (formData: FormData): number | null | "invalid" => {
 export function writeDeps(client: AdminClient): WriteDeps {
   return {
     check: () => checkAdmin(client),
-    revalidate: () => revalidatePath("/", "layout"),
+    revalidate: () => {
+      revalidatePath("/", "layout");
+      knownSlugs.invalidate(); // new or renamed slugs must pass proxy.ts
+    },
     logError: (context, code) => console.error(context, code ?? "unknown"),
   };
 }

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { err, ok } from "@/lib/result";
 
 const check = vi.fn();
+const invalidate = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/catalog/known-slugs", () => ({ knownSlugs: { invalidate } }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(),
@@ -17,7 +19,8 @@ vi.mock("./auth", () => ({
   checkAdmin: () => check(),
 }));
 
-import { editIdFrom, runWrite } from "./server";
+import type { AdminClient } from "@/lib/supabase/session";
+import { editIdFrom, runWrite, writeDeps } from "./server";
 
 beforeEach(() => {
   check.mockReset();
@@ -58,6 +61,14 @@ describe("runWrite", () => {
       "redirect:/admin/login"
     );
     expect(write).not.toHaveBeenCalled();
+  });
+});
+
+describe("writeDeps", () => {
+  it("lets the proxy see new or renamed slugs after a write", () => {
+    invalidate.mockReset();
+    writeDeps({} as AdminClient).revalidate();
+    expect(invalidate).toHaveBeenCalledTimes(1);
   });
 });
 

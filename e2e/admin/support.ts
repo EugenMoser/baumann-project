@@ -55,8 +55,37 @@ export function createAdmin(email: string, password: string): void {
   });
 }
 
+// Mirrors BASE_URL in playwright.config.ts, which has no named export.
+const BASE_URL = `http://127.0.0.1:${Number(process.env.E2E_PORT ?? 3000)}`;
+
+// Service-role writes bypass the admin, so proxy.ts only learns the new slug
+// on its next reload (within 10 s); until then the page answers 404. Polling
+// after all inserts also means the first render already has the final rows.
+async function waitForPublicProduct(slug: string): Promise<void> {
+  // The helpers insert into category 1, `moebelteile` in the seed.
+  const url = `${BASE_URL}/produkte/moebelteile/${slug}`;
+  const deadline = Date.now() + 15_000;
+  let status = 0;
+  while (Date.now() < deadline) {
+    status = (await fetch(url, { redirect: "manual" })).status;
+    if (status === 200) return;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`${url} still answers ${status} after 15 s.`);
+}
+
 // Published e2e product with one article, created directly (service role).
 export async function createPublishedProduct(
+  slug: string,
+  name: string,
+  articleNumber: string
+): Promise<number> {
+  const id = await insertPublishedProduct(slug, name, articleNumber);
+  await waitForPublicProduct(slug);
+  return id;
+}
+
+async function insertPublishedProduct(
   slug: string,
   name: string,
   articleNumber: string
@@ -82,7 +111,7 @@ export async function createProductWithTwoColors(
   name: string,
   articleNumber: string
 ): Promise<number> {
-  const id = await createPublishedProduct(slug, name, articleNumber);
+  const id = await insertPublishedProduct(slug, name, articleNumber);
   const { error } = await serviceClient()
     .from("product_color")
     .insert([
@@ -102,6 +131,7 @@ export async function createProductWithTwoColors(
       },
     ]);
   if (error) throw error;
+  await waitForPublicProduct(slug);
   return id;
 }
 
