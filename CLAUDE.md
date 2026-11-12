@@ -14,7 +14,7 @@ Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
 
-- Next.js 16.3 (App Router), React 19.2, TypeScript 5 (`strict: true`)
+- Next.js 16.4 (App Router), React 19.2, TypeScript 5 (`strict: true`)
 - Tailwind CSS 4 via `@tailwindcss/postcss`
 - ESLint 9 flat config (`eslint.config.mjs`, `eslint-config-next`)
 - Vitest + Testing Library (unit), Playwright (E2E), Prettier for formatting
