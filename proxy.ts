@@ -2,14 +2,48 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { LOGIN_PATH, loginPathFor } from "@/lib/admin/auth";
 import { GENERATE_MESSAGES } from "@/lib/ai/messages";
+import { knownSlugs } from "@/lib/catalog/known-slugs";
+import { CATALOG_NOT_FOUND_PATH } from "@/lib/catalog/not-found-path";
 import { publicEnv } from "@/lib/env/public";
 
 const SUGGESTION_ROUTE = /^\/admin\/produkte\/\d+\/ki-vorschlag$/;
 
+export async function proxy(request: NextRequest) {
+  const [first, ...slugs] = request.nextUrl.pathname.split("/").filter(Boolean);
+  // Admin is the default branch: the matcher also matches encoded variants
+  // such as /produkt%65/..., which must not reach the ISR pages unchecked.
+  return first === "produkte"
+    ? catalogProxy(request, slugs)
+    : adminProxy(request);
+}
+
+// The catalog pages are ISR: every random slug would render a 404 and write a
+// cache entry to disk. Unknown slugs go to one fixed not-found path instead.
+// No session client here: public pages set no cookies (SC-1).
+async function catalogProxy(request: NextRequest, slugs: string[]) {
+  // Only /produkte/<category> and /produkte/<category>/<product> render ISR.
+  if (slugs.length < 1 || slugs.length > 2) return NextResponse.next();
+  const [category, product] = decodeAll(slugs) ?? [];
+  const known =
+    category !== undefined && (await knownSlugs.isKnown(category, product));
+  return known
+    ? NextResponse.next()
+    : NextResponse.rewrite(new URL(CATALOG_NOT_FOUND_PATH, request.url));
+}
+
+// Null on malformed percent-encoding, which no real slug has.
+function decodeAll(segments: string[]): string[] | null {
+  try {
+    return segments.map((segment) => decodeURIComponent(segment));
+  } catch {
+    return null;
+  }
+}
+
 // Optimistic check only (spec D2): refreshes the session cookie and sends
 // visitors without a session to the login page. checkAdmin() in the admin
 // layout and every action decides; RLS is the boundary.
-export async function proxy(request: NextRequest) {
+async function adminProxy(request: NextRequest) {
   let response = NextResponse.next({ request });
   let cacheHeaders: Record<string, string> = {};
   const supabase = createServerClient(
@@ -52,4 +86,4 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-export const config = { matcher: ["/admin/:path*"] };
+export const config = { matcher: ["/admin/:path*", "/produkte/:path*"] };

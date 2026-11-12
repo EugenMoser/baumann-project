@@ -262,6 +262,13 @@ it (it is stored as a GitHub secret).
 - Health check: the Dockerfile `HEALTHCHECK` is what Coolify uses. Do not
   configure a separate HTTP health check in the dashboard; the slim image has
   neither curl nor wget.
+- Run a single app instance. `proxy.ts` answers unknown catalog slugs from an
+  in-memory slug list that admin writes refresh in the same process; with
+  several replicas, or writes outside the admin (import, Studio), new slugs
+  reach it within 10 s. The check covers as many products and as many
+  categories as PostgREST `max_rows` allows per table (1000 locally;
+  production follows `PGRST_DB_MAX_ROWS`). Above that it switches itself off,
+  and every reload logs `known-slugs: load failed`.
 - Create an API token with deploy permission and copy the deploy webhook URL
   of the resource.
 - Access protection until the preview is public: **General → Security →

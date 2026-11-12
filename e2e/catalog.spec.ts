@@ -77,6 +77,27 @@ test.describe("public catalog", () => {
     ).toBe(404);
   });
 
+  test("unknown product and category URLs render the not-found page inside the site chrome, a known product stays 200", async ({
+    page,
+  }) => {
+    for (const url of [
+      "/produkte/moebelteile/zufall-xyz-123",
+      "/produkte/zufall-xyz-123",
+    ]) {
+      const response = await page.goto(url);
+      expect(response?.status()).toBe(404);
+      await expect(page.getByRole("banner")).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Seite nicht gefunden" })
+      ).toBeVisible();
+      await expect(
+        page.getByText("Die angeforderte Seite existiert nicht.")
+      ).toBeVisible();
+    }
+    const known = await page.goto(PRODUCT);
+    expect(known?.status()).toBe(200);
+  });
+
   test("product page shows every article, the default-colour numbers and all four in the text (SC-4, SC-5)", async ({
     page,
   }) => {
