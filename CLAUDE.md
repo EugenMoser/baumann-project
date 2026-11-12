@@ -9,7 +9,8 @@ the customer's live website is not part of this repo.
 
 ## Status
 
-Active. MVP: 12 of 13 features done (6a/6b count as one). Next: feature 8 (showcase).
+Active. MVP: 12 of 14 features done (6a/6b count as one). Next: 7a (manual click-through
+of the preview), then feature 8 (showcase).
 Roadmap: `docs/roadmap.md` · Data model: `docs/data-model.md`
 
 ## Tech stack
